@@ -6,9 +6,11 @@
 build/
 .pub-cache/
 .pub/
-pubspec.lock
+# pubspec.lock IS committed — this is an application, not a library, so builds
+# should be reproducible.
 
-# Generated code (drift, riverpod, json_serializable)
+# Generated code — regenerate with:
+#   dart run build_runner build --delete-conflicting-outputs
 *.g.dart
 *.freezed.dart
 *.drift.dart
