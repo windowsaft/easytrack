@@ -44,6 +44,9 @@ macos/Pods/
 windows/flutter/ephemeral/
 linux/flutter/ephemeral/
 
+# Node dependencies (the ETL toolchain under tools/etl)
+node_modules/
+
 # ETL working files — large downloads and intermediate data, never committed
 tools/etl/.cache/
 tools/etl/out/

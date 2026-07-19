@@ -65,10 +65,13 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    # Bundeslebensmittelschlüssel 4.0, built by tools/etl/build_bls.mjs.
+    # Bundled rather than downloaded: it is only ~2.5 MB and it is the primary
+    # search source, so the app must work fully offline the moment it installs.
+    - assets/data/bls.sqlite
+    # Shared with the ETL so the runtime and the index agree on compound splits.
+    - tools/etl/de_food_morphemes.txt
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

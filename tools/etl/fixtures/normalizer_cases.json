@@ -1,0 +1,77 @@
+{
+  "_comment": "Shared test fixtures for the German search normalizer. Asserted by BOTH lib/core/text/german_normalizer.dart (test/core/german_normalizer_test.dart) and tools/etl/normalize.mjs (tools/etl/normalize.test.mjs). If these two implementations ever diverge, the search index and the search query stop agreeing and every query silently returns nothing. Add a case here first, then make both sides pass.",
+
+  "normalize": [
+    ["Käse", "kaese"],
+    ["käse", "kaese"],
+    ["KÄSE", "kaese"],
+    ["Kaese", "kaese"],
+    ["Öl", "oel"],
+    ["Müsli", "muesli"],
+    ["Weißbrot", "weissbrot"],
+    ["WEISSBROT", "weissbrot"],
+    ["Weissbrot", "weissbrot"],
+    ["Grieß", "griess"],
+    ["Gemüse", "gemuese"],
+    ["Frühstück", "fruehstueck"],
+    ["Hähnchenbrust", "haehnchenbrust"],
+    ["Quark 40% Fett i. Tr.", "quark 40 fett i tr"],
+    ["Vollkorn-Brot", "vollkorn brot"],
+    ["Vollkorn/Brot", "vollkorn brot"],
+    ["Vollkorn, Brot", "vollkorn brot"],
+    ["Milch (3,5%)", "milch 3 5"],
+    ["Joghurt   mit    Früchten", "joghurt mit fruechten"],
+    ["  Apfel  ", "apfel"],
+    ["Créme fraîche", "creme fraiche"],
+    ["Jalapeño", "jalapeno"],
+    ["Cordon bleu", "cordon bleu"],
+    ["Müller's Müsli", "mueller s muesli"],
+    ["E-Nummer E330", "e nummer e330"],
+    ["", ""],
+    ["   ", ""],
+    ["123", "123"],
+    ["ÄÖÜäöüß", "aeoeueaeoeuess"],
+    ["Roggenvollkornbrötchen", "roggenvollkornbroetchen"],
+    ["Nudeln 500g", "nudeln 500g"],
+    ["Tomaten & Mozzarella", "tomaten mozzarella"],
+    ["Schwein Fettwamme, ohne Schwarten", "schwein fettwamme ohne schwarten"]
+  ],
+
+  "_compounds_comment": "Longest match at each start position, advancing one character at a time. 'vollkornbrot' must yield BOTH 'vollkorn' and 'korn' — segmenting the word would swallow 'korn' and make the compound unfindable by it, which is the whole reason this step exists. Order is by start position, then longest first.",
+
+  "compounds": [
+    ["vollkornbrot", ["vollkorn", "korn", "brot"]],
+    ["roggenvollkornbrot", ["roggen", "vollkorn", "korn", "brot"]],
+    ["apfelschorle", ["apfel", "schorle"]],
+    ["haferflocken", ["hafer", "flocken"]],
+    ["kartoffelsalat", ["kartoffel", "salat"]],
+    ["huehnersuppe", ["suppe"]],
+    ["tomatensosse", ["tomaten", "sosse"]],
+    ["brot", []],
+    ["apfel", []],
+    ["milch", []]
+  ],
+
+  "searchText": [
+    {
+      "name": "Vollkornbrot",
+      "brand": null,
+      "expected": "vollkornbrot vollkorn korn brot"
+    },
+    {
+      "name": "Haferflocken",
+      "brand": "Kölln",
+      "expected": "haferflocken koelln hafer flocken"
+    },
+    {
+      "name": "Brot",
+      "brand": null,
+      "expected": "brot"
+    },
+    {
+      "name": "Apfel",
+      "brand": null,
+      "expected": "apfel"
+    }
+  ]
+}

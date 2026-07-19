@@ -1,0 +1,19 @@
+{
+  "name": "easytrack-etl",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Builds the bundled food reference databases for EasyTrack.",
+  "scripts": {
+    "build:bls": "node build_bls.mjs",
+    "test": "node --test ."
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "exceljs": "^4.4.0",
+    "yauzl-promise": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
