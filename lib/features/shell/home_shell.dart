@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../diary/diary_screen.dart';
 import '../search/food_search_screen.dart';
 
 /// Bottom-navigation shell. The diary is the landing screen because logging is
@@ -43,7 +44,7 @@ class _HomeShellState extends State<HomeShell> {
       body: IndexedStack(
         index: _index,
         children: const [
-          _Placeholder(title: 'Tagebuch', icon: Icons.today),
+          DiaryScreen(),
           FoodSearchScreen(),
           _Placeholder(title: 'Verlauf', icon: Icons.insights),
           _Placeholder(title: 'Profil', icon: Icons.person),

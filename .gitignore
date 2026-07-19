@@ -67,3 +67,6 @@ off_*.sqlite.zst
 # Local env
 .env
 .env.local
+
+# Flutter tool crash reports
+flutter_*.log

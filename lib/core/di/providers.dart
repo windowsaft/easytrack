@@ -7,7 +7,10 @@ import '../../data/food/bls_provider.dart';
 import '../../data/food/custom_food_provider.dart';
 import '../../data/food/food_provider.dart';
 import '../../data/food/search_orchestrator.dart';
+import '../../data/repositories/diary_repository.dart';
+import '../../domain/day_summary.dart';
 import '../nutrition/food_ref.dart';
+import '../time/day_key.dart';
 
 /// The local user database. Lives for the whole app session.
 final userDatabaseProvider = Provider<UserDatabase>((ref) {
@@ -93,6 +96,31 @@ final searchOrchestratorProvider = FutureProvider<FoodSearchOrchestrator>((
     recency: recency,
   );
 });
+
+final diaryRepositoryProvider = Provider<DiaryRepository>(
+  (ref) => DiaryRepository(ref.watch(userDatabaseProvider)),
+);
+
+/// The day the diary is showing. Defaults to today.
+class SelectedDay extends Notifier<DayKey> {
+  @override
+  DayKey build() => DayKey.today();
+
+  void select(DayKey day) => state = day;
+
+  void goToToday() => state = DayKey.today();
+
+  void shift(int days) => state = state.addDays(days);
+}
+
+final selectedDayProvider = NotifierProvider<SelectedDay, DayKey>(
+  SelectedDay.new,
+);
+
+/// One day's entries and totals, refreshed whenever the day changes.
+final daySummaryProvider = StreamProvider.family<DaySummary, DayKey>(
+  (ref, day) => ref.watch(diaryRepositoryProvider).watchDay(day),
+);
 
 /// Debounced search results for a query.
 final foodSearchProvider = StreamProvider.autoDispose
