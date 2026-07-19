@@ -1,0 +1,64 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+.pub-cache/
+.pub/
+pubspec.lock
+
+# Generated code (drift, riverpod, json_serializable)
+*.g.dart
+*.freezed.dart
+*.drift.dart
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.metadata
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+android/app/*.jks
+android/app/*.keystore
+*.apk
+*.aab
+
+# iOS / macOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+macos/Pods/
+**/.DS_Store
+
+# Windows / Linux desktop
+windows/flutter/ephemeral/
+linux/flutter/ephemeral/
+
+# ETL working files — large downloads and intermediate data, never committed
+tools/etl/.cache/
+tools/etl/out/
+*.zip
+*.parquet
+*.jsonl
+*.jsonl.gz
+*.csv.gz
+duckdb.exe
+
+# Reference database artifacts. The BLS pack is committed as a built asset
+# (assets/data/bls.sqlite); the much larger OFF packs are published as GitHub
+# Releases instead of being tracked here.
+tools/etl/out/*.sqlite
+off_*.sqlite
+off_*.sqlite.zst
+
+# Local env
+.env
+.env.local
