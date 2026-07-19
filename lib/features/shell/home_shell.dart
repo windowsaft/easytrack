@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../search/food_search_screen.dart';
+
 /// Bottom-navigation shell. The diary is the landing screen because logging is
 /// the action the user opens the app to perform.
 class HomeShell extends StatefulWidget {
@@ -42,7 +44,7 @@ class _HomeShellState extends State<HomeShell> {
         index: _index,
         children: const [
           _Placeholder(title: 'Tagebuch', icon: Icons.today),
-          _Placeholder(title: 'Suche', icon: Icons.search),
+          FoodSearchScreen(),
           _Placeholder(title: 'Verlauf', icon: Icons.insights),
           _Placeholder(title: 'Profil', icon: Icons.person),
         ],
