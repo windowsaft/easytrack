@@ -37,9 +37,18 @@ dependencies:
   fl_chart: ^1.2.0
   flutter:
     sdk: flutter
+  # Supplies the Material/Cupertino widget translations that MaterialApp
+  # requires once a non-English locale is pinned.
+  flutter_localizations:
+    sdk: flutter
   flutter_riverpod: ^3.3.2
+  # Swipe-to-add on the meal rows. Dismissible cannot express a persistent
+  # action pane that snaps back instead of removing the row.
+  flutter_slidable: ^4.0.2
   http: ^1.6.0
-  intl: ^0.20.3
+  # Pinned by flutter_localizations from the SDK; do not raise past 0.20.2
+  # without checking what the SDK ships.
+  intl: ^0.20.2
   mobile_scanner: ^7.3.0
   path: ^1.9.1
   path_provider: ^2.1.6
@@ -72,6 +81,20 @@ flutter:
     - assets/data/bls.sqlite
     # Shared with the ETL so the runtime and the index agree on compound splits.
     - tools/etl/de_food_morphemes.txt
+
+  # Bundled rather than fetched via google_fonts: the app must render correctly
+  # on a fresh sideload with no network, and the design leans on Anton hard
+  # enough that a fallback face reads as a different product.
+  # Both are SIL Open Font License 1.1 — see assets/fonts/OFL.txt.
+  fonts:
+    - family: Anton
+      fonts:
+        - asset: assets/fonts/Anton-Regular.ttf
+    # A variable font: one file covering 300–700. Weights are selected with
+    # TextStyle.fontVariations, not fontWeight — see core/ui/app_theme.dart.
+    - family: SpaceGrotesk
+      fonts:
+        - asset: assets/fonts/SpaceGrotesk-Variable.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -23,31 +23,39 @@ patterns relative to the working directory.
 | Ranking & merging | `test/data/search_orchestrator_test.dart` | Uses provider stubs |
 | Diary logic | `test/data/diary_repository_test.dart` | Logging, editing, budget, water |
 | Search UI | `test/features/food_search_screen_test.dart` | Real widget, real pack |
+| Diary/settings/profile UI | `test/features/diary_screen_test.dart` | Phone-sized, catches layout overflow |
 
-## Known gap: widget tests over drift streams
+## Widget tests over drift streams
 
-There is **no widget test for the diary screen or the navigation shell**, and this
-is a deliberate, unsatisfying compromise rather than an oversight.
+This was previously recorded as an unfixable gap. It is not — `test/features/
+diary_screen_test.dart` now renders the diary, meal detail, settings and profile
+screens against a real in-memory database. Three rules make it work, and breaking
+any one of them produces a hang rather than a failure, which is why the gap looked
+permanent:
 
-Any widget test whose tree subscribes to a drift `.watch()` stream fails or hangs
-under `flutter_test`'s fake-async clock. Drift schedules a zero-duration timer
-when a query stream is cancelled; if that happens during the framework's teardown
-the test fails with "Pending timers", and unmounting inside the test body to flush
-it instead causes `pumpAndSettle` to spin. The search screen tests pass precisely
-because that screen reads a one-shot `StreamProvider` rather than a live database
-stream.
+1. **Never `pumpAndSettle`.** The loading state is a `CircularProgressIndicator`,
+   whose animation never settles, so the call spins until its ten-minute timeout.
+   Pump a bounded number of fixed-duration frames instead.
+2. **Unmount the tree before the test body returns** — `pumpWidget(SizedBox())`
+   followed by `pump(Duration(milliseconds: 1))`. Drift schedules a zero-duration
+   timer when a query stream is cancelled, and the timer is created *during* that
+   unmount frame. The trailing pump must carry a real duration: a bare `pump()`
+   does not advance the fake clock, so a zero-duration timer never runs and the
+   "timer still pending" assertion fires anyway.
+3. **Never close the database from a widget test.** `close()` inside the
+   fake-async zone never completes, and the whole `flutter test` process hangs
+   without reporting. The in-memory database dies with the process; leaving it
+   open only costs a "database opened twice" warning from drift.
 
-What covers the diary in the meantime:
+The payoff is real: the first run of these tests found a 15px `RenderFlex`
+overflow on the settings screen that the repository-level suite could never see.
 
-- `test/data/diary_repository_test.dart` — 19 tests over the real logic: nutrient
-  scaling, snapshot storage, per-day isolation, editing, soft delete, the water
-  undo ordering, and the activity safety factor.
-- Running the app (`flutter run -d windows`) and confirming the rendered day view.
+Sizing matters too. The default 800x600 test surface is wider than any phone, so
+overflows that would show on the device do not reproduce. `diary_screen_test.dart`
+sets a 1080x2340 physical size at devicePixelRatio 3.
 
-Worth revisiting by wrapping the day summary in a plain `Stream` fed from a manual
-controller in tests, or by checking whether a newer drift release changes the
-cancellation behaviour. Until then, **changes to diary widgets must be verified by
-running the app**, not by the test suite alone.
+Still not covered: the navigation shell, the search screen's selection tray, and
+the add-activity keypad. Running the app remains the check for those.
 
 ## Verifying by running
 

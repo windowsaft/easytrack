@@ -52,6 +52,13 @@ class FoodItem {
   List<ServingOption> get servingChoices => servings.isEmpty
       ? const [ServingOption.per100g]
       : [...servings, ServingOption.per100g];
+
+  /// The portion a search result is shown and quick-added with.
+  ///
+  /// BLS entries are per-100 g generics with no natural serving, so this falls
+  /// back to 100 g rather than inventing a "1 bowl" the data does not support.
+  ServingOption get defaultServing =>
+      servings.isEmpty ? ServingOption.per100g : servings.first;
 }
 
 /// A [FoodItem] with the score its provider assigned.

@@ -190,6 +190,14 @@ class UserProfile extends Table with SyncableTable {
   /// Whether logged activity increases the day's calorie budget at all.
   BoolColumn get activityAddsToBudget =>
       boolean().withDefault(const Constant(true))();
+
+  /// Volume of one bar on the water meter, in millilitres.
+  ///
+  /// A fixed real amount (250 ml by default) rather than a fraction of the
+  /// goal: a "cup" is a physical glass the user pours, so its size must not
+  /// change when the daily target does. The meter derives its bar count from
+  /// this and the goal, not the other way round.
+  IntColumn get waterCupMl => integer().withDefault(const Constant(250))();
 }
 
 /// Daily targets, kept as history rather than as columns on the profile.

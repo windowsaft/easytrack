@@ -4,6 +4,7 @@
 // support directory to copy the pack into.
 
 import 'package:easytrack/core/di/providers.dart';
+import 'package:easytrack/core/ui/widgets/bold_controls.dart';
 import 'package:easytrack/data/db/reference_database.dart';
 import 'package:easytrack/data/db/user_database.dart';
 import 'package:easytrack/features/search/food_search_screen.dart';
@@ -41,6 +42,10 @@ void main() {
     );
   }
 
+  /// Result rows have no public type, so they are counted by the icon tile
+  /// every one of them renders.
+  final resultRows = find.byType(TileIcon);
+
   /// Types a query and lets the debounce and the search complete.
   Future<void> searchFor(WidgetTester tester, String query) async {
     await tester.enterText(find.byType(TextField), query);
@@ -62,9 +67,10 @@ void main() {
     await searchFor(tester, 'apfel');
 
     expect(find.textContaining('Apfel'), findsWidgets);
-    // Nutrients are shown per 100 g so results are comparable at a glance.
-    expect(find.textContaining('kcal'), findsWidgets);
-    expect(find.textContaining('pro 100 g'), findsWidgets);
+    // Each row states the portion its quick-add would log, and the calories
+    // for that portion — not an unlabelled per-100 g figure.
+    expect(find.textContaining('100 g'), findsWidgets);
+    expect(find.text('KCAL'), findsWidgets);
   });
 
   testWidgets('umlaut spelling works from the UI', (tester) async {
@@ -80,7 +86,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await searchFor(tester, 'kaese');
-    expect(find.byType(ListTile), findsWidgets);
+    expect(resultRows, findsWidgets);
   });
 
   testWidgets('a compound is findable by an interior part', (tester) async {
@@ -88,7 +94,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await searchFor(tester, 'korn');
-    expect(find.byType(ListTile), findsWidgets);
+    expect(resultRows, findsWidgets);
   });
 
   testWidgets('reports no results rather than an error', (tester) async {
@@ -118,9 +124,9 @@ void main() {
     await tester.pumpAndSettle();
 
     await searchFor(tester, 'apfel');
-    expect(find.byType(ListTile), findsWidgets);
+    expect(resultRows, findsWidgets);
 
-    await tester.tap(find.byIcon(Icons.clear));
+    await tester.tap(find.byIcon(Icons.close));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Funktioniert auch offline'), findsOneWidget);
@@ -133,7 +139,7 @@ void main() {
     for (final partial in ['h', 'ha', 'haf', 'hafe', 'hafer']) {
       await searchFor(tester, partial);
       expect(
-        find.byType(ListTile),
+        resultRows,
         findsWidgets,
         reason: 'no results while typing "$partial"',
       );

@@ -7,12 +7,18 @@ import '../../core/time/day_key.dart';
 import '../../domain/day_summary.dart';
 import '../db/user_database.dart';
 import '../food/food_item.dart';
+import 'settings_repository.dart';
 
 /// Reads and writes the daily diary.
 class DiaryRepository {
-  DiaryRepository(this._db);
+  DiaryRepository(this._db, this._settings);
 
   final UserDatabase _db;
+
+  /// Targets and the profile are read through the settings repository rather
+  /// than re-queried here, so there is exactly one definition of "the target in
+  /// force on a day".
+  final SettingsRepository _settings;
 
   /// Watches one day, re-emitting whenever anything about it changes.
   Stream<DaySummary> watchDay(DayKey day) {
@@ -42,11 +48,18 @@ class DiaryRepository {
             ))
             .watch();
 
-    return Rx.combine3(entries, water, activity, (
-      List<DiaryEntry> diaryRows,
-      List<WaterLogEntry> waterRows,
-      List<ActivityEntry> activityRows,
+    final target = _settings.watchTargetFor(day);
+    final profile = _settings.watchProfile();
+
+    return Rx.combineLatest([entries, water, activity, target, profile], (
+      values,
     ) {
+      final diaryRows = values[0]! as List<DiaryEntry>;
+      final waterRows = values[1]! as List<WaterLogEntry>;
+      final activityRows = values[2]! as List<ActivityEntry>;
+      final targetRow = values[3] as TargetRow?;
+      final profileRow = values[4] as UserProfileRow?;
+
       final byMeal = <MealType, List<DiaryEntry>>{};
       for (final entry in diaryRows) {
         final meal = MealType.fromWire(entry.meal);
@@ -67,7 +80,16 @@ class DiaryRepository {
           0.0,
           (sum, row) => sum + row.kcalBurnedRaw * row.safetyFactor,
         ),
-        target: DayTarget.fallback,
+        // Falls back per field rather than wholesale: the activity toggle is
+        // profile state and stays meaningful even before a target is set.
+        target: DayTarget(
+          kcal: targetRow?.kcal ?? DayTarget.fallback.kcal,
+          proteinG: targetRow?.proteinG,
+          carbsG: targetRow?.carbsG,
+          fatG: targetRow?.fatG,
+          waterMl: targetRow?.waterMl ?? DayTarget.fallback.waterMl,
+          activityAddsToBudget: profileRow?.activityAddsToBudget ?? true,
+        ),
       );
     });
   }
@@ -170,6 +192,36 @@ class DiaryRepository {
         );
   }
 
+  /// Sets the day's water total, as the eight-cup meter on the diary does.
+  ///
+  /// The meter is a level, not a stream of events, so lowering it cannot be
+  /// expressed as another log row without inventing a negative drink. Raising
+  /// it appends the difference; lowering it tombstones the day and writes a
+  /// single row for the new total. Individual sip timestamps are lost on the
+  /// way down, which is a fair trade for a control whose whole premise is that
+  /// the day has one water level.
+  Future<void> setWater({required DayKey day, required int amountMl}) async {
+    final rows = await (_db.select(
+      _db.waterLog,
+    )..where((t) => t.loggedOn.equals(day.value) & t.deletedAt.isNull())).get();
+    final current = rows.fold(0, (sum, row) => sum + row.amountMl);
+    if (amountMl == current) return;
+
+    if (amountMl > current) {
+      await addWater(day: day, amountMl: amountMl - current);
+      return;
+    }
+
+    await _db.transaction(() async {
+      await (_db.update(_db.waterLog)
+            ..where((t) => t.loggedOn.equals(day.value) & t.deletedAt.isNull()))
+          .write(WaterLogCompanion(deletedAt: Value(DateTime.now())));
+      if (amountMl > 0) {
+        await addWater(day: day, amountMl: amountMl);
+      }
+    });
+  }
+
   /// Removes the most recent water entry of the day, undoing a misplaced tap.
   Future<void> undoLastWater(DayKey day) async {
     final last =
@@ -215,6 +267,85 @@ class DiaryRepository {
             safetyFactor: Value(safetyFactor),
           ),
         );
+  }
+
+  /// The most recently logged foods, one row per distinct food.
+  ///
+  /// Returns diary entries rather than [FoodItem]s on purpose: an entry already
+  /// carries the name, the portion and the nutrient snapshot the user chose
+  /// last time, so re-logging one needs no lookup in the reference database and
+  /// cannot be affected by the pack having been replaced since.
+  Stream<List<DiaryEntry>> watchRecentFoods({int limit = 30}) => _db
+      .customSelect(
+        '''
+        SELECT * FROM diary_entries
+        WHERE deleted_at IS NULL
+        GROUP BY source_type, source_id
+        HAVING logged_at = MAX(logged_at)
+        ORDER BY logged_at DESC
+        LIMIT ?1
+        ''',
+        variables: [Variable.withInt(limit)],
+        readsFrom: {_db.diaryEntries},
+      )
+      .map(_db.diaryEntries.mapFromRow)
+      .watch()
+      // mapFromRow is asynchronous, so the query yields a list of futures.
+      .asyncMap(Future.wait);
+
+  /// Logs a previous entry again, with the same portion and snapshot.
+  Future<void> relogEntry({
+    required DiaryEntry source,
+    required DayKey day,
+    required MealType meal,
+  }) async {
+    final maxSort =
+        await (_db.selectOnly(_db.diaryEntries)
+              ..addColumns([_db.diaryEntries.sortOrder.max()])
+              ..where(
+                _db.diaryEntries.loggedOn.equals(day.value) &
+                    _db.diaryEntries.meal.equals(meal.wireName) &
+                    _db.diaryEntries.deletedAt.isNull(),
+              ))
+            .map((row) => row.read(_db.diaryEntries.sortOrder.max()))
+            .getSingleOrNull();
+
+    await _db
+        .into(_db.diaryEntries)
+        .insert(
+          DiaryEntriesCompanion.insert(
+            loggedOn: day.value,
+            meal: meal.wireName,
+            sourceType: source.sourceType,
+            sourceId: source.sourceId,
+            nameSnapshot: source.nameSnapshot,
+            brandSnapshot: Value(source.brandSnapshot),
+            amountG: source.amountG,
+            servingLabel: Value(source.servingLabel),
+            servingCount: Value(source.servingCount),
+            sortOrder: Value((maxSort ?? -1) + 1),
+            kcal: source.kcal,
+            proteinG: source.proteinG,
+            carbsG: source.carbsG,
+            fatG: source.fatG,
+            sugarG: Value(source.sugarG),
+            fiberG: Value(source.fiberG),
+            satFatG: Value(source.satFatG),
+            saltG: Value(source.saltG),
+          ),
+        );
+  }
+
+  /// The day's activity entries, newest last.
+  Stream<List<ActivityEntry>> watchActivity(DayKey day) =>
+      (_db.select(_db.activityEntries)
+            ..where((t) => t.loggedOn.equals(day.value) & t.deletedAt.isNull())
+            ..orderBy([(t) => OrderingTerm(expression: t.loggedAt)]))
+          .watch();
+
+  Future<void> deleteActivity(String entryId) async {
+    await (_db.update(_db.activityEntries)..where((t) => t.id.equals(entryId)))
+        .write(ActivityEntriesCompanion(deletedAt: Value(DateTime.now())));
   }
 
   /// Copies every entry of one meal to another day, for repeated meals.
@@ -266,49 +397,38 @@ class DiaryRepository {
 
 /// Minimal stream combiner, to avoid pulling in rxdart for one function.
 abstract final class Rx {
-  static Stream<R> combine3<A, B, C, R>(
-    Stream<A> a,
-    Stream<B> b,
-    Stream<C> c,
-    R Function(A, B, C) combine,
+  /// Emits once every source has produced a value, and on every value after.
+  ///
+  /// Untyped in its elements because the sources have different types; callers
+  /// cast positionally. A fixed-arity generic version was replaced by this one
+  /// when the day summary grew past three inputs — each new arity meant copying
+  /// the whole subscription dance again.
+  static Stream<R> combineLatest<R>(
+    List<Stream<Object?>> sources,
+    R Function(List<Object?> values) combine,
   ) {
-    late A latestA;
-    late B latestB;
-    late C latestC;
-    var hasA = false;
-    var hasB = false;
-    var hasC = false;
+    final latest = List<Object?>.filled(sources.length, null);
+    final seen = List<bool>.filled(sources.length, false);
+    var pending = sources.length;
 
     late StreamController<R> controller;
     var subs = <StreamSubscription<void>>[];
 
-    void emit() {
-      if (hasA && hasB && hasC) {
-        controller.add(combine(latestA, latestB, latestC));
-      }
-    }
-
     // Subscribe on listen rather than eagerly. Eager subscription would open
-    // the three underlying database streams as soon as the summary stream was
-    // built, whether or not anything ever listened, and leave them dangling.
+    // the underlying database streams as soon as the summary stream was built,
+    // whether or not anything ever listened, and leave them dangling.
     controller = StreamController<R>(
       onListen: () {
         subs = [
-          a.listen((v) {
-            latestA = v;
-            hasA = true;
-            emit();
-          }, onError: controller.addError),
-          b.listen((v) {
-            latestB = v;
-            hasB = true;
-            emit();
-          }, onError: controller.addError),
-          c.listen((v) {
-            latestC = v;
-            hasC = true;
-            emit();
-          }, onError: controller.addError),
+          for (var i = 0; i < sources.length; i++)
+            sources[i].listen((value) {
+              latest[i] = value;
+              if (!seen[i]) {
+                seen[i] = true;
+                pending--;
+              }
+              if (pending == 0) controller.add(combine(latest));
+            }, onError: controller.addError),
         ];
       },
       onCancel: () async {

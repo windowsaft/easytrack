@@ -4,6 +4,7 @@ import 'package:easytrack/core/time/day_key.dart';
 import 'package:easytrack/data/db/user_database.dart';
 import 'package:easytrack/data/food/food_item.dart';
 import 'package:easytrack/data/repositories/diary_repository.dart';
+import 'package:easytrack/data/repositories/settings_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -33,7 +34,7 @@ void main() {
 
   setUp(() {
     db = UserDatabase.forTesting();
-    repository = DiaryRepository(db);
+    repository = DiaryRepository(db, SettingsRepository(db));
   });
   tearDown(() => db.close());
 

@@ -34,7 +34,7 @@ class UserDatabase extends _$UserDatabase {
   UserDatabase.forTesting() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   static QueryExecutor _open() => driftDatabase(name: 'user');
 
@@ -59,6 +59,13 @@ class UserDatabase extends _$UserDatabase {
       await m.createAll();
       await _createIndexes();
       await _createSyncTriggers();
+    },
+    onUpgrade: (m, from, to) async {
+      // v2 added the configurable water-cup size. addColumn backfills the
+      // 250 ml default onto existing profile rows.
+      if (from < 2) {
+        await m.addColumn(userProfile, userProfile.waterCupMl);
+      }
     },
     beforeOpen: (details) async {
       // SQLite disables foreign keys per connection by default, and recipe

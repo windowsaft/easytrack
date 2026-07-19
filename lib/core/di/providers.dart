@@ -5,9 +5,12 @@ import '../../data/db/reference_database.dart';
 import '../../data/db/user_database.dart';
 import '../../data/food/bls_provider.dart';
 import '../../data/food/custom_food_provider.dart';
+import '../../data/food/food_item.dart';
 import '../../data/food/food_provider.dart';
 import '../../data/food/search_orchestrator.dart';
+import '../../data/repositories/custom_food_repository.dart';
 import '../../data/repositories/diary_repository.dart';
+import '../../data/repositories/settings_repository.dart';
 import '../../domain/day_summary.dart';
 import '../nutrition/food_ref.dart';
 import '../time/day_key.dart';
@@ -97,8 +100,44 @@ final searchOrchestratorProvider = FutureProvider<FoodSearchOrchestrator>((
   );
 });
 
+final settingsRepositoryProvider = Provider<SettingsRepository>(
+  (ref) => SettingsRepository(ref.watch(userDatabaseProvider)),
+);
+
 final diaryRepositoryProvider = Provider<DiaryRepository>(
-  (ref) => DiaryRepository(ref.watch(userDatabaseProvider)),
+  (ref) => DiaryRepository(
+    ref.watch(userDatabaseProvider),
+    ref.watch(settingsRepositoryProvider),
+  ),
+);
+
+/// The profile row. Null until the user has changed a setting that creates it.
+final userProfileProvider = StreamProvider<UserProfileRow?>(
+  (ref) => ref.watch(settingsRepositoryProvider).watchProfile(),
+);
+
+/// The safety factor applied to manual burn entries, with its default applied.
+final safetyFactorProvider = Provider<double>((ref) {
+  final profile = ref.watch(userProfileProvider).value;
+  return profile?.activitySafetyFactor ??
+      SettingsRepository.defaultSafetyFactor;
+});
+
+/// The volume of one water-meter bar, with its default applied.
+final waterCupMlProvider = Provider<int>((ref) {
+  final profile = ref.watch(userProfileProvider).value;
+  return profile?.waterCupMl ?? SettingsRepository.defaultWaterCupMl;
+});
+
+/// The most recent recorded body weight, or null if never weighed.
+final latestWeightProvider = StreamProvider<double?>(
+  (ref) => ref.watch(settingsRepositoryProvider).watchLatestWeightKg(),
+);
+
+/// The target in force today, used by the settings screen. The diary reads the
+/// target for the day it is showing instead, via [daySummaryProvider].
+final currentTargetProvider = StreamProvider<TargetRow?>(
+  (ref) => ref.watch(settingsRepositoryProvider).watchTargetFor(DayKey.today()),
 );
 
 /// The day the diary is showing. Defaults to today.
@@ -120,6 +159,32 @@ final selectedDayProvider = NotifierProvider<SelectedDay, DayKey>(
 /// One day's entries and totals, refreshed whenever the day changes.
 final daySummaryProvider = StreamProvider.family<DaySummary, DayKey>(
   (ref, day) => ref.watch(diaryRepositoryProvider).watchDay(day),
+);
+
+/// The day's activity rows. Separate from [daySummaryProvider], which carries
+/// only the totals the budget needs.
+final activityEntriesProvider =
+    StreamProvider.family<List<ActivityEntry>, DayKey>(
+      (ref, day) => ref.watch(diaryRepositoryProvider).watchActivity(day),
+    );
+
+/// Distinct recently logged foods, powering the search screen's "Zuletzt" tab.
+final recentFoodsProvider = StreamProvider<List<DiaryEntry>>(
+  (ref) => ref.watch(diaryRepositoryProvider).watchRecentFoods(),
+);
+
+final customFoodRepositoryProvider = Provider<CustomFoodRepository>(
+  (ref) => CustomFoodRepository(ref.watch(userDatabaseProvider)),
+);
+
+/// The user's own foods, for the search screen's "Meine" tab.
+final myFoodsProvider = StreamProvider<List<FoodItem>>(
+  (ref) => ref.watch(customFoodRepositoryProvider).watchMyFoods(),
+);
+
+/// The user's favourite foods, for the search screen's "Favoriten" tab.
+final favoriteFoodsProvider = StreamProvider<List<FoodItem>>(
+  (ref) => ref.watch(customFoodRepositoryProvider).watchFavorites(),
 );
 
 /// Debounced search results for a query.
