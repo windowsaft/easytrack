@@ -92,29 +92,57 @@ class SettingsRepository {
           .watchSingleOrNull()
           .map((row) => row?.weightKg);
 
+  /// The full weight history, oldest first — the series the trend chart plots.
+  Stream<List<WeightEntry>> watchWeightLog() =>
+      (_db.select(_db.weightLog)
+            ..where((t) => t.deletedAt.isNull())
+            ..orderBy([(t) => OrderingTerm(expression: t.measuredOn)]))
+          .watch();
+
   /// Records today's weight, replacing any earlier reading for the same day.
+  Future<void> recordWeight(double kg) =>
+      recordWeightOn(day: DayKey.today(), kg: kg);
+
+  /// Records the weight for [day], replacing any earlier reading for that day.
   ///
   /// One measurement per calendar day: a unique index enforces it, so a second
-  /// weigh-in on the same day corrects the first rather than stacking.
-  Future<void> recordWeight(double kg) async {
-    final today = DayKey.today();
+  /// weigh-in on the same day corrects the first rather than stacking. Editing
+  /// an existing day resolves to the same update path, so the entry list and the
+  /// add sheet share one write.
+  Future<void> recordWeightOn({
+    required DayKey day,
+    required double kg,
+    String? note,
+  }) async {
     final existing =
         await (_db.select(_db.weightLog)..where(
-              (t) => t.measuredOn.equals(today.value) & t.deletedAt.isNull(),
+              (t) => t.measuredOn.equals(day.value) & t.deletedAt.isNull(),
             ))
             .getSingleOrNull();
 
     if (existing != null) {
       await (_db.update(_db.weightLog)..where((t) => t.id.equals(existing.id)))
-          .write(WeightLogCompanion(weightKg: Value(kg)));
+          .write(WeightLogCompanion(weightKg: Value(kg), note: Value(note)));
       return;
     }
 
     await _db
         .into(_db.weightLog)
         .insert(
-          WeightLogCompanion.insert(measuredOn: today.value, weightKg: kg),
+          WeightLogCompanion.insert(
+            measuredOn: day.value,
+            weightKg: kg,
+            note: Value(note),
+          ),
         );
+  }
+
+  /// Tombstones a weight entry. Rows are never physically removed, so a future
+  /// sync can propagate the deletion to other devices.
+  Future<void> deleteWeight(String id) async {
+    await (_db.update(_db.weightLog)..where((t) => t.id.equals(id))).write(
+      WeightLogCompanion(deletedAt: Value(DateTime.now())),
+    );
   }
 
   /// Saves the physical profile, records the weight, and — unless the user has

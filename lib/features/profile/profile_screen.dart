@@ -7,6 +7,7 @@ import '../../core/ui/widgets/bold_controls.dart';
 import '../../core/ui/widgets/calorie_gauge.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../settings/settings_screen.dart';
+import '../weight/weight_screen.dart';
 import 'profile_edit_screen.dart';
 
 /// Screen 6a — who you are, your current goals at a glance, and the way into
@@ -101,6 +102,15 @@ class ProfileScreen extends ConsumerWidget {
                 label: 'Körperdaten & Ziel',
                 subtitle: 'Kalorienziel aus Größe, Gewicht & Alter berechnen',
                 onTap: () => _openEdit(context),
+              ),
+              const SizedBox(height: AppTheme.rowGap),
+              BoldListRow(
+                icon: Icons.monitor_weight_outlined,
+                label: 'Gewicht',
+                subtitle: 'Verlauf erfassen und den Trend verfolgen',
+                onTap: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute(builder: (_) => const WeightScreen()),
+                ),
               ),
               const SizedBox(height: AppTheme.rowGap),
               BoldListRow(

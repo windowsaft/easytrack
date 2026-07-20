@@ -136,6 +136,11 @@ final latestWeightProvider = StreamProvider<double?>(
   (ref) => ref.watch(settingsRepositoryProvider).watchLatestWeightKg(),
 );
 
+/// The full weight history, oldest first, for the trend screen.
+final weightLogProvider = StreamProvider<List<WeightEntry>>(
+  (ref) => ref.watch(settingsRepositoryProvider).watchWeightLog(),
+);
+
 /// The target in force today, used by the settings screen. The diary reads the
 /// target for the day it is showing instead, via [daySummaryProvider].
 final currentTargetProvider = StreamProvider<TargetRow?>(
