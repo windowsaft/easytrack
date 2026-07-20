@@ -3,8 +3,8 @@
 ## Running
 
 ```bash
-flutter test                 # Dart: 118 tests
-cd tools/etl && npm test     # Node: 15 tests (the ETL and its normalizer)
+flutter test                 # Dart: 211 tests
+cd tools/etl && npm test     # Node: 26 tests (the ETLs and the normalizer)
 ```
 
 The ETL tests must run from `tools/etl`; Node's test runner resolves its file
@@ -20,6 +20,9 @@ patterns relative to the working directory.
 | Schema & sync metadata | `test/data/user_database_test.dart` | Triggers, tombstones, cascades |
 | BLS pack integrity | `test/data/reference_database_test.dart` | Runs against the real 7,140-row pack |
 | Food search | `test/data/bls_provider_test.dart` | Includes FTS-operator injection |
+| OFF product search | `test/data/off_local_provider_test.dart` | Synthetic pack fixture, brand + barcode |
+| OFF pack build | `tools/etl/build_off.test.mjs` | Sanity filter + FTS + ODbL meta |
+| Pack manifest/installer | `test/data/pack_{manifest,installer,service}_test.dart` | SHA-256, integrity, failure-safe swap |
 | Ranking & merging | `test/data/search_orchestrator_test.dart` | Uses provider stubs |
 | Diary logic | `test/data/diary_repository_test.dart` | Logging, editing, budget, water |
 | Search UI | `test/features/food_search_screen_test.dart` | Real widget, real pack |

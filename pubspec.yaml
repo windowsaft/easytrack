@@ -29,6 +29,8 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   collection: ^1.19.1
+  # SHA-256 verification of downloaded product packs before they are installed.
+  crypto: ^3.0.6
   cupertino_icons: ^1.0.8
   # drift bundles SQLite itself from 2.32 via native assets in package:sqlite3
   # 3.x, so sqlite3_flutter_libs is deliberately absent — it is end-of-life.

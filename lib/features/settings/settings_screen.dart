@@ -6,6 +6,8 @@ import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../core/ui/widgets/calorie_gauge.dart';
 import '../../data/db/user_database.dart';
+import '../../data/pack/off_region.dart';
+import '../../data/pack/pack_service.dart';
 import '../../data/repositories/settings_repository.dart';
 
 /// Screen 6b — settings, reached from the profile.
@@ -24,6 +26,7 @@ class SettingsScreen extends ConsumerWidget {
     final target = ref.watch(currentTargetProvider).value;
     final profile = ref.watch(userProfileProvider).value;
     final factor = ref.watch(safetyFactorProvider);
+    final packState = ref.watch(packStateProvider).value;
 
     return Scaffold(
       body: SafeArea(
@@ -118,6 +121,27 @@ class SettingsScreen extends ConsumerWidget {
                         label: 'Design',
                         value: 'Dunkel',
                         chevron: false,
+                      ),
+                    ],
+                  ),
+                  const _GroupHeader('PRODUKTDATEN'),
+                  _Group(
+                    children: [
+                      BoldListRow(
+                        icon: Icons.public,
+                        label: 'Region',
+                        subtitle:
+                            (packState?.selectedRegion ?? OffRegion.fallback)
+                                .hint,
+                        value: (packState?.selectedRegion ?? OffRegion.fallback)
+                            .label,
+                        onTap: () => _editRegion(context, ref),
+                      ),
+                      BoldListRow(
+                        icon: Icons.inventory_2_outlined,
+                        label: 'Produktdatenbank',
+                        subtitle: _packSubtitle(packState),
+                        onTap: () => _managePack(context, ref),
                       ),
                     ],
                   ),
@@ -248,6 +272,89 @@ class SettingsScreen extends ConsumerWidget {
         .setTarget(proteinG: protein, carbsG: carbs, fatG: fat);
   }
 
+  static String _packSubtitle(PackInstallState? state) {
+    if (state == null) {
+      return 'Wird geprüft …';
+    }
+    if (!state.isInstalled) {
+      return 'Open Food Facts — noch nicht geladen';
+    }
+    if (state.regionChanged) {
+      return 'Region geändert — neu laden zum Aktualisieren';
+    }
+    final version = state.installedVersion;
+    return version == null
+        ? 'Open Food Facts — geladen'
+        : 'Open Food Facts · Stand $version';
+  }
+
+  Future<void> _editRegion(BuildContext context, WidgetRef ref) async {
+    final service = await ref.read(packServiceProvider.future);
+    if (!context.mounted) return;
+    final current = service.selectedRegion;
+
+    final chosen = await showModalBottomSheet<OffRegion>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            AppTheme.screenPadding,
+            20,
+            AppTheme.screenPadding,
+            MediaQuery.paddingOf(context).bottom + 12,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('REGION', style: AppText.section(size: 18)),
+              const SizedBox(height: 14),
+              for (final region in OffRegion.values) ...[
+                BoldListRow(
+                  icon: Icons.public,
+                  label: region.label,
+                  subtitle: region.hint,
+                  chevron: false,
+                  highlight: region == current,
+                  onTap: () => Navigator.of(context).pop(region),
+                ),
+                const SizedBox(height: AppTheme.rowGap),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (chosen == null || chosen == current) {
+      return;
+    }
+    await service.setRegion(chosen);
+    ref.invalidate(packStateProvider);
+  }
+
+  Future<void> _managePack(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final service = await ref.read(packServiceProvider.future);
+
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Lade Produktdaten …')),
+    );
+    try {
+      final release = await service.install();
+      // The pack file changed, so re-open it and rebuild the search stack.
+      ref.invalidate(offPackProvider);
+      ref.invalidate(packStateProvider);
+      messenger.showSnackBar(
+        SnackBar(content: Text('${release.rowCount} Produkte geladen')),
+      );
+    } on Object catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Produktdaten fehlgeschlagen: $error')),
+      );
+    }
+  }
+
   static void _showSources(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -270,6 +377,20 @@ class SettingsScreen extends ConsumerWidget {
               'Max Rubner-Institut (2025), Karlsruhe.\n'
               'DOI: 10.25826/Data20251217-134202-0\n'
               'Lizenz: CC BY 4.0',
+              style: AppText.grotesk(
+                size: 13,
+                weight: 500,
+                color: AppColors.textBright,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Produktdaten (Barcode-Produkte):\n'
+              'Open Food Facts — beigetragen von der Open-Food-Facts-'
+              'Gemeinschaft.\n'
+              'openfoodfacts.org\n'
+              'Lizenz: Open Database License (ODbL) v1.0',
               style: AppText.grotesk(
                 size: 13,
                 weight: 500,

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Pre-Android-12 backup rules (android:fullBackupContent). Same intent as
+  data_extraction_rules.xml: keep the re-obtainable food packs out of backups.
+-->
+<full-backup-content>
+    <exclude domain="file" path="off.sqlite" />
+    <exclude domain="file" path="off.sqlite.download" />
+    <exclude domain="file" path="bls.sqlite" />
+</full-backup-content>

@@ -6,6 +6,7 @@
   "description": "Builds the bundled food reference databases for EasyTrack.",
   "scripts": {
     "build:bls": "node build_bls.mjs",
+    "build:off": "node build_off.mjs",
     "test": "node --test ."
   },
   "dependencies": {

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ backup/transfer rules.
+
+  The food reference packs are re-downloadable (Open Food Facts) or re-copied
+  from the APK asset (BLS), so they have no business consuming the user's cloud
+  backup quota — the OFF pack alone can be ~85 MB. `domain="file"` is the app's
+  files dir, which is where path_provider's application-support directory lands
+  on Android and where the installer writes off.sqlite.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="off.sqlite" />
+        <exclude domain="file" path="off.sqlite.download" />
+        <exclude domain="file" path="bls.sqlite" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="off.sqlite" />
+        <exclude domain="file" path="off.sqlite.download" />
+        <exclude domain="file" path="bls.sqlite" />
+    </device-transfer>
+</data-extraction-rules>

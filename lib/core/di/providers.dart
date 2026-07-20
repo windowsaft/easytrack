@@ -1,5 +1,8 @@
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/db/reference_database.dart';
 import '../../data/db/user_database.dart';
@@ -7,8 +10,12 @@ import '../../data/food/bls_provider.dart';
 import '../../data/food/custom_food_provider.dart';
 import '../../data/food/food_item.dart';
 import '../../data/food/food_provider.dart';
+import '../../data/food/off_local_provider.dart';
 import '../../data/food/recipe_provider.dart';
 import '../../data/food/search_orchestrator.dart';
+import '../../data/pack/off_pack_database.dart';
+import '../../data/pack/pack_installer.dart';
+import '../../data/pack/pack_service.dart';
 import '../../data/repositories/custom_food_repository.dart';
 import '../../data/repositories/diary_repository.dart';
 import '../../data/repositories/recipe_repository.dart';
@@ -78,13 +85,80 @@ final recencyIndexProvider = FutureProvider<RecencyIndex>((ref) async {
 });
 
 /// All locally available food sources, highest priority first.
+///
+/// The Open Food Facts provider joins only once a pack has been downloaded and
+/// installed; until then search is BLS + the user's own foods, fully offline.
 final localFoodProvidersProvider = FutureProvider<List<FoodProvider>>((
   ref,
 ) async {
   final reference = await ref.watch(referenceDatabaseProvider.future);
   final db = ref.watch(userDatabaseProvider);
+  // Read the pack's *current* value rather than awaiting it: the OFF pack is
+  // optional, so search must not block on it loading (or on the preferences
+  // plugin behind it). Once the pack resolves, this provider re-runs and the
+  // OFF source appears; until then search runs on BLS + the user's own foods.
+  final offPack = switch (ref.watch(offPackProvider)) {
+    AsyncData(:final value) => value,
+    _ => null,
+  };
 
-  return [CustomFoodProvider(db), RecipeProvider(db), BlsProvider(reference)];
+  return [
+    CustomFoodProvider(db),
+    RecipeProvider(db),
+    BlsProvider(reference),
+    if (offPack != null) OffLocalProvider(offPack),
+  ];
+});
+
+/// Device-local key/value store. Backs the product-pack bookkeeping.
+final sharedPreferencesProvider = FutureProvider<SharedPreferences>(
+  (ref) => SharedPreferences.getInstance(),
+);
+
+/// Owns the downloadable Open Food Facts pack: region, install state, updates.
+final packServiceProvider = FutureProvider<PackService>((ref) async {
+  final prefs = await ref.watch(sharedPreferencesProvider.future);
+
+  Future<http.Response> get(Uri url) async {
+    final response = await http.get(url);
+    if (response.statusCode != 200) {
+      throw PackInstallException('HTTP ${response.statusCode} bei $url');
+    }
+    return response;
+  }
+
+  return PackService(
+    prefs: prefs,
+    installer: PackInstaller((url) async => (await get(url)).bodyBytes),
+    fetchManifestText: (url) async => (await get(url)).body,
+    supportDirectory: getApplicationSupportDirectory,
+  );
+});
+
+/// The installed product pack, or null when none is installed (or the installed
+/// file is unreadable, which is treated the same as absent).
+final offPackProvider = FutureProvider<OffPackDatabase?>((ref) async {
+  try {
+    final service = await ref.watch(packServiceProvider.future);
+    final file = await service.packFile();
+    if (!file.existsSync()) return null;
+    final pack = OffPackDatabase.openAt(file.path);
+    ref.onDispose(pack.dispose);
+    return pack;
+  } catch (_) {
+    // Anything upstream failing — no preferences store, no app-support
+    // directory, or a corrupt/incompatible pack — is treated as "no pack": the
+    // app stays on BLS rather than crashing the whole search path. This also
+    // keeps the search stack buildable in unit tests, where the plugins behind
+    // the pack service are absent.
+    return null;
+  }
+});
+
+/// Install state for the Settings product-data row.
+final packStateProvider = FutureProvider<PackInstallState>((ref) async {
+  final service = await ref.watch(packServiceProvider.future);
+  return service.state();
 });
 
 /// The search entry point used by the UI.

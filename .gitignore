@@ -50,6 +50,9 @@ node_modules/
 # ETL working files — large downloads and intermediate data, never committed
 tools/etl/.cache/
 tools/etl/out/
+# Built product packs + manifest. Reproducible via `npm run build:off`, and in
+# production published to a GitHub Release, so never tracked.
+tools/etl/dist/
 *.zip
 *.parquet
 *.jsonl
