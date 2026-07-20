@@ -43,7 +43,20 @@ class MealRow extends StatelessWidget {
       key: ValueKey(meal.wireName),
       endActionPane: ActionPane(
         motion: const DrawerMotion(),
-        extentRatio: 0.28,
+        extentRatio: 0.4,
+        // Swipe far enough and the search opens on its own — no second tap on
+        // the revealed button, the way a queue-swipe works. The pane snaps back
+        // rather than dismissing (the row is permanent), so the action runs from
+        // confirmDismiss, which then declines the actual dismissal.
+        dismissible: DismissiblePane(
+          dismissThreshold: 0.4,
+          closeOnCancel: true,
+          confirmDismiss: () async {
+            onAdd();
+            return false;
+          },
+          onDismissed: () {},
+        ),
         children: [
           CustomSlidableAction(
             onPressed: (_) => onAdd(),

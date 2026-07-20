@@ -38,37 +38,44 @@ void main() {
   }
 
   group('row growth', () {
-    testWidgets('an empty day shows exactly the goal in one row', (
+    testWidgets('an empty day shows a single row of eight cups', (
       tester,
     ) async {
-      // 2000 ml goal at 250 ml a cup is eight bars — one full row, no more.
       expect(await pumpMeter(tester, current: 0), 8);
     });
 
-    testWidgets('hitting the goal exactly does not spawn an empty row', (
+    testWidgets('completing a row reveals a fresh empty row to pour into', (
       tester,
     ) async {
-      // The bug: completing the first row used to force a second, empty one.
-      expect(await pumpMeter(tester, current: 2000), 8);
+      // Eight cups (2000 ml at 250) fills the first row, so a second, empty row
+      // appears — that is where the next glass goes, now that the + button is
+      // gone.
+      expect(await pumpMeter(tester, current: 2000), 16);
     });
 
-    testWidgets('drinking past the goal opens a second row', (tester) async {
-      // One glass beyond the goal needs a ninth bar, hence a second row.
+    testWidgets('a partly-filled row shows exactly one row', (tester) async {
+      // Five cups: filled bars plus empties, still one row, no buffer yet.
+      expect(await pumpMeter(tester, current: 1250), 8);
+    });
+
+    testWidgets('drinking into the second row keeps two rows', (tester) async {
       expect(await pumpMeter(tester, current: 2250), 16);
     });
 
-    testWidgets('dropping back below a full row hides the second row', (
+    testWidgets('dropping back within the first row hides the second', (
       tester,
     ) async {
       expect(await pumpMeter(tester, current: 2250), 16);
       expect(await pumpMeter(tester, current: 1750), 8);
     });
 
-    testWidgets('a goal finer than a row still fills within one row', (
+    testWidgets('the row count ignores the goal, tracking only what is drunk', (
       tester,
     ) async {
-      // 1500 ml at 250 is six cups: still one row of eight, with room to spare.
+      // A finer or coarser goal does not change the grid — the goal is the
+      // reading, the cups are the pours.
       expect(await pumpMeter(tester, current: 0, goal: 1500), 8);
+      expect(await pumpMeter(tester, current: 0, goal: 3000), 8);
     });
   });
 
@@ -102,14 +109,16 @@ void main() {
       expect(set, 1000);
     });
 
-    testWidgets('the add button logs a glass past a full goal', (tester) async {
+    testWidgets('the empty buffer row is how you pour past a full row', (
+      tester,
+    ) async {
       int? set;
-      // Exactly at the goal: every bar is full, so only the add button can push
-      // the level higher.
+      // Exactly one full row (2000 ml); the second row is empty, and its first
+      // bar (index 8) pours the ninth glass.
       await pumpMeter(tester, current: 2000, onSet: (ml) => set = ml);
-      expect(bars.evaluate().length, 8); // still one tidy row
+      expect(bars.evaluate().length, 16);
 
-      await tester.tap(find.byKey(const ValueKey('water_add_cup')));
+      await tester.tap(bars.at(8));
       expect(set, 2250);
     });
   });

@@ -10,6 +10,7 @@ import '../diary/diary_screen.dart';
 import '../diary/meal_detail_screen.dart';
 import '../diary/widgets/meal_row.dart';
 import '../profile/profile_screen.dart';
+import '../recipes/recipe_edit_screen.dart';
 import '../recipes/recipes_screen.dart';
 
 /// Bottom-navigation shell. The diary is the landing screen because logging is
@@ -59,6 +60,14 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   /// The chooser costs one tap and removes both problems; the time-of-day guess
   /// survives only as the pre-highlighted meal.
   Future<void> _quickAdd() async {
+    // On the Rezepte tab the centre button means "new recipe", not "log food".
+    if (_index == 1) {
+      await Navigator.of(
+        context,
+      ).push<void>(MaterialPageRoute(builder: (_) => const RecipeEditScreen()));
+      return;
+    }
+
     // Move to the diary first: returning from the add flow to another tab would
     // leave the user somewhere they did not navigate to.
     setState(() => _index = 0);

@@ -78,14 +78,11 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
         bottom: false,
         child: Column(
           children: [
+            // No back button: the FERTIG action in the bottom bar is the one
+            // way out, and the system back gesture still works.
             BoldHeader(
               overline: _dayLabel(day.toDateTime()),
               title: widget.meal.displayLabel.toUpperCase(),
-              leading: SquareIconButton(
-                icon: Icons.arrow_back,
-                tooltip: 'Zurück',
-                onPressed: Navigator.of(context).pop,
-              ),
             ),
             _EntryActions(
               onSearch: _openSearch,

@@ -6,11 +6,12 @@ import '../../../core/ui/app_theme.dart';
 ///
 /// Each bar is a fixed physical pour ([cupMl], 250 ml by default and set in
 /// Settings), not a fraction of the goal — a glass is the same size whatever
-/// today's target is. The bar count is derived from the cup size and the goal:
-/// enough bars to represent the goal, laid out eight to a row. Drink past the
-/// goal and a fresh row appears, so overshooting is visible rather than clamped.
-/// Tapping a bar sets the level to it; tapping the topmost filled bar clears it,
-/// which makes a mistaken tap undoable without a separate affordance.
+/// today's target is. Bars are laid out eight to a row, and the grid grows
+/// purely with what has been drunk: there is always exactly one empty row below
+/// the last poured cup, so completing a row reveals a fresh one to keep pouring
+/// into, and dropping back below a row's worth makes that empty row disappear.
+/// Tapping an empty bar fills up to it; tapping the topmost filled bar clears it,
+/// so a mistaken tap is undoable without any separate control.
 class WaterMeter extends StatelessWidget {
   const WaterMeter({
     required this.currentMl,
@@ -35,21 +36,12 @@ class WaterMeter extends StatelessWidget {
     final cup = cupMl <= 0 ? 250 : cupMl;
     // Round down: a bar lights only once it is actually full.
     final filled = currentMl ~/ cup;
-    // Cups that represent the goal, rounded up so the goal is always reachable.
-    final goalCups = goalMl <= 0 ? cupsPerRow : (goalMl / cup).ceil();
 
-    // Show whichever is more rows: enough to display the goal, or enough to
-    // hold what has actually been drunk. Growing strictly with `filled` — with
-    // no padding cup — means a second row appears only once a glass is poured
-    // *into* it, and vanishes again the moment the level drops back within the
-    // first. Completing a row exactly does not, on its own, spawn an empty one.
-    int rowsFor(int cups) => (cups + cupsPerRow - 1) ~/ cupsPerRow;
-    final goalRows = rowsFor(goalCups);
-    final filledRows = rowsFor(filled);
-    final rows = (goalRows > filledRows ? goalRows : filledRows).clamp(
-      1,
-      _maxRows,
-    );
+    // One row per eight cups drunk, plus one always-empty row to pour the next
+    // glass into. `filled ~/ cupsPerRow` is the number of *completed* rows, so
+    // +1 is the row currently being filled (or a fresh empty one when the last
+    // row just completed). Reducing the level shrinks this straight back.
+    final rows = ((filled ~/ cupsPerRow) + 1).clamp(1, _maxRows);
 
     return Container(
       color: AppColors.surface,
@@ -69,7 +61,7 @@ class WaterMeter extends StatelessWidget {
                 ),
               ),
               // Expanded + scale-down so a wider reading ("1,75 / 2 L") shrinks
-              // rather than shoving the add button off the edge.
+              // rather than clipping.
               Expanded(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
@@ -94,12 +86,6 @@ class WaterMeter extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              // Adds one glass regardless of the grid. The bars grow strictly
-              // with what has been drunk, so once a row is exactly full there
-              // is no empty bar to tap — this button is how the goal gets
-              // exceeded without a permanently-parked empty row.
-              _AddCupButton(onTap: () => onSet(currentMl + cup)),
             ],
           ),
           const SizedBox(height: 10),
@@ -134,38 +120,6 @@ class WaterMeter extends StatelessWidget {
         ? litres.round().toString()
         : litres.toStringAsFixed(2).replaceFirst(RegExp(r'0$'), '');
     return text.replaceAll('.', ',');
-  }
-}
-
-/// The compact "add one glass" control in the meter header.
-class _AddCupButton extends StatelessWidget {
-  const _AddCupButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Glas hinzufügen',
-      child: Material(
-        color: AppColors.surfaceAlt2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadii.tile),
-          side: const BorderSide(color: AppColors.water, width: 1.5),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          key: const ValueKey('water_add_cup'),
-          onTap: onTap,
-          child: const SizedBox(
-            width: 30,
-            height: 26,
-            child: Icon(Icons.add, size: 18, color: AppColors.water),
-          ),
-        ),
-      ),
-    );
   }
 }
 

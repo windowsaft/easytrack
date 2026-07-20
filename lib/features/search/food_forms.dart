@@ -62,13 +62,20 @@ class _QuickAddSheet extends StatefulWidget {
 class _QuickAddSheetState extends State<_QuickAddSheet> {
   final _name = TextEditingController();
   final _kcal = TextEditingController();
+  final _carbs = TextEditingController();
+  final _protein = TextEditingController();
+  final _fat = TextEditingController();
 
   @override
   void dispose() {
-    _name.dispose();
-    _kcal.dispose();
+    for (final c in [_name, _kcal, _carbs, _protein, _fat]) {
+      c.dispose();
+    }
     super.dispose();
   }
+
+  double _num(TextEditingController c) =>
+      double.tryParse(c.text.replaceAll(',', '.')) ?? 0;
 
   void _submit() {
     final kcal = double.tryParse(_kcal.text.replaceAll(',', '.'));
@@ -81,7 +88,14 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
       FoodItem(
         ref: FoodRef(FoodSourceType.custom, newId()),
         name: name,
-        nutrients: Nutrients(kcal: kcal, proteinG: 0, carbsG: 0, fatG: 0),
+        // The 100 g serving means the figures entered are logged as typed, so
+        // the optional macros are the amounts for this one entry.
+        nutrients: Nutrients(
+          kcal: kcal,
+          proteinG: _num(_protein),
+          carbsG: _num(_carbs),
+          fatG: _num(_fat),
+        ),
         servings: const [ServingOption(label: 'Schnell-Eintrag', grams: 100)],
       ),
     );
@@ -92,7 +106,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
     return _SheetFrame(
       title: 'SCHNELL-EINTRAG',
       subtitle:
-          'Nur Kalorien, ohne Nährwerte. Für etwas, das du nicht als '
+          'Kalorien und optional die Nährwerte. Für etwas, das du nicht als '
           'Lebensmittel speichern willst.',
       children: [
         _Field(controller: _name, label: 'Name (optional)', autofocus: false),
@@ -103,7 +117,37 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
           suffix: 'kcal',
           number: true,
           autofocus: true,
-          onSubmitted: (_) => _submit(),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _Field(
+                controller: _carbs,
+                label: 'Kohlenh.',
+                suffix: 'g',
+                number: true,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _Field(
+                controller: _protein,
+                label: 'Eiweiß',
+                suffix: 'g',
+                number: true,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _Field(
+                controller: _fat,
+                label: 'Fett',
+                suffix: 'g',
+                number: true,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 18),
         PrimaryButton(
@@ -272,7 +316,6 @@ class _Field extends StatelessWidget {
     this.suffix,
     this.number = false,
     this.autofocus = false,
-    this.onSubmitted,
   });
 
   final TextEditingController controller;
@@ -280,7 +323,6 @@ class _Field extends StatelessWidget {
   final String? suffix;
   final bool number;
   final bool autofocus;
-  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -293,7 +335,6 @@ class _Field extends StatelessWidget {
       inputFormatters: number
           ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))]
           : null,
-      onSubmitted: onSubmitted,
       style: AppText.grotesk(size: 15, weight: 600),
       decoration: InputDecoration(
         labelText: label,

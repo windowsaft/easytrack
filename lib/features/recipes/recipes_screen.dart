@@ -25,14 +25,9 @@ class RecipesScreen extends ConsumerWidget {
         bottom: 24,
       ),
       children: [
-        BoldHeader(
-          title: 'REZEPTE',
-          trailing: SquareIconButton(
-            icon: Icons.add,
-            tooltip: 'Rezept erstellen',
-            onPressed: () => _openEdit(context),
-          ),
-        ),
+        // No header add button: on this tab the centre nav button (the FAB)
+        // creates a recipe. The empty state still offers an explicit action.
+        const BoldHeader(title: 'REZEPTE'),
         const SizedBox(height: 8),
         if (recipes.isEmpty)
           Padding(
