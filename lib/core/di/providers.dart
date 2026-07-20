@@ -7,9 +7,11 @@ import '../../data/food/bls_provider.dart';
 import '../../data/food/custom_food_provider.dart';
 import '../../data/food/food_item.dart';
 import '../../data/food/food_provider.dart';
+import '../../data/food/recipe_provider.dart';
 import '../../data/food/search_orchestrator.dart';
 import '../../data/repositories/custom_food_repository.dart';
 import '../../data/repositories/diary_repository.dart';
+import '../../data/repositories/recipe_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../domain/day_summary.dart';
 import '../nutrition/food_ref.dart';
@@ -82,7 +84,7 @@ final localFoodProvidersProvider = FutureProvider<List<FoodProvider>>((
   final reference = await ref.watch(referenceDatabaseProvider.future);
   final db = ref.watch(userDatabaseProvider);
 
-  return [CustomFoodProvider(db), BlsProvider(reference)];
+  return [CustomFoodProvider(db), RecipeProvider(db), BlsProvider(reference)];
 });
 
 /// The search entry point used by the UI.
@@ -175,6 +177,15 @@ final recentFoodsProvider = StreamProvider<List<DiaryEntry>>(
 
 final customFoodRepositoryProvider = Provider<CustomFoodRepository>(
   (ref) => CustomFoodRepository(ref.watch(userDatabaseProvider)),
+);
+
+final recipeRepositoryProvider = Provider<RecipeRepository>(
+  (ref) => RecipeRepository(ref.watch(userDatabaseProvider)),
+);
+
+/// The user's recipes with their computed nutrients, for the Rezepte tab.
+final recipesProvider = StreamProvider<List<RecipeDetail>>(
+  (ref) => ref.watch(recipeRepositoryProvider).watchRecipes(),
 );
 
 /// The user's own foods, for the search screen's "Meine" tab.

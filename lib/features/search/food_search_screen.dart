@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
 import '../../core/nutrition/food_ref.dart';
+import '../../core/nutrition/nutrients.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/db/user_database.dart';
@@ -19,10 +20,20 @@ import 'food_forms.dart';
 /// amount. The row always shows the portion the `+` would log, so the fast path
 /// is never a guess.
 class FoodSearchScreen extends ConsumerStatefulWidget {
-  const FoodSearchScreen({super.key, this.meal});
+  const FoodSearchScreen({super.key, this.meal}) : pick = false;
 
-  /// Meal being logged into. Without one the screen is browse-only.
+  /// Ingredient-picker mode: tapping a food pops the screen with that
+  /// [FoodItem] instead of logging it, so the recipe builder can reuse the whole
+  /// search surface without duplicating it. The multi-select tray, quick-add and
+  /// favourite stars are all hidden — none apply when the caller just wants one
+  /// food back.
+  const FoodSearchScreen.pick({super.key}) : meal = null, pick = true;
+
+  /// Meal being logged into. Without one the screen is browse-only (or, in
+  /// [pick] mode, returns the tapped food).
   final MealType? meal;
+
+  final bool pick;
 
   @override
   ConsumerState<FoodSearchScreen> createState() => _FoodSearchScreenState();
@@ -128,6 +139,36 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     );
   }
 
+  /// Pick mode: hand the tapped food back to the caller (the recipe builder).
+  void _returnFood(FoodItem food) => Navigator.of(context).pop(food);
+
+  /// Pick mode for the "Zuletzt" tab, whose rows are diary entries. Recovers a
+  /// per-100 g [FoodItem] from the entry's stored snapshot so an ingredient can
+  /// be re-added at any weight, not just the one it was last logged at.
+  void _returnEntry(DiaryEntry entry) {
+    final per100g = entry.amountG <= 0
+        ? Nutrients.zero
+        : Nutrients(
+            kcal: entry.kcal,
+            proteinG: entry.proteinG,
+            carbsG: entry.carbsG,
+            fatG: entry.fatG,
+            sugarG: entry.sugarG,
+            fiberG: entry.fiberG,
+            satFatG: entry.satFatG,
+            saltG: entry.saltG,
+          ).scaled(100 / entry.amountG);
+
+    Navigator.of(context).pop(
+      FoodItem(
+        ref: FoodRef(FoodSourceType.fromWire(entry.sourceType), entry.sourceId),
+        name: entry.nameSnapshot,
+        brand: entry.brandSnapshot,
+        nutrients: per100g,
+      ),
+    );
+  }
+
   void _scan() {
     // Barcode scanning is phase 12. The affordance is part of the design, so
     // it stays visible and says so rather than being silently inert.
@@ -178,6 +219,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   @override
   Widget build(BuildContext context) {
     final logging = widget.meal != null;
+    final picking = widget.pick;
 
     return Scaffold(
       body: SafeArea(
@@ -197,7 +239,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
             _Tabs(current: _tab, onSelect: (t) => setState(() => _tab = t)),
             if (logging)
               _QuickActions(onQuickAdd: _quickAdd, onCreate: _createFood),
-            Expanded(child: _body(logging)),
+            Expanded(child: _body(logging, picking)),
             if (_selected.isNotEmpty && logging)
               _SelectionTray(
                 count: _selected.length,
@@ -211,17 +253,24 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     );
   }
 
-  Widget _body(bool logging) {
+  Widget _body(bool logging, bool picking) {
+    // In pick mode every food row simply returns; otherwise a tap opens the
+    // portion picker, and only when a meal is being logged into.
+    final onFood = picking ? _returnFood : (logging ? _pickPortion : null);
+
     switch (_tab) {
       case _Tab.all:
         return _SearchResults(
           query: _query,
           selected: _selected.keys.toSet(),
           onToggle: _toggle,
-          onOpen: logging ? _pickPortion : null,
+          onOpen: onFood,
+          picking: picking,
         );
       case _Tab.recent:
-        return _RecentList(onPick: logging ? _relog : null);
+        return _RecentList(
+          onPick: picking ? _returnEntry : (logging ? _relog : null),
+        );
       case _Tab.favorites:
         final foods = ref.watch(favoriteFoodsProvider).value ?? const [];
         return _FoodItemList(
@@ -230,7 +279,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
           emptyText:
               'Noch keine Favoriten.\nMarkiere ein eigenes Lebensmittel mit '
               'dem Stern.',
-          onPick: logging ? _pickPortion : null,
+          onPick: onFood,
         );
       case _Tab.mine:
         final foods = ref.watch(myFoodsProvider).value ?? const [];
@@ -239,8 +288,10 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
           emptyIcon: Icons.restaurant_menu,
           emptyText:
               'Noch keine eigenen Lebensmittel.\nLege eines über „Anlegen" an.',
-          onPick: logging ? _pickPortion : null,
-          favouritable: true,
+          onPick: onFood,
+          // The star toggles a favourite flag, which is meaningless while
+          // picking an ingredient — hide it so the whole row just selects.
+          favouritable: !picking,
         );
     }
   }
@@ -425,12 +476,14 @@ class _SearchResults extends ConsumerWidget {
     required this.selected,
     required this.onToggle,
     required this.onOpen,
+    this.picking = false,
   });
 
   final String query;
   final Set<FoodRef> selected;
   final ValueChanged<FoodItem> onToggle;
   final ValueChanged<FoodItem>? onOpen;
+  final bool picking;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -452,6 +505,7 @@ class _SearchResults extends ConsumerWidget {
         selected: selected,
         onToggle: onToggle,
         onOpen: onOpen,
+        picking: picking,
       ),
       AsyncError(:final error) => _Message(
         icon: Icons.error_outline,
@@ -471,6 +525,7 @@ class _ResultList extends StatelessWidget {
     required this.selected,
     required this.onToggle,
     required this.onOpen,
+    this.picking = false,
   });
 
   final SearchState state;
@@ -478,6 +533,7 @@ class _ResultList extends StatelessWidget {
   final Set<FoodRef> selected;
   final ValueChanged<FoodItem> onToggle;
   final ValueChanged<FoodItem>? onOpen;
+  final bool picking;
 
   @override
   Widget build(BuildContext context) {
@@ -517,6 +573,7 @@ class _ResultList extends StatelessWidget {
           selected: selected.contains(item.ref),
           onToggle: () => onToggle(item),
           onOpen: onOpen == null ? null : () => onOpen!(item),
+          picking: picking,
         );
       },
     );
@@ -529,12 +586,14 @@ class _ResultRow extends StatelessWidget {
     required this.selected,
     required this.onToggle,
     required this.onOpen,
+    this.picking = false,
   });
 
   final FoodItem item;
   final bool selected;
   final VoidCallback onToggle;
   final VoidCallback? onOpen;
+  final bool picking;
 
   @override
   Widget build(BuildContext context) {
@@ -584,7 +643,16 @@ class _ResultRow extends StatelessWidget {
               const SizedBox(width: 8),
               _KcalColumn(kcal: kcal),
               const SizedBox(width: 10),
-              _AddToggle(selected: selected, onTap: onToggle),
+              // While picking an ingredient the row itself selects, so the
+              // multi-select toggle would be a second, confusing target.
+              if (picking)
+                const Icon(
+                  Icons.chevron_right,
+                  size: 22,
+                  color: AppColors.chevron,
+                )
+              else
+                _AddToggle(selected: selected, onTap: onToggle),
             ],
           ),
         ),

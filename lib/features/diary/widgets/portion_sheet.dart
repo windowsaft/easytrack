@@ -17,7 +17,16 @@ class PickedPortion {
 }
 
 /// Asks how much of [food] to log, showing live nutrients for the amount.
-Future<PickedPortion?> showPortionSheet(BuildContext context, FoodItem food) {
+///
+/// [initialGrams] pre-fills the amount when reopening a portion that already has
+/// a weight — reworking a recipe ingredient rather than adding a fresh one. It
+/// only applies in grams mode; a serving-based food still defaults to one
+/// serving.
+Future<PickedPortion?> showPortionSheet(
+  BuildContext context,
+  FoodItem food, {
+  double? initialGrams,
+}) {
   return showModalBottomSheet<PickedPortion>(
     context: context,
     isScrollControlled: true,
@@ -26,15 +35,16 @@ Future<PickedPortion?> showPortionSheet(BuildContext context, FoodItem food) {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: _PortionSheet(food: food),
+      child: _PortionSheet(food: food, initialGrams: initialGrams),
     ),
   );
 }
 
 class _PortionSheet extends StatefulWidget {
-  const _PortionSheet({required this.food});
+  const _PortionSheet({required this.food, this.initialGrams});
 
   final FoodItem food;
+  final double? initialGrams;
 
   @override
   State<_PortionSheet> createState() => _PortionSheetState();
@@ -52,6 +62,12 @@ class _PortionSheetState extends State<_PortionSheet> {
     // A serving defaults to one of it; grams default to a portion people
     // actually eat rather than a single gram.
     _count = _serving.grams == 100 ? 100 : 1;
+    // Reopening an existing weight (editing a recipe ingredient): keep it, but
+    // only in grams mode, where the number is grams rather than a serving count.
+    final initial = widget.initialGrams;
+    if (initial != null && initial > 0 && _isGramsMode) {
+      _count = initial;
+    }
     _controller = TextEditingController(text: _formatCount(_count));
   }
 

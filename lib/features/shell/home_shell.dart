@@ -10,6 +10,7 @@ import '../diary/diary_screen.dart';
 import '../diary/meal_detail_screen.dart';
 import '../diary/widgets/meal_row.dart';
 import '../profile/profile_screen.dart';
+import '../recipes/recipes_screen.dart';
 
 /// Bottom-navigation shell. The diary is the landing screen because logging is
 /// the action the user opens the app to perform.
@@ -34,11 +35,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         index: _index,
         children: const [
           DiaryScreen(),
-          _Placeholder(
-            title: 'Rezepte',
-            icon: Icons.menu_book,
-            note: 'Rezepte mit Portionsrechnung folgen in Phase 10.',
-          ),
+          RecipesScreen(),
           _Placeholder(
             title: 'Verlauf',
             icon: Icons.insights,
