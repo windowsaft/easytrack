@@ -107,7 +107,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     final repository = ref.read(diaryRepositoryProvider);
     final messenger = ScaffoldMessenger.of(context);
 
-    final portion = await showPortionSheet(context, food);
+    final portion = await showPortionSheet(context, food, allowFavorite: true);
     if (portion == null) return;
 
     await repository.addEntry(
@@ -290,14 +290,16 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
           onPick: picking ? _returnEntry : (logging ? _relog : null),
         );
       case _Tab.favorites:
-        final foods = ref.watch(favoriteFoodsProvider).value ?? const [];
+        final foods = ref.watch(favoritesProvider).value ?? const [];
         return _FoodItemList(
           foods: foods,
           emptyIcon: Icons.star_border,
           emptyText:
-              'Noch keine Favoriten.\nMarkiere ein eigenes Lebensmittel mit '
-              'dem Stern.',
+              'Noch keine Favoriten.\nTippe bei einem Lebensmittel auf den '
+              'Stern.',
           onPick: onFood,
+          // Nothing to favourite while picking an ingredient.
+          pinnable: !picking,
         );
       case _Tab.mine:
         final foods = ref.watch(myFoodsProvider).value ?? const [];
@@ -307,9 +309,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
           emptyText:
               'Noch keine eigenen Lebensmittel.\nLege eines über „Anlegen" an.',
           onPick: onFood,
-          // The star toggles a favourite flag, which is meaningless while
-          // picking an ingredient — hide it so the whole row just selects.
-          favouritable: !picking,
+          pinnable: !picking,
         );
     }
   }
@@ -820,7 +820,7 @@ class _FoodItemList extends StatelessWidget {
     required this.emptyIcon,
     required this.emptyText,
     required this.onPick,
-    this.favouritable = false,
+    this.pinnable = false,
   });
 
   final List<FoodItem> foods;
@@ -828,8 +828,8 @@ class _FoodItemList extends StatelessWidget {
   final String emptyText;
   final ValueChanged<FoodItem>? onPick;
 
-  /// Whether rows carry a star that toggles the favourite flag.
-  final bool favouritable;
+  /// Whether rows carry a star that toggles the favourite state.
+  final bool pinnable;
 
   @override
   Widget build(BuildContext context) {
@@ -873,8 +873,8 @@ class _FoodItemList extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   _KcalColumn(kcal: kcal),
-                  if (favouritable)
-                    _FavouriteStar(food: food)
+                  if (pinnable)
+                    _PinStar(food: food)
                   else
                     const SizedBox(width: 10),
                 ],
@@ -887,29 +887,40 @@ class _FoodItemList extends StatelessWidget {
   }
 }
 
-/// Toggles a custom food's favourite flag. Reads the current value by watching
-/// the favourites list so the icon reflects taps immediately.
-class _FavouriteStar extends ConsumerWidget {
-  const _FavouriteStar({required this.food});
+/// Toggles a food's favourite state, whatever its source. A custom food uses
+/// its own `isFavorite` flag; anything else is pinned. The icon reflects the
+/// unified [favoriteRefsProvider], so taps show immediately.
+class _PinStar extends ConsumerWidget {
+  const _PinStar({required this.food});
 
   final FoodItem food;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final favourites = ref.watch(favoriteFoodsProvider).value ?? const [];
-    final isFavourite = favourites.any((f) => f.ref == food.ref);
+    final isFavourite = ref.watch(favoriteRefsProvider).contains(food.ref);
 
     return IconButton(
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
       icon: Icon(
         isFavourite ? Icons.star : Icons.star_border,
         size: 22,
         color: isFavourite ? AppColors.lime : AppColors.chevron,
       ),
       tooltip: isFavourite ? 'Favorit entfernen' : 'Zu Favoriten',
-      onPressed: () => ref
-          .read(customFoodRepositoryProvider)
-          .setFavorite(food.ref.id, value: !isFavourite),
+      onPressed: () => _toggle(ref, isFavourite),
     );
+  }
+
+  void _toggle(WidgetRef ref, bool isFavourite) {
+    if (food.ref.source == FoodSourceType.custom) {
+      ref
+          .read(customFoodRepositoryProvider)
+          .setFavorite(food.ref.id, value: !isFavourite);
+    } else {
+      ref.read(pinnedFoodsRepositoryProvider).toggle(food);
+    }
   }
 }
 

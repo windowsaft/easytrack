@@ -64,7 +64,7 @@ Future<void> scanBarcodeIntoMeal(
   final food = await resolveScannedBarcode(context, ref, barcode);
   if (food == null || !context.mounted) return;
 
-  final portion = await showPortionSheet(context, food);
+  final portion = await showPortionSheet(context, food, allowFavorite: true);
   if (portion == null || !context.mounted) return;
 
   final messenger = ScaffoldMessenger.of(context);

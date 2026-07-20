@@ -342,6 +342,50 @@ void main() {
     });
   });
 
+  group('repeating a meal', () {
+    test('copies the most recent earlier day with that meal', () async {
+      // Breakfast two days ago, nothing yesterday.
+      await repository.addEntry(
+        day: today.previous.previous,
+        meal: MealType.breakfast,
+        food: oats,
+        amountG: 50,
+      );
+      await repository.addEntry(
+        day: today.previous.previous,
+        meal: MealType.breakfast,
+        food: milk,
+        amountG: 200,
+      );
+
+      final copied = await repository.repeatMeal(
+        to: today,
+        meal: MealType.breakfast,
+      );
+
+      expect(copied, 2);
+      expect(
+        (await repository.watchDay(today).first).entriesFor(MealType.breakfast),
+        hasLength(2),
+      );
+    });
+
+    test('does nothing when no earlier day had that meal', () async {
+      expect(await repository.repeatMeal(to: today, meal: MealType.dinner), 0);
+    });
+
+    test('ignores the target day itself and any later day', () async {
+      await repository.addEntry(
+        day: today.next,
+        meal: MealType.lunch,
+        food: oats,
+        amountG: 50,
+      );
+      // Only a future lunch exists, so there is nothing earlier to repeat.
+      expect(await repository.repeatMeal(to: today, meal: MealType.lunch), 0);
+    });
+  });
+
   group('live updates', () {
     test('the day stream re-emits when an entry is added', () async {
       final stream = repository.watchDay(today);

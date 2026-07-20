@@ -97,7 +97,7 @@ class RecipesScreen extends ConsumerWidget {
     if (meal == null || !context.mounted) return;
 
     final food = detail.toFoodItem();
-    final portion = await showPortionSheet(context, food);
+    final portion = await showPortionSheet(context, food, allowFavorite: true);
     if (portion == null) return;
 
     await ref

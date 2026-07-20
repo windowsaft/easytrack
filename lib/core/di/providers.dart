@@ -11,6 +11,7 @@ import '../../data/food/bls_provider.dart';
 import '../../data/food/custom_food_provider.dart';
 import '../../data/food/food_item.dart';
 import '../../data/food/food_provider.dart';
+import '../../data/food/food_resolver.dart';
 import '../../data/food/off_api_client.dart';
 import '../../data/food/off_local_provider.dart';
 import '../../data/food/recipe_provider.dart';
@@ -21,6 +22,7 @@ import '../../data/pack/pack_service.dart';
 import '../../data/repositories/custom_food_repository.dart';
 import '../../data/repositories/diary_repository.dart';
 import '../../data/repositories/off_cache_repository.dart';
+import '../../data/repositories/pinned_foods_repository.dart';
 import '../../data/repositories/recipe_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../domain/day_summary.dart';
@@ -305,10 +307,59 @@ final myFoodsProvider = StreamProvider<List<FoodItem>>(
   (ref) => ref.watch(customFoodRepositoryProvider).watchMyFoods(),
 );
 
-/// The user's favourite foods, for the search screen's "Favoriten" tab.
+/// The user's favourite *custom* foods (the isFavorite flag). The unified
+/// favourites — across every source — are [favoritesProvider].
 final favoriteFoodsProvider = StreamProvider<List<FoodItem>>(
   (ref) => ref.watch(customFoodRepositoryProvider).watchFavorites(),
 );
+
+final pinnedFoodsRepositoryProvider = Provider<PinnedFoodsRepository>(
+  (ref) => PinnedFoodsRepository(ref.watch(userDatabaseProvider)),
+);
+
+/// Foods pinned from any source (BLS, OFF, recipe), as bare references.
+final pinnedFoodsProvider = StreamProvider<List<PinnedFood>>(
+  (ref) => ref.watch(pinnedFoodsRepositoryProvider).watchPinned(),
+);
+
+/// Resolves a [FoodRef] back to a full [FoodItem] across all sources.
+final foodResolverProvider = FutureProvider<FoodResolver>((ref) async {
+  final providers = await ref.watch(localFoodProvidersProvider.future);
+  return FoodResolver(
+    providers: providers,
+    cache: ref.watch(offCacheRepositoryProvider),
+  );
+});
+
+/// Whether a given food is a favourite, as a cheap set of refs — no resolution.
+/// Both mechanisms feed it: a custom food's flag and a pin on anything else.
+final favoriteRefsProvider = Provider<Set<FoodRef>>((ref) {
+  final custom = ref.watch(favoriteFoodsProvider).value ?? const <FoodItem>[];
+  final pins = ref.watch(pinnedFoodsProvider).value ?? const <PinnedFood>[];
+  return {
+    for (final food in custom) food.ref,
+    for (final pin in pins)
+      FoodRef(FoodSourceType.fromWire(pin.sourceType), pin.sourceId),
+  };
+});
+
+/// The unified favourites list for the "Favoriten" tab: custom favourites plus
+/// pinned foods from other sources, resolved to full [FoodItem]s. Pins that no
+/// longer resolve (an OFF product whose pack was removed) are quietly dropped.
+final favoritesProvider = FutureProvider<List<FoodItem>>((ref) async {
+  final custom = await ref.watch(favoriteFoodsProvider.future);
+  final pins = await ref.watch(pinnedFoodsProvider.future);
+  final resolver = await ref.watch(foodResolverProvider.future);
+
+  final byRef = <FoodRef, FoodItem>{for (final food in custom) food.ref: food};
+  for (final pin in pins) {
+    final ref0 = FoodRef(FoodSourceType.fromWire(pin.sourceType), pin.sourceId);
+    if (byRef.containsKey(ref0)) continue;
+    final item = await resolver.resolve(ref0);
+    if (item != null) byRef[ref0] = item;
+  }
+  return byRef.values.toList();
+});
 
 /// Debounced search results for a query.
 final foodSearchProvider = StreamProvider.autoDispose

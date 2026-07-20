@@ -3,7 +3,7 @@
 ## Running
 
 ```bash
-flutter test                 # Dart: 227 tests
+flutter test                 # Dart: 234 tests
 cd tools/etl && npm test     # Node: 26 tests (the ETLs and the normalizer)
 ```
 
@@ -24,6 +24,7 @@ patterns relative to the working directory.
 | OFF pack build | `tools/etl/build_off.test.mjs` | Sanity filter + FTS + ODbL meta |
 | Pack manifest/installer | `test/data/pack_{manifest,installer,service}_test.dart` | SHA-256, integrity, failure-safe swap |
 | OFF API + barcode chain | `test/data/{off_api_client,off_cache_repository,barcode_resolver}_test.dart` | Parse, cache, source-order, offline-after-hit |
+| Favorites + re-log | `test/data/{pinned_foods_repository,diary_repository}_test.dart` | Pin revive/tombstone, repeat-meal source day |
 | Ranking & merging | `test/data/search_orchestrator_test.dart` | Uses provider stubs |
 | Diary logic | `test/data/diary_repository_test.dart` | Logging, editing, budget, water |
 | Search UI | `test/features/food_search_screen_test.dart` | Real widget, real pack |

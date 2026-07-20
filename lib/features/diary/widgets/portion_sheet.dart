@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/di/providers.dart';
+import '../../../core/nutrition/food_ref.dart';
 import '../../../core/nutrition/nutrients.dart';
 import '../../../data/food/food_item.dart';
 
@@ -22,10 +25,15 @@ class PickedPortion {
 /// a weight — reworking a recipe ingredient rather than adding a fresh one. It
 /// only applies in grams mode; a serving-based food still defaults to one
 /// serving.
+/// [allowFavorite] shows a star in the header that pins/unpins the food. Set
+/// when logging a food (search, scan, a recipe portion) — the natural moment to
+/// mark it a favourite — and left off when the sheet is only picking a recipe
+/// ingredient's weight, where favouriting makes no sense.
 Future<PickedPortion?> showPortionSheet(
   BuildContext context,
   FoodItem food, {
   double? initialGrams,
+  bool allowFavorite = false,
 }) {
   return showModalBottomSheet<PickedPortion>(
     context: context,
@@ -35,22 +43,31 @@ Future<PickedPortion?> showPortionSheet(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: _PortionSheet(food: food, initialGrams: initialGrams),
+      child: _PortionSheet(
+        food: food,
+        initialGrams: initialGrams,
+        allowFavorite: allowFavorite,
+      ),
     ),
   );
 }
 
-class _PortionSheet extends StatefulWidget {
-  const _PortionSheet({required this.food, this.initialGrams});
+class _PortionSheet extends ConsumerStatefulWidget {
+  const _PortionSheet({
+    required this.food,
+    this.initialGrams,
+    this.allowFavorite = false,
+  });
 
   final FoodItem food;
   final double? initialGrams;
+  final bool allowFavorite;
 
   @override
-  State<_PortionSheet> createState() => _PortionSheetState();
+  ConsumerState<_PortionSheet> createState() => _PortionSheetState();
 }
 
-class _PortionSheetState extends State<_PortionSheet> {
+class _PortionSheetState extends ConsumerState<_PortionSheet> {
   late ServingOption _serving;
   late TextEditingController _controller;
   double _count = 1;
@@ -96,7 +113,17 @@ class _PortionSheetState extends State<_PortionSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.food.displayTitle, style: theme.textTheme.titleLarge),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.food.displayTitle,
+                    style: theme.textTheme.titleLarge,
+                  ),
+                ),
+                if (widget.allowFavorite) _FavoriteStar(food: widget.food),
+              ],
+            ),
             const SizedBox(height: 4),
             Text(
               widget.food.sourceLabel,
@@ -230,6 +257,38 @@ class _Value extends StatelessWidget {
         Text(value, style: theme.textTheme.titleMedium),
         Text(label, style: theme.textTheme.labelSmall),
       ],
+    );
+  }
+}
+
+/// Toggles a food's favourite state from the log sheet, whatever its source: a
+/// custom food uses its own flag, anything else is pinned. State comes from the
+/// unified [favoriteRefsProvider].
+class _FavoriteStar extends ConsumerWidget {
+  const _FavoriteStar({required this.food});
+
+  final FoodItem food;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isFavourite = ref.watch(favoriteRefsProvider).contains(food.ref);
+
+    return IconButton(
+      icon: Icon(isFavourite ? Icons.star : Icons.star_border),
+      color: isFavourite
+          ? theme.colorScheme.primary
+          : theme.colorScheme.onSurfaceVariant,
+      tooltip: isFavourite ? 'Favorit entfernen' : 'Zu Favoriten',
+      onPressed: () {
+        if (food.ref.source == FoodSourceType.custom) {
+          ref
+              .read(customFoodRepositoryProvider)
+              .setFavorite(food.ref.id, value: !isFavourite);
+        } else {
+          ref.read(pinnedFoodsRepositoryProvider).toggle(food);
+        }
+      },
     );
   }
 }

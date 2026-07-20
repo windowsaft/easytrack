@@ -393,6 +393,35 @@ class DiaryRepository {
 
     return source.length;
   }
+
+  /// Repeats a meal the user has eaten before: finds the most recent day
+  /// *before* [to] that had entries for [meal] and copies them onto [to].
+  ///
+  /// Returns the number of entries copied, or 0 if no earlier day had that meal
+  /// — the "repeat my usual breakfast" action, without the user hunting for the
+  /// day to copy from.
+  Future<int> repeatMeal({required DayKey to, required MealType meal}) async {
+    final source =
+        await (_db.selectOnly(_db.diaryEntries)
+              ..addColumns([_db.diaryEntries.loggedOn])
+              ..where(
+                _db.diaryEntries.meal.equals(meal.wireName) &
+                    _db.diaryEntries.loggedOn.isSmallerThanValue(to.value) &
+                    _db.diaryEntries.deletedAt.isNull(),
+              )
+              ..orderBy([
+                OrderingTerm(
+                  expression: _db.diaryEntries.loggedOn,
+                  mode: OrderingMode.desc,
+                ),
+              ])
+              ..limit(1))
+            .map((row) => row.read(_db.diaryEntries.loggedOn))
+            .getSingleOrNull();
+    if (source == null) return 0;
+
+    return copyMeal(from: DayKey(source), to: to, meal: meal);
+  }
 }
 
 /// Minimal stream combiner, to avoid pulling in rxdart for one function.

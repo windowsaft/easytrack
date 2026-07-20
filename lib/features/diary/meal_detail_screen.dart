@@ -47,6 +47,25 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
     );
   }
 
+  /// Copies the most recent earlier day's version of this meal onto the day
+  /// being shown.
+  Future<void> _repeat() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final day = ref.read(selectedDayProvider);
+    final count = await ref
+        .read(diaryRepositoryProvider)
+        .repeatMeal(to: day, meal: widget.meal);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          count == 0
+              ? 'Keine frühere ${widget.meal.displayLabel} gefunden'
+              : '$count Einträge übernommen',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final day = ref.watch(selectedDayProvider);
@@ -71,6 +90,19 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
             _EntryActions(
               onSearch: _openSearch,
               onScan: () => scanBarcodeIntoMeal(context, ref, widget.meal),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppTheme.screenPadding,
+                0,
+                AppTheme.screenPadding,
+                4,
+              ),
+              child: DashedActionChip(
+                label: 'Mahlzeit wiederholen',
+                icon: Icons.replay,
+                onTap: _repeat,
+              ),
             ),
             Expanded(
               child: ListView(
