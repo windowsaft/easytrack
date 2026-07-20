@@ -25,20 +25,31 @@ Future<FoodItem?> showQuickAddSheet(BuildContext context) {
 
 /// Creates a reusable custom food from name + per-100 g macros. Returns the
 /// saved food so the caller can offer to log it straight away.
-Future<CustomFoodDraft?> showCreateFoodSheet(BuildContext context) {
+///
+/// [initialBarcode] prefills the barcode when this is reached from a failed
+/// scan, so the food the user enters becomes resolvable by a later scan.
+Future<CustomFoodDraft?> showCreateFoodSheet(
+  BuildContext context, {
+  String? initialBarcode,
+}) {
   return showModalBottomSheet<CustomFoodDraft>(
     context: context,
     isScrollControlled: true,
-    builder: (context) => const _CreateFoodSheet(),
+    builder: (context) => _CreateFoodSheet(initialBarcode: initialBarcode),
   );
 }
 
 /// What [showCreateFoodSheet] collects. The repository turns it into a row.
 class CustomFoodDraft {
-  const CustomFoodDraft({required this.name, required this.nutrients});
+  const CustomFoodDraft({
+    required this.name,
+    required this.nutrients,
+    this.barcode,
+  });
 
   final String name;
   final Nutrients nutrients;
+  final String? barcode;
 }
 
 class _QuickAddSheet extends StatefulWidget {
@@ -106,7 +117,9 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
 }
 
 class _CreateFoodSheet extends StatefulWidget {
-  const _CreateFoodSheet();
+  const _CreateFoodSheet({this.initialBarcode});
+
+  final String? initialBarcode;
 
   @override
   State<_CreateFoodSheet> createState() => _CreateFoodSheetState();
@@ -143,15 +156,20 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
           carbsG: _num(_carbs),
           fatG: _num(_fat),
         ),
+        barcode: widget.initialBarcode,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final barcode = widget.initialBarcode;
     return _SheetFrame(
       title: 'LEBENSMITTEL ANLEGEN',
-      subtitle: 'Nährwerte pro 100 g. Erscheint danach unter „Meine".',
+      subtitle: barcode == null
+          ? 'Nährwerte pro 100 g. Erscheint danach unter „Meine".'
+          : 'Unbekannter Barcode $barcode. Lege das Produkt selbst an — beim '
+                'nächsten Scan wird es erkannt.',
       children: [
         _Field(controller: _name, label: 'Name', autofocus: true),
         const SizedBox(height: 12),

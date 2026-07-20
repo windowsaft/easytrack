@@ -10,6 +10,7 @@ import '../../data/db/user_database.dart';
 import '../../data/food/food_item.dart';
 import '../../data/food/search_orchestrator.dart';
 import '../diary/widgets/portion_sheet.dart';
+import '../scan/barcode_flow.dart';
 import 'food_forms.dart';
 
 /// Screen 4b — search foods and add them to a meal.
@@ -169,14 +170,31 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     );
   }
 
-  void _scan() {
-    // Barcode scanning is phase 12. The affordance is part of the design, so
-    // it stays visible and says so rather than being silently inert.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Barcode-Scan folgt in einer späteren Phase.'),
-      ),
-    );
+  Future<void> _scan() async {
+    // Pick mode (recipe ingredient): hand the scanned food straight back.
+    if (widget.pick) {
+      final barcode = await scanBarcode(context);
+      if (barcode == null || !mounted) return;
+      final food = await resolveScannedBarcode(context, ref, barcode);
+      if (food != null && mounted) _returnFood(food);
+      return;
+    }
+
+    final meal = widget.meal;
+    if (meal != null) {
+      await scanBarcodeIntoMeal(context, ref, meal);
+      return;
+    }
+
+    // Browse-only: no meal to log into, so just report what was scanned.
+    final barcode = await scanBarcode(context);
+    if (barcode == null || !mounted) return;
+    final food = await resolveScannedBarcode(context, ref, barcode);
+    if (food != null && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gefunden: ${food.name}')));
+    }
   }
 
   /// Quick calorie entry: logged straight into the meal, not saved as a food.

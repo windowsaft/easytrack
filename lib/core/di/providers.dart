@@ -6,10 +6,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/db/reference_database.dart';
 import '../../data/db/user_database.dart';
+import '../../data/food/barcode_resolver.dart';
 import '../../data/food/bls_provider.dart';
 import '../../data/food/custom_food_provider.dart';
 import '../../data/food/food_item.dart';
 import '../../data/food/food_provider.dart';
+import '../../data/food/off_api_client.dart';
 import '../../data/food/off_local_provider.dart';
 import '../../data/food/recipe_provider.dart';
 import '../../data/food/search_orchestrator.dart';
@@ -18,6 +20,7 @@ import '../../data/pack/pack_installer.dart';
 import '../../data/pack/pack_service.dart';
 import '../../data/repositories/custom_food_repository.dart';
 import '../../data/repositories/diary_repository.dart';
+import '../../data/repositories/off_cache_repository.dart';
 import '../../data/repositories/recipe_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../domain/day_summary.dart';
@@ -257,6 +260,36 @@ final recentFoodsProvider = StreamProvider<List<DiaryEntry>>(
 final customFoodRepositoryProvider = Provider<CustomFoodRepository>(
   (ref) => CustomFoodRepository(ref.watch(userDatabaseProvider)),
 );
+
+/// The Open Food Facts online API client, for the last link of the barcode
+/// chain. A single client for the app session, so its HTTP connection pools.
+final offApiClientProvider = Provider<OffApiClient>((ref) {
+  final client = OffApiClient();
+  ref.onDispose(client.close);
+  return client;
+});
+
+final offCacheRepositoryProvider = Provider<OffCacheRepository>(
+  (ref) => OffCacheRepository(ref.watch(userDatabaseProvider)),
+);
+
+/// Resolves a scanned barcode through custom foods → cache → local pack →
+/// online. Reads the OFF pack's current value (see [localFoodProvidersProvider])
+/// so it is never blocked by the pack still loading.
+final barcodeResolverProvider = Provider<BarcodeResolver>((ref) {
+  final db = ref.watch(userDatabaseProvider);
+  final offPack = switch (ref.watch(offPackProvider)) {
+    AsyncData(:final value) => value,
+    _ => null,
+  };
+
+  return BarcodeResolver(
+    custom: CustomFoodProvider(db),
+    cache: ref.watch(offCacheRepositoryProvider),
+    offApi: ref.watch(offApiClientProvider),
+    pack: offPack == null ? null : OffLocalProvider(offPack),
+  );
+});
 
 final recipeRepositoryProvider = Provider<RecipeRepository>(
   (ref) => RecipeRepository(ref.watch(userDatabaseProvider)),

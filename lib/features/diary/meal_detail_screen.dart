@@ -9,6 +9,7 @@ import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../core/ui/widgets/macro_donut.dart';
 import '../../data/db/user_database.dart';
+import '../scan/barcode_flow.dart';
 import '../search/food_search_screen.dart';
 import 'widgets/meal_row.dart';
 
@@ -67,7 +68,10 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
                 onPressed: Navigator.of(context).pop,
               ),
             ),
-            _EntryActions(onSearch: _openSearch),
+            _EntryActions(
+              onSearch: _openSearch,
+              onScan: () => scanBarcodeIntoMeal(context, ref, widget.meal),
+            ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.only(bottom: 24),
@@ -126,9 +130,10 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
 
 /// The two ways into the meal: search (primary) and barcode scan.
 class _EntryActions extends StatelessWidget {
-  const _EntryActions({required this.onSearch});
+  const _EntryActions({required this.onSearch, required this.onScan});
 
   final VoidCallback onSearch;
+  final VoidCallback onScan;
 
   @override
   Widget build(BuildContext context) {
@@ -193,16 +198,7 @@ class _EntryActions extends StatelessWidget {
               ),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
-                // Barcode scanning is phase 12. The affordance is part of the
-                // design, so it stays visible and says so rather than being
-                // silently inert.
-                onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Barcode-Scan folgt in einer späteren Phase.',
-                    ),
-                  ),
-                ),
+                onTap: onScan,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

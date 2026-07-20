@@ -53,6 +53,7 @@ class CustomFoodRepository {
     required Nutrients nutrients,
     double? servingG,
     String? servingLabel,
+    String? barcode,
     bool isFavorite = false,
   }) async {
     final row = await _db
@@ -63,6 +64,9 @@ class CustomFoodRepository {
             // Kept in sync with the name here because [CustomFoodProvider]
             // searches this column, not the display name.
             searchText: Value(normalizeGerman(name)),
+            // A barcode makes a manually-created food resolvable by a later
+            // scan — the scan → "Produkt anlegen" → rescan loop.
+            barcode: Value(barcode),
             kcal: nutrients.kcal,
             proteinG: nutrients.proteinG,
             carbsG: nutrients.carbsG,

@@ -1,4 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Barcode scanning (mobile_scanner / CameraX). The camera is not required
+         for the app to install: search, the diary and manual entry all work
+         without it, so the scanner degrades rather than gating the install. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
     <application
         android:label="easytrack"
         android:name="${applicationName}"
