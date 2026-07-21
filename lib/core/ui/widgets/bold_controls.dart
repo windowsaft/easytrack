@@ -541,11 +541,12 @@ class BoldListRow extends StatelessWidget {
                   ],
                 ),
               ),
-              // Flexible, not bare: a Row lays non-flex children out at their
-              // natural width, so a long value ("Metrisch · g, kg, ml") pushes
-              // the row past the screen edge instead of yielding space.
+              // Non-flex so the value hugs the right edge (the Expanded label
+              // eats the free space) rather than floating mid-row. A max width
+              // caps a long value and lets it ellipsize instead of overflowing.
               if (value != null)
-                Flexible(
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 150),
                   child: Padding(
                     padding: const EdgeInsets.only(left: 8),
                     child: Text(

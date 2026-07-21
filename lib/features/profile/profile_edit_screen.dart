@@ -6,17 +6,14 @@ import '../../core/di/providers.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../core/ui/widgets/calorie_gauge.dart';
-import '../../core/ui/widgets/edit_sheets.dart';
-import '../../data/repositories/settings_repository.dart';
-import '../../domain/nutrients_targets.dart';
 import '../../domain/tdee.dart';
 
-/// Screen 11a ⇄ 11b — the calculator, in two views.
+/// Screen 11a — the calculator: body stats in, a recommended calorie target out.
 ///
-/// **View 1 (ANGABEN)** gathers body stats; **view 2 (ZIELE)** shows the computed
-/// targets and lets each be overridden before ÜBERNEHMEN writes them. Reached
-/// only from the Kalorien-Sheet's "neu berechnen" row (one home for computing
-/// targets). Mifflin-St Jeor drives the calorie figure.
+/// A single page. Reached only from the Ziele-Seite's Kalorien-Sheet ("neu
+/// berechnen"); ÜBERNEHMEN saves the computed target and pops straight back to
+/// the Ziele-Seite the user came from. Water / cup / safety-factor are edited on
+/// the Ziele-Seite itself, so they are not repeated here.
 class ProfileEditScreen extends ConsumerStatefulWidget {
   const ProfileEditScreen({super.key});
 
@@ -32,16 +29,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   late final TextEditingController _rate;
   ActivityLevel _activity = ActivityLevel.moderate;
   WeightGoal _goal = WeightGoal.maintain;
-
-  // View-2 overrides. Null until the user changes one; otherwise the computed /
-  // current value is shown and used.
-  double? _kcalOverride;
-  int? _waterMl;
-  int? _cupMl;
-  double? _factor;
-
-  final _pager = PageController();
-  int _page = 0;
   var _prefilled = false;
 
   @override
@@ -61,7 +48,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     for (final c in [_age, _height, _weight, _rate]) {
       c.dispose();
     }
-    _pager.dispose();
     super.dispose();
   }
 
@@ -86,11 +72,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       if ((profile?.rateKgPerWeek ?? 0) > 0) {
         _rate.text = _trim(profile!.rateKgPerWeek);
       }
-      // The "weitere Ziele" start from what is currently set.
-      final target = ref.read(currentTargetProvider).value;
-      _waterMl = target?.waterMl ?? SettingsRepository.defaultWaterMl;
-      _cupMl = ref.read(waterCupMlProvider);
-      _factor = ref.read(safetyFactorProvider);
     });
   }
 
@@ -113,53 +94,24 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     return inputs.isComplete ? inputs : null;
   }
 
-  double? get _computedKcal {
-    final inputs = _inputs;
-    return inputs == null ? null : recommendedCalorieTarget(inputs);
-  }
-
-  double? get _finalKcal => _kcalOverride ?? _computedKcal;
-
-  void _goToPage(int page) {
-    _pager.animateToPage(
-      page,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
-    );
-  }
-
   Future<void> _save() async {
     final inputs = _inputs;
-    final kcal = _finalKcal;
-    if (inputs == null || kcal == null) return;
-
+    if (inputs == null) return;
     final navigator = Navigator.of(context);
-    final settings = ref.read(settingsRepositoryProvider);
 
-    await settings.saveProfileAndTarget(
-      sex: inputs.sex,
-      birthDate: _birthDateFor(inputs.age),
-      heightCm: inputs.heightCm,
-      weightKg: inputs.weightKg,
-      activity: inputs.activity,
-      goal: inputs.goal,
-      rateKgPerWeek: inputs.rateKgPerWeek,
-    );
+    await ref
+        .read(settingsRepositoryProvider)
+        .saveProfileAndTarget(
+          sex: inputs.sex,
+          birthDate: _birthDateFor(inputs.age),
+          heightCm: inputs.heightCm,
+          weightKg: inputs.weightKg,
+          activity: inputs.activity,
+          goal: inputs.goal,
+          rateKgPerWeek: inputs.rateKgPerWeek,
+        );
 
-    // Write the final target deterministically — a manual kcal override wins and
-    // marks the target non-auto; otherwise the computed value stands.
-    final macros = defaultMacrosFor(kcal);
-    await settings.setTarget(
-      kcal: kcal.roundToDouble(),
-      proteinG: macros.proteinG,
-      carbsG: macros.carbsG,
-      fatG: macros.fatG,
-      waterMl: _waterMl,
-      isAuto: _kcalOverride == null,
-    );
-    if (_cupMl != null) await settings.setWaterCupMl(_cupMl!);
-    if (_factor != null) await settings.setSafetyFactor(_factor!);
-
+    // Back to the Ziele-Seite the user came from; it reflects the new target.
     navigator.pop();
   }
 
@@ -167,6 +119,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   Widget build(BuildContext context) {
     ref.listen(userProfileProvider, (_, _) => _maybePrefill());
     ref.listen(latestWeightProvider, (_, _) => _maybePrefill());
+
+    final inputs = _inputs;
 
     return Scaffold(
       body: SafeArea(
@@ -181,294 +135,100 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 onPressed: Navigator.of(context).pop,
               ),
             ),
-            _StepTabs(
-              current: _page,
-              canAdvance: _inputs != null,
-              onSelect: _goToPage,
-            ),
             Expanded(
-              child: PageView(
-                controller: _pager,
-                onPageChanged: (p) => setState(() => _page = p),
-                // Only allow swiping forward once the inputs compute.
-                physics: _inputs == null
-                    ? const NeverScrollableScrollPhysics()
-                    : const ClampingScrollPhysics(),
-                children: [_angabenView(), _zieleView()],
-              ),
-            ),
-            _page == 0 ? _angabenBar() : _zieleBar(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ───────────────────────────────────────────────────────── view 1: inputs
-
-  Widget _angabenView() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.screenPadding,
-        8,
-        AppTheme.screenPadding,
-        24,
-      ),
-      children: [
-        _label('GESCHLECHT'),
-        Row(
-          children: [
-            for (final sex in Sex.values) ...[
-              if (sex != Sex.values.first) const SizedBox(width: 8),
-              BoldChip(
-                label: sex.label,
-                selected: _sex == sex,
-                onTap: () => setState(() => _sex = sex),
-              ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _NumberField(
-                controller: _age,
-                label: 'Alter',
-                suffix: 'Jahre',
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _NumberField(
-                controller: _height,
-                label: 'Größe',
-                suffix: 'cm',
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _NumberField(
-                controller: _weight,
-                label: 'Gewicht',
-                suffix: 'kg',
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 18),
-        _label('AKTIVITÄT'),
-        for (final level in ActivityLevel.values) ...[
-          if (level != ActivityLevel.values.first)
-            const SizedBox(height: AppTheme.rowGap),
-          _ActivityRow(
-            level: level,
-            selected: _activity == level,
-            onTap: () => setState(() => _activity = level),
-          ),
-        ],
-        const SizedBox(height: 18),
-        _label('ZIEL'),
-        Row(
-          children: [
-            for (final goal in WeightGoal.values) ...[
-              if (goal != WeightGoal.values.first) const SizedBox(width: 8),
-              Expanded(
-                child: BoldChip(
-                  label: goal.label,
-                  selected: _goal == goal,
-                  onTap: () => setState(() => _goal = goal),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.screenPadding,
+                  8,
+                  AppTheme.screenPadding,
+                  24,
                 ),
-              ),
-            ],
-          ],
-        ),
-        if (_goal != WeightGoal.maintain) ...[
-          const SizedBox(height: 12),
-          _NumberField(
-            controller: _rate,
-            label: _goal == WeightGoal.lose
-                ? 'Abnehmen pro Woche'
-                : 'Zunehmen pro Woche',
-            suffix: 'kg',
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _angabenBar() {
-    final kcal = _computedKcal;
-    return _BottomBar(
-      leading: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  kcal == null ? '—' : 'Ergibt ${formatKcal(kcal)}',
-                  style: AppText.anton(size: 22, height: 1),
-                ),
-                if (kcal != null)
-                  Text(
-                    ' kcal',
-                    style: AppText.grotesk(
-                      size: 12,
-                      weight: 600,
-                      color: AppColors.textMute,
-                    ),
+                children: [
+                  _label('GESCHLECHT'),
+                  Row(
+                    children: [
+                      for (final sex in Sex.values) ...[
+                        if (sex != Sex.values.first) const SizedBox(width: 8),
+                        BoldChip(
+                          label: sex.label,
+                          selected: _sex == sex,
+                          onTap: () => setState(() => _sex = sex),
+                        ),
+                      ],
+                    ],
                   ),
-              ],
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _NumberField(
+                          controller: _age,
+                          label: 'Alter',
+                          suffix: 'Jahre',
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _NumberField(
+                          controller: _height,
+                          label: 'Größe',
+                          suffix: 'cm',
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _NumberField(
+                          controller: _weight,
+                          label: 'Gewicht',
+                          suffix: 'kg',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  _label('AKTIVITÄT'),
+                  for (final level in ActivityLevel.values) ...[
+                    if (level != ActivityLevel.values.first)
+                      const SizedBox(height: AppTheme.rowGap),
+                    _ActivityRow(
+                      level: level,
+                      selected: _activity == level,
+                      onTap: () => setState(() => _activity = level),
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  _label('ZIEL'),
+                  Row(
+                    children: [
+                      for (final goal in WeightGoal.values) ...[
+                        if (goal != WeightGoal.values.first)
+                          const SizedBox(width: 8),
+                        Expanded(
+                          child: BoldChip(
+                            label: goal.label,
+                            selected: _goal == goal,
+                            onTap: () => setState(() => _goal = goal),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (_goal != WeightGoal.maintain) ...[
+                    const SizedBox(height: 12),
+                    _NumberField(
+                      controller: _rate,
+                      label: _goal == WeightGoal.lose
+                          ? 'Abnehmen pro Woche'
+                          : 'Zunehmen pro Woche',
+                      suffix: 'kg',
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
-          Text(
-            'VORAUSSICHTLICHES ZIEL',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppText.grotesk(
-              size: 10,
-              weight: 600,
-              color: AppColors.textMute,
-              letterSpacing: 0.66,
-            ),
-          ),
-        ],
-      ),
-      button: PrimaryButton(
-        label: 'ZIELE →',
-        height: 52,
-        radius: AppRadii.fab,
-        onPressed: kcal == null ? null : () => _goToPage(1),
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────── view 2: computed goals
-
-  Widget _zieleView() {
-    final kcal = _finalKcal;
-    if (kcal == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Text(
-            'Fülle zuerst die Angaben aus.',
-            textAlign: TextAlign.center,
-            style: AppText.grotesk(size: 14, color: AppColors.textMute),
-          ),
+            _PreviewBar(inputs: inputs, onSave: inputs == null ? null : _save),
+          ],
         ),
-      );
-    }
-    final macros = defaultMacrosFor(kcal);
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.screenPadding,
-        10,
-        AppTheme.screenPadding,
-        24,
-      ),
-      children: [
-        Text(
-          'Aus deinen Angaben berechnet · antippen zum Überschreiben',
-          style: AppText.grotesk(
-            size: 12,
-            weight: 500,
-            color: AppColors.textFaint,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _ComputedHero(kcal: kcal, macros: macros, onEdit: _overrideKcal),
-        const SectionHeader(
-          title: 'WEITERE ZIELE',
-          padding: EdgeInsets.only(top: 14, bottom: 6),
-        ),
-        BoldListRow(
-          icon: Icons.water_drop,
-          label: 'Wasserziel',
-          value: '${_waterMl ?? SettingsRepository.defaultWaterMl} ml',
-          onTap: () async {
-            final v = await promptNumber(
-              context,
-              title: 'Wasserziel',
-              suffix: 'ml',
-              initial: (_waterMl ?? SettingsRepository.defaultWaterMl)
-                  .toDouble(),
-            );
-            if (v != null) setState(() => _waterMl = v.round());
-          },
-        ),
-        const SizedBox(height: AppTheme.rowGap),
-        BoldListRow(
-          icon: Icons.local_drink,
-          label: 'Glasgröße',
-          value: '${_cupMl ?? SettingsRepository.defaultWaterCupMl} ml',
-          onTap: () async {
-            final v = await promptNumber(
-              context,
-              title: 'Glasgröße',
-              suffix: 'ml',
-              initial: (_cupMl ?? SettingsRepository.defaultWaterCupMl)
-                  .toDouble(),
-            );
-            if (v != null) setState(() => _cupMl = v.round());
-          },
-        ),
-        const SizedBox(height: AppTheme.rowGap),
-        BoldListRow(
-          icon: Icons.shield,
-          label: 'Sicherheitsfaktor',
-          iconColor: AppColors.coral,
-          trailing: Text(
-            (_factor ?? SettingsRepository.defaultSafetyFactor)
-                .toStringAsFixed(2)
-                .replaceAll('.', ','),
-            style: AppText.anton(size: 18, color: AppColors.coral),
-          ),
-          onTap: () async {
-            final v = await promptFactor(
-              context,
-              initial: _factor ?? SettingsRepository.defaultSafetyFactor,
-            );
-            if (v != null) setState(() => _factor = v);
-          },
-        ),
-      ],
-    );
-  }
-
-  Future<void> _overrideKcal() async {
-    final v = await promptNumber(
-      context,
-      title: 'Tageskalorien',
-      suffix: 'kcal',
-      initial: _finalKcal ?? SettingsRepository.defaultKcal,
-    );
-    if (v != null) setState(() => _kcalOverride = v);
-  }
-
-  Widget _zieleBar() {
-    return _BottomBar(
-      leading: Text(
-        _kcalOverride == null ? 'Berechnet' : 'Manuell angepasst',
-        style: AppText.grotesk(
-          size: 13,
-          weight: 600,
-          color: AppColors.textMute,
-        ),
-      ),
-      button: PrimaryButton(
-        label: 'ÜBERNEHMEN',
-        icon: Icons.check_circle,
-        height: 52,
-        radius: AppRadii.fab,
-        onPressed: _finalKcal == null ? null : _save,
       ),
     );
   }
@@ -498,192 +258,17 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       : value.toString();
 }
 
-/// The two underline step-tabs. Not pills — pills read as form inputs.
-class _StepTabs extends StatelessWidget {
-  const _StepTabs({
-    required this.current,
-    required this.canAdvance,
-    required this.onSelect,
-  });
+/// The sticky footer: the live recommended target and ÜBERNEHMEN.
+class _PreviewBar extends StatelessWidget {
+  const _PreviewBar({required this.inputs, required this.onSave});
 
-  final int current;
-  final bool canAdvance;
-  final ValueChanged<int> onSelect;
-
-  static const _titles = ['1  ANGABEN', '2  ZIELE'];
+  final TdeeInputs? inputs;
+  final VoidCallback? onSave;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.screenPadding,
-        4,
-        AppTheme.screenPadding,
-        0,
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < _titles.length; i++)
-            Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: (i == 1 && !canAdvance) ? null : () => onSelect(i),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Text(
-                        _titles[i],
-                        style: AppText.grotesk(
-                          size: 12,
-                          weight: 700,
-                          color: current == i
-                              ? AppColors.lime
-                              : (i == 1 && !canAdvance
-                                    ? AppColors.textFaint
-                                    : AppColors.textMute),
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      height: 2,
-                      color: current == i
-                          ? AppColors.lime
-                          : AppColors.strokeDashed,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
+    final kcal = inputs == null ? null : recommendedCalorieTarget(inputs!);
 
-/// The computed calorie hero on view 2 — lime here (vs. white on the Ziele-Seite).
-class _ComputedHero extends StatelessWidget {
-  const _ComputedHero({
-    required this.kcal,
-    required this.macros,
-    required this.onEdit,
-  });
-
-  final double kcal;
-  final MacroTargets macros;
-  final VoidCallback onEdit;
-
-  @override
-  Widget build(BuildContext context) {
-    final total = macros.carbsG + macros.proteinG + macros.fatG;
-    int flex(double g) =>
-        total <= 0 ? 1 : (g / total * 1000).round().clamp(1, 1000);
-
-    return Material(
-      color: AppColors.surface,
-      child: InkWell(
-        onTap: onEdit,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'TAGESKALORIEN',
-                          style: AppText.grotesk(
-                            size: 11,
-                            weight: 700,
-                            color: AppColors.textMute,
-                            letterSpacing: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                formatKcal(kcal),
-                                style: AppText.anton(
-                                  size: 46,
-                                  height: 1,
-                                  color: AppColors.lime,
-                                ),
-                              ),
-                              Text(
-                                ' kcal',
-                                style: AppText.grotesk(
-                                  size: 12,
-                                  weight: 600,
-                                  color: AppColors.textUnit,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.edit, size: 20, color: AppColors.textMute),
-                ],
-              ),
-              const SizedBox(height: 14),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: flex(macros.carbsG),
-                      child: Container(height: 12, color: AppColors.carbs),
-                    ),
-                    Expanded(
-                      flex: flex(macros.proteinG),
-                      child: Container(height: 12, color: AppColors.protein),
-                    ),
-                    Expanded(
-                      flex: flex(macros.fatG),
-                      child: Container(height: 12, color: AppColors.fat),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'KH ${macros.carbsG.round()} g · EW ${macros.proteinG.round()} g '
-                '· F ${macros.fatG.round()} g',
-                style: AppText.grotesk(
-                  size: 11,
-                  weight: 600,
-                  color: AppColors.textMute,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The sticky footer shared by both views.
-class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.leading, required this.button});
-
-  final Widget leading;
-  final Widget button;
-
-  @override
-  Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.bar,
@@ -697,9 +282,58 @@ class _BottomBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Flexible(child: leading),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        kcal == null ? '—' : formatKcal(kcal),
+                        style: AppText.anton(size: 26, height: 1),
+                      ),
+                      if (kcal != null)
+                        Text(
+                          ' kcal',
+                          style: AppText.grotesk(
+                            size: 12,
+                            weight: 600,
+                            color: AppColors.textMute,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Text(
+                  'EMPFOHLENES ZIEL',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.grotesk(
+                    size: 11,
+                    weight: 600,
+                    color: AppColors.textMute,
+                    letterSpacing: 0.66,
+                  ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(width: 14),
-          Expanded(child: button),
+          Expanded(
+            child: PrimaryButton(
+              label: 'ÜBERNEHMEN',
+              icon: Icons.check_circle,
+              height: 52,
+              radius: AppRadii.fab,
+              onPressed: onSave,
+            ),
+          ),
         ],
       ),
     );
