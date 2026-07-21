@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:archive/archive_io.dart';
 import 'package:crypto/crypto.dart';
 import 'package:easytrack/data/pack/off_pack_database.dart';
 import 'package:easytrack/data/pack/off_region.dart';
@@ -88,6 +89,48 @@ void main() {
       expect(await service.isInstalled(), isFalse);
     },
   );
+
+  test('installFromZip extracts the .sqlite and installs it', () async {
+    // A pack built elsewhere, zipped, and copied onto the device.
+    final packPath = '${dir.path}/src-pack.sqlite';
+    writeOffPack(packPath);
+    final zipPath = '${dir.path}/pack.zip';
+    final encoder = ZipFileEncoder()..create(zipPath);
+    encoder.addFileSync(File(packPath), 'off.sqlite');
+    encoder.closeSync();
+
+    final service = build();
+    expect(await service.isInstalled(), isFalse);
+
+    final result = await service.installFromZip(File(zipPath));
+    expect(result.rowCount, 2);
+    expect(result.version, '2026-07-20');
+    expect(result.region, OffRegion.dach);
+
+    // Recorded as installed, from the pack's own meta — no manifest involved.
+    expect(await service.isInstalled(), isTrue);
+    expect(service.installedVersion, '2026-07-20');
+    expect(service.installedRegion, OffRegion.dach);
+
+    final pack = OffPackDatabase.openAt((await service.packFile()).path);
+    expect(pack.foodCount, 2);
+    pack.dispose();
+  });
+
+  test('installFromZip rejects a zip that has no .sqlite', () async {
+    final note = File('${dir.path}/note.txt')..writeAsStringSync('kein pack');
+    final zipPath = '${dir.path}/empty.zip';
+    final encoder = ZipFileEncoder()..create(zipPath);
+    encoder.addFileSync(note, 'note.txt');
+    encoder.closeSync();
+
+    final service = build();
+    await expectLater(
+      service.installFromZip(File(zipPath)),
+      throwsA(isA<PackInstallException>()),
+    );
+    expect(await service.isInstalled(), isFalse);
+  });
 
   test('deletePack removes the file and forgets the version', () async {
     final service = build();

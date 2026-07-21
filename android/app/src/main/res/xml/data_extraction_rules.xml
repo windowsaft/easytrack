@@ -12,11 +12,15 @@
     <cloud-backup>
         <exclude domain="file" path="off.sqlite" />
         <exclude domain="file" path="off.sqlite.download" />
+        <exclude domain="file" path="off.sqlite.import" />
         <exclude domain="file" path="bls.sqlite" />
+        <exclude domain="file" path="logs" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="file" path="off.sqlite" />
         <exclude domain="file" path="off.sqlite.download" />
+        <exclude domain="file" path="off.sqlite.import" />
         <exclude domain="file" path="bls.sqlite" />
+        <exclude domain="file" path="logs" />
     </device-transfer>
 </data-extraction-rules>

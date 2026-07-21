@@ -74,6 +74,48 @@ class PackInstaller {
     await _swap(tmp, destination);
   }
 
+  /// Installs a pack from a local file already on disk — one the user picked and
+  /// we extracted from a zip — rather than a downloaded release.
+  ///
+  /// There is no manifest to match, so the pack must vouch for itself with
+  /// exactly the checks a downloaded pack passes: `integrity_check` holds, the
+  /// schema is one this build reads, and `off_foods` is present. On success
+  /// [source] is renamed into place (consumed) and the pack's `pack_meta` is
+  /// returned so the caller can record its version and region without a manifest.
+  /// On any failure a `PackInstallException` is thrown and the currently
+  /// installed pack is left untouched.
+  Future<Map<String, String>> installLocalFile(
+    File source, {
+    required File destination,
+  }) async {
+    if (!source.existsSync()) {
+      throw const PackInstallException(
+        'Die ausgewählte Datei wurde nicht gefunden.',
+      );
+    }
+    try {
+      _assertReadablePack(source.path);
+    } catch (e) {
+      throw PackInstallException('Datei ist kein gültiges Produktpaket: $e');
+    }
+    final meta = _readMeta(source.path);
+    await destination.parent.create(recursive: true);
+    await _swap(source, destination);
+    return meta;
+  }
+
+  Map<String, String> _readMeta(String path) {
+    final db = sqlite3.open(path, mode: OpenMode.readOnly);
+    try {
+      final rows = db.select('SELECT key, value FROM pack_meta');
+      return {
+        for (final row in rows) row['key'] as String: row['value'] as String,
+      };
+    } finally {
+      db.close();
+    }
+  }
+
   /// Opens the candidate read-only and confirms it is a sound, compatible pack:
   /// SQLite integrity holds, the schema is one this build reads, and the
   /// `off_foods` table is actually present.

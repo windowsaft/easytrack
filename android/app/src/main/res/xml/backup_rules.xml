@@ -6,5 +6,8 @@
 <full-backup-content>
     <exclude domain="file" path="off.sqlite" />
     <exclude domain="file" path="off.sqlite.download" />
+    <exclude domain="file" path="off.sqlite.import" />
     <exclude domain="file" path="bls.sqlite" />
+    <!-- Diagnostic App-Protokoll: local-only, exported on demand. -->
+    <exclude domain="file" path="logs" />
 </full-backup-content>

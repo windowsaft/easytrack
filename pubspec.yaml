@@ -28,6 +28,10 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  # Streams the .sqlite out of a locally-imported product-pack zip
+  # (Einstellungen → Paket aus Datei laden) without holding the ~85 MB pack in
+  # memory. Pure Dart, so it works on every target.
+  archive: ^4.0.9
   collection: ^1.19.1
   # SHA-256 verification of downloaded product packs before they are installed.
   crypto: ^3.0.6
@@ -36,6 +40,11 @@ dependencies:
   # 3.x, so sqlite3_flutter_libs is deliberately absent — it is end-of-life.
   drift: ^2.34.2
   drift_flutter: ^0.3.1
+  # Picks the local product-pack zip to import. Chosen over file_picker, whose
+  # Android module pins a legacy Kotlin Gradle Plugin that clashes with this
+  # toolchain's built-in Kotlin; file_selector is Flutter-team maintained and
+  # builds cleanly. Cross-platform (Android/iOS/desktop).
+  file_selector: ^1.1.0
   fl_chart: ^1.2.0
   flutter:
     sdk: flutter
@@ -57,6 +66,9 @@ dependencies:
   package_info_plus: ^8.1.2
   path: ^1.9.1
   path_provider: ^2.1.6
+  # Hands the exported App-Protokoll to the system share sheet
+  # (Einstellungen → DIAGNOSE → Protokoll exportieren).
+  share_plus: ^12.0.2
   shared_preferences: ^2.5.5
   sqlite3: ^3.5.0
   uuid: ^4.6.0

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -27,6 +28,21 @@ class PackInstallState {
       isInstalled &&
       installedRegion != null &&
       installedRegion != selectedRegion;
+}
+
+/// The outcome of a local (zip) install, drawn from the pack's own `pack_meta`.
+class LocalPackInstall {
+  const LocalPackInstall({
+    required this.rowCount,
+    required this.version,
+    required this.region,
+  });
+
+  final int rowCount;
+  final String version;
+
+  /// The region the pack declares, or null when it does not name one.
+  final OffRegion? region;
 }
 
 /// Owns the downloaded product pack: which region is selected, what is installed,
@@ -112,6 +128,73 @@ class PackService {
     await prefs.setString(_kInstalledVersion, release.version);
     await prefs.setString(_kInstalledRegion, region.wire);
     return release;
+  }
+
+  /// Installs a pack from a user-supplied **zip** that contains the pack's
+  /// `.sqlite`. This is the offline path for when the packs are not hosted on a
+  /// GitHub Release: build the pack locally, zip it, copy it onto the phone, and
+  /// import it here.
+  ///
+  /// No manifest and no checksum — the pack vouches for itself the same way a
+  /// downloaded one does (integrity_check + schema + `off_foods`). The `.sqlite`
+  /// is streamed out of the zip to a temp file so an ~85 MB pack is never held
+  /// in memory at once. The installed version/region are read from the pack's
+  /// own `pack_meta`. A failure leaves any already-installed pack untouched.
+  Future<LocalPackInstall> installFromZip(File zip) async {
+    final destination = await packFile();
+    final tmp = File('${destination.path}.import');
+    if (tmp.existsSync()) await tmp.delete();
+    try {
+      _extractPackSqlite(zip, tmp);
+      final meta = await installer.installLocalFile(
+        tmp,
+        destination: destination,
+      );
+
+      final version = (meta['off_version']?.trim().isNotEmpty ?? false)
+          ? meta['off_version']!.trim()
+          : 'Lokal importiert';
+      final regionWire = meta['off_region'];
+      final region = regionWire == null ? null : OffRegion.fromWire(regionWire);
+      final rowCount = int.tryParse(meta['off_row_count'] ?? '') ?? 0;
+
+      await prefs.setString(_kInstalledVersion, version);
+      if (region != null) {
+        await prefs.setString(_kInstalledRegion, region.wire);
+      }
+      return LocalPackInstall(
+        rowCount: rowCount,
+        version: version,
+        region: region,
+      );
+    } finally {
+      // installLocalFile renames tmp into place on success, so this only fires
+      // when extraction or verification failed partway.
+      if (tmp.existsSync()) await tmp.delete();
+    }
+  }
+
+  /// Streams the single `.sqlite` entry out of [zip] to [out]. Reads the zip's
+  /// central directory, then decompresses only the pack entry to disk.
+  void _extractPackSqlite(File zip, File out) {
+    final input = InputFileStream(zip.path);
+    try {
+      final archive = ZipDecoder().decodeStream(input);
+      final entry = archive.files.firstWhere(
+        (f) => f.isFile && f.name.toLowerCase().endsWith('.sqlite'),
+        orElse: () => throw const PackInstallException(
+          'Im Zip wurde keine .sqlite-Datei gefunden.',
+        ),
+      );
+      final output = OutputFileStream(out.path);
+      try {
+        entry.writeContent(output);
+      } finally {
+        output.closeSync();
+      }
+    } finally {
+      input.closeSync();
+    }
   }
 
   /// Removes the installed pack and forgets it. Search falls back to BLS-only.

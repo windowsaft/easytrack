@@ -1,7 +1,14 @@
+import 'dart:io';
+
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/diagnostics/app_log.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/pack/off_region.dart';
@@ -93,6 +100,30 @@ class SettingsScreen extends ConsumerWidget {
                         label: 'Produktdatenbank',
                         subtitle: _packSubtitle(packState),
                         onTap: () => _managePack(context, ref),
+                      ),
+                      BoldListRow(
+                        icon: Icons.folder_zip_outlined,
+                        label: 'Paket aus Datei laden',
+                        subtitle: 'Produktdaten aus lokalem Zip importieren',
+                        onTap: () => _importPack(context, ref),
+                      ),
+                    ],
+                  ),
+                  const _GroupHeader('DIAGNOSE'),
+                  _Group(
+                    children: [
+                      BoldListRow(
+                        icon: Icons.article_outlined,
+                        label: 'Protokoll exportieren',
+                        subtitle: 'App-Protokoll als Datei teilen',
+                        onTap: () => _exportLog(context, ref),
+                      ),
+                      BoldListRow(
+                        icon: Icons.delete_outline,
+                        label: 'Protokoll löschen',
+                        subtitle: 'Bisherige Protokoll-Einträge verwerfen',
+                        chevron: false,
+                        onTap: () => _clearLog(context),
                       ),
                     ],
                   ),
@@ -186,6 +217,93 @@ class SettingsScreen extends ConsumerWidget {
         SnackBar(content: Text('Produktdaten fehlgeschlagen: $error')),
       );
     }
+  }
+
+  /// Imports a locally built product pack from a zip the user picks. The offline
+  /// counterpart to [_managePack]: no manifest, no download — the zip is on the
+  /// device already. Works the same on Android and iOS.
+  Future<void> _importPack(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    // openFile hands back an XFile with a real path we can stream from — the
+    // .sqlite is pulled out of the zip on disk, so an ~85 MB pack is never
+    // loaded into memory.
+    const zipGroup = XTypeGroup(
+      label: 'Produktpaket (Zip)',
+      extensions: ['zip'],
+      mimeTypes: ['application/zip', 'application/x-zip-compressed'],
+    );
+    final picked = await openFile(acceptedTypeGroups: [zipGroup]);
+    final path = picked?.path;
+    if (path == null) return; // Cancelled.
+
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Importiere Produktdaten …')),
+    );
+    try {
+      final service = await ref.read(packServiceProvider.future);
+      final installed = await service.installFromZip(File(path));
+      // The pack file changed, so re-open it and rebuild the search stack.
+      ref.invalidate(offPackProvider);
+      ref.invalidate(packStateProvider);
+      AppLog.instance.log(
+        'Paket importiert: ${installed.rowCount} Produkte '
+        '(${installed.version})',
+        tag: 'pack',
+      );
+      messenger.showSnackBar(
+        SnackBar(content: Text('${installed.rowCount} Produkte importiert')),
+      );
+    } on Object catch (error) {
+      AppLog.instance.log(
+        'Paket-Import fehlgeschlagen',
+        tag: 'pack',
+        level: LogLevel.error,
+        error: error,
+      );
+      messenger.showSnackBar(
+        SnackBar(content: Text('Import fehlgeschlagen: $error')),
+      );
+    }
+  }
+
+  /// Writes the App-Protokoll to a temp file and hands it to the system share
+  /// sheet, so it can be mailed to yourself or dropped into a file manager.
+  Future<void> _exportLog(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final info = ref.read(packageInfoProvider).value;
+      final tempDir = await getTemporaryDirectory();
+      final file = await AppLog.instance.exportTo(
+        tempDir,
+        header: _logHeader(info),
+      );
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(file.path)], subject: 'EasyTrack Protokoll'),
+      );
+    } on Object catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Protokoll-Export fehlgeschlagen: $error')),
+      );
+    }
+  }
+
+  Future<void> _clearLog(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await AppLog.instance.clear();
+    messenger.showSnackBar(const SnackBar(content: Text('Protokoll gelöscht')));
+  }
+
+  /// A small header prepended to an exported protocol, so a shared log carries
+  /// the build it came from and the platform it ran on.
+  static String _logHeader(PackageInfo? info) {
+    final version = info == null
+        ? 'unbekannt'
+        : '${info.version}+${info.buildNumber}';
+    return 'EasyTrack $version · ${Platform.operatingSystem} '
+        '${Platform.operatingSystemVersion}\n'
+        'Exportiert: ${DateTime.now().toIso8601String()}\n'
+        '${'-' * 40}';
   }
 }
 

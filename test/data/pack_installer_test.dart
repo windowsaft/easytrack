@@ -100,6 +100,38 @@ void main() {
     expect(dest.readAsBytesSync(), const [9, 9, 9]);
   });
 
+  test('installs a local pack file and returns its meta', () async {
+    final src = File('${dir.path}/local.sqlite');
+    writeOffPack(src.path);
+    final installer = PackInstaller((_) async => packBytes);
+
+    final meta = await installer.installLocalFile(src, destination: dest);
+
+    expect(dest.existsSync(), isTrue);
+    expect(meta['off_region'], 'dach');
+    expect(meta['off_row_count'], '2');
+    // The source is renamed into place, so it is consumed on success.
+    expect(src.existsSync(), isFalse);
+
+    final pack = OffPackDatabase.openAt(dest.path);
+    expect(pack.foodCount, 2);
+    pack.dispose();
+  });
+
+  test('installLocalFile refuses a file that is not a pack', () async {
+    final junk = File('${dir.path}/junk.sqlite')
+      ..writeAsBytesSync(List<int>.generate(64, (i) => i));
+    dest.writeAsBytesSync(const [7, 7, 7]);
+    final installer = PackInstaller((_) async => packBytes);
+
+    await expectLater(
+      installer.installLocalFile(junk, destination: dest),
+      throwsA(isA<PackInstallException>()),
+    );
+    // The live pack is untouched.
+    expect(dest.readAsBytesSync(), const [7, 7, 7]);
+  });
+
   test('a pack needing a newer app is refused before downloading', () async {
     var downloaded = false;
     final installer = PackInstaller((_) async {
