@@ -173,7 +173,7 @@ class _KcalCard extends StatelessWidget {
       color: AppColors.surface,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       child: SizedBox(
-        height: 120,
+        height: 138,
         child: CustomPaint(
           size: Size.infinite,
           painter: _KcalBarsPainter(days),
@@ -188,10 +188,17 @@ class _KcalBarsPainter extends CustomPainter {
 
   final List<DayHistory> days;
 
+  static const _weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
+  /// Reserved strip at the bottom for the day labels.
+  static const _labelStrip = 18.0;
+
   @override
   void paint(Canvas canvas, Size size) {
     if (days.isEmpty) return;
 
+    // Bars occupy everything above the label strip.
+    final chartH = size.height - _labelStrip;
     final target = days.last.targetKcal > 0 ? days.last.targetKcal : 2000.0;
     final maxKcal = days.map((d) => d.kcal).fold(0.0, math.max);
     final maxY = math.max(maxKcal, target) * 1.18;
@@ -203,7 +210,7 @@ class _KcalBarsPainter extends CustomPainter {
 
     for (var i = 0; i < n; i++) {
       final day = days[i];
-      final h = (day.kcal / maxY) * size.height;
+      final h = (day.kcal / maxY) * chartH;
       final x = i * (barW + gap);
 
       // The last day is "today" — still being logged, so it reads as muted
@@ -216,14 +223,14 @@ class _KcalBarsPainter extends CustomPainter {
 
       if (h > 0) {
         canvas.drawRect(
-          Rect.fromLTWH(x, size.height - h, barW, h),
+          Rect.fromLTWH(x, chartH - h, barW, h),
           Paint()..color = color,
         );
       }
     }
 
     // Dashed coral ZIEL line at the current target level.
-    final ly = size.height - (target / maxY) * size.height;
+    final ly = chartH - (target / maxY) * chartH;
     final linePaint = Paint()
       ..color = AppColors.coral
       ..strokeWidth = 1.5;
@@ -233,6 +240,29 @@ class _KcalBarsPainter extends CustomPainter {
         Offset(math.min(x + 4, size.width), ly),
         linePaint,
       );
+    }
+
+    // Day labels under the bars: the weekday for a week, sparse day numbers for
+    // a longer span so they do not collide.
+    final every = n <= 10 ? 1 : (n / 6).ceil();
+    final tp = TextPainter(textDirection: TextDirection.ltr);
+    for (var i = 0; i < n; i++) {
+      if (i % every != 0) continue;
+      final date = days[i].day.toDateTime();
+      final text = n <= 10 ? _weekdays[date.weekday - 1] : '${date.day}';
+      tp
+        ..text = TextSpan(
+          text: text,
+          style: const TextStyle(
+            color: AppColors.textFaint,
+            fontSize: 9.5,
+            fontFamily: 'SpaceGrotesk',
+            fontWeight: FontWeight.w600,
+          ),
+        )
+        ..layout();
+      final cx = i * (barW + gap) + barW / 2;
+      tp.paint(canvas, Offset(cx - tp.width / 2, chartH + 5));
     }
   }
 
