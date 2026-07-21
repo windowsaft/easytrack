@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -116,6 +117,12 @@ final localFoodProvidersProvider = FutureProvider<List<FoodProvider>>((
     if (offPack != null) OffLocalProvider(offPack),
   ];
 });
+
+/// App name, version and build number, for the About sheet. Read at runtime so
+/// a sideloaded APK reports its real build.
+final packageInfoProvider = FutureProvider<PackageInfo>(
+  (ref) => PackageInfo.fromPlatform(),
+);
 
 /// Device-local key/value store. Backs the product-pack bookkeeping.
 final sharedPreferencesProvider = FutureProvider<SharedPreferences>(

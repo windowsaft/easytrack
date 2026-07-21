@@ -52,6 +52,9 @@ dependencies:
   # without checking what the SDK ships.
   intl: ^0.20.2
   mobile_scanner: ^7.3.0
+  # App version / build number for the About sheet, read at runtime so a
+  # sideloaded APK reports its real build.
+  package_info_plus: ^8.1.2
   path: ^1.9.1
   path_provider: ^2.1.6
   shared_preferences: ^2.5.5

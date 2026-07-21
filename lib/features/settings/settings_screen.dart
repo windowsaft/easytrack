@@ -96,24 +96,6 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const _GroupHeader('DATEN & RECHTLICHES'),
-                  _Group(
-                    children: [
-                      BoldListRow(
-                        icon: Icons.info_outline,
-                        label: 'Datenquellen',
-                        onTap: () => _showSources(context),
-                      ),
-                      BoldListRow(
-                        icon: Icons.description_outlined,
-                        label: 'Lizenzen',
-                        onTap: () => showLicensePage(
-                          context: context,
-                          applicationName: 'EasyTrack',
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
@@ -204,55 +186,6 @@ class SettingsScreen extends ConsumerWidget {
         SnackBar(content: Text('Produktdaten fehlgeschlagen: $error')),
       );
     }
-  }
-
-  static void _showSources(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (context) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          AppTheme.screenPadding,
-          20,
-          AppTheme.screenPadding,
-          MediaQuery.paddingOf(context).bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('DATENQUELLEN', style: AppText.section(size: 18)),
-            const SizedBox(height: 14),
-            Text(
-              'Bundeslebensmittelschlüssel (BLS), Version 4.0 — Deutsche '
-              'Nährstoffdatenbank.\n'
-              'Max Rubner-Institut (2025), Karlsruhe.\n'
-              'DOI: 10.25826/Data20251217-134202-0\n'
-              'Lizenz: CC BY 4.0',
-              style: AppText.grotesk(
-                size: 13,
-                weight: 500,
-                color: AppColors.textBright,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Produktdaten (Barcode-Produkte):\n'
-              'Open Food Facts — beigetragen von der Open-Food-Facts-'
-              'Gemeinschaft.\n'
-              'openfoodfacts.org\n'
-              'Lizenz: Open Database License (ODbL) v1.0',
-              style: AppText.grotesk(
-                size: 13,
-                weight: 500,
-                color: AppColors.textBright,
-                height: 1.5,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

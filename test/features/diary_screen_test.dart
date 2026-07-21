@@ -265,10 +265,12 @@ void main() {
       expect(find.text('DEINE ZIELE'), findsOneWidget);
       expect(find.text('2.000'), findsOneWidget); // fallback kcal goal
       expect(find.text('0,80'), findsOneWidget); // default safety factor
-      // Doorways.
+      // Doorways, plus the legal + about sections that moved here.
       expect(find.text('Gewicht'), findsOneWidget);
       expect(find.text('Einstellungen'), findsOneWidget);
-      expect(find.text('Datenquellen & Lizenzen'), findsOneWidget);
+      expect(find.text('Datenquellen'), findsOneWidget);
+      expect(find.text('Lizenzen'), findsOneWidget);
+      expect(find.text('Über EasyTrack'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await unmount(tester);

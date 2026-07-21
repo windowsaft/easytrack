@@ -9,6 +9,7 @@ import '../../data/repositories/settings_repository.dart';
 import '../goals/goals_screen.dart';
 import '../settings/settings_screen.dart';
 import '../weight/weight_screen.dart';
+import 'about_sheets.dart';
 
 /// Screen 10a/12a — Profil: a glance at the targets and the doorways out.
 ///
@@ -23,6 +24,7 @@ class ProfileScreen extends ConsumerWidget {
     final target = ref.watch(currentTargetProvider).value;
     final factor = ref.watch(safetyFactorProvider);
     final weight = ref.watch(latestWeightProvider).value;
+    final info = ref.watch(packageInfoProvider).value;
     final kcal = target?.kcal ?? SettingsRepository.defaultKcal;
     final waterMl = target?.waterMl ?? SettingsRepository.defaultWaterMl;
     final isAuto = target?.isAuto ?? false;
@@ -134,17 +136,44 @@ class ProfileScreen extends ConsumerWidget {
                 subtitle: 'App, Anzeige, Produktdaten',
                 onTap: () => _open(context, const SettingsScreen()),
               ),
+            ],
+          ),
+        ),
+        const SectionHeader(title: 'DATEN & RECHTLICHES'),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.screenPadding,
+          ),
+          child: Column(
+            children: [
+              BoldListRow(
+                icon: Icons.info_outline,
+                label: 'Datenquellen',
+                subtitle: 'BLS 4.0 · Open Food Facts',
+                onTap: () => showDataSources(context),
+              ),
               const SizedBox(height: AppTheme.rowGap),
               BoldListRow(
                 icon: Icons.description_outlined,
-                label: 'Datenquellen & Lizenzen',
-                subtitle: 'BLS 4.0 · CC BY 4.0',
+                label: 'Lizenzen',
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'EasyTrack',
                 ),
               ),
             ],
+          ),
+        ),
+        const SectionHeader(title: 'ÜBER'),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.screenPadding,
+          ),
+          child: BoldListRow(
+            icon: Icons.info_outline,
+            label: 'Über EasyTrack',
+            subtitle: versionLine(info),
+            onTap: () => showAbout(context, info),
           ),
         ),
       ],
