@@ -60,6 +60,24 @@ class GoalsScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   BoldListRow(
+                    icon: Icons.pie_chart,
+                    label: 'Makro-Verteilung',
+                    value:
+                        '${macros.carbsG.round()} / ${macros.proteinG.round()} '
+                        '/ ${macros.fatG.round()} g',
+                    onTap: () async {
+                      final result = await _showMacroSheet(context, macros);
+                      if (result != null) {
+                        await settings.setTarget(
+                          carbsG: result.carbsG,
+                          proteinG: result.proteinG,
+                          fatG: result.fatG,
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(height: AppTheme.rowGap),
+                  BoldListRow(
                     icon: Icons.water_drop,
                     label: 'Wasserziel',
                     value: '$waterMl ml',
@@ -372,6 +390,182 @@ class _MacroValue extends StatelessWidget {
           const SizedBox(height: 2),
           Text('${grams.round()} g', style: AppText.anton(size: 16)),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────── Makro-Verteilung sheet
+
+Future<MacroTargets?> _showMacroSheet(
+  BuildContext context,
+  MacroTargets initial,
+) {
+  return showModalBottomSheet<MacroTargets>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) => Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: _MacroSheet(initial: initial),
+    ),
+  );
+}
+
+class _MacroSheet extends StatefulWidget {
+  const _MacroSheet({required this.initial});
+
+  final MacroTargets initial;
+
+  @override
+  State<_MacroSheet> createState() => _MacroSheetState();
+}
+
+class _MacroSheetState extends State<_MacroSheet> {
+  late final TextEditingController _carbs;
+  late final TextEditingController _protein;
+  late final TextEditingController _fat;
+
+  @override
+  void initState() {
+    super.initState();
+    _carbs = TextEditingController(
+      text: widget.initial.carbsG.round().toString(),
+    )..addListener(_onChanged);
+    _protein = TextEditingController(
+      text: widget.initial.proteinG.round().toString(),
+    )..addListener(_onChanged);
+    _fat = TextEditingController(text: widget.initial.fatG.round().toString())
+      ..addListener(_onChanged);
+  }
+
+  void _onChanged() => setState(() {});
+
+  @override
+  void dispose() {
+    for (final c in [_carbs, _protein, _fat]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  double _num(TextEditingController c) =>
+      double.tryParse(c.text.replaceAll(',', '.')) ?? 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final carbs = _num(_carbs);
+    final protein = _num(_protein);
+    final fat = _num(_fat);
+    // Atwater energy from the entered grams, so the split's calorie sum is
+    // visible and can be lined up with the calorie target.
+    final kcal = (carbs * 4 + protein * 4 + fat * 9).round();
+    final valid = carbs > 0 || protein > 0 || fat > 0;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.screenPadding,
+          4,
+          AppTheme.screenPadding,
+          20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('MAKRO-VERTEILUNG', style: AppText.section(size: 18)),
+            const SizedBox(height: 4),
+            Text(
+              'Nährwerte in Gramm. Ergibt ≈ $kcal kcal.',
+              style: AppText.grotesk(
+                size: 13,
+                weight: 500,
+                color: AppColors.textMute,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _MacroField(
+                    controller: _carbs,
+                    label: 'Kohlenh.',
+                    accent: AppColors.carbs,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _MacroField(
+                    controller: _protein,
+                    label: 'Eiweiß',
+                    accent: AppColors.protein,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _MacroField(
+                    controller: _fat,
+                    label: 'Fett',
+                    accent: AppColors.fat,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            PrimaryButton(
+              label: 'SPEICHERN',
+              icon: Icons.check_circle,
+              radius: AppRadii.fab,
+              onPressed: valid
+                  ? () => Navigator.of(context).pop(
+                      MacroTargets(carbsG: carbs, proteinG: protein, fatG: fat),
+                    )
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MacroField extends StatelessWidget {
+  const _MacroField({
+    required this.controller,
+    required this.label,
+    required this.accent,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+      style: AppText.grotesk(size: 18, weight: 700),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: AppText.grotesk(size: 12, weight: 600, color: accent),
+        suffixText: 'g',
+        suffixStyle: AppText.grotesk(
+          size: 12,
+          weight: 600,
+          color: AppColors.textMute,
+        ),
+        isDense: true,
+        enabledBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: AppColors.strokeDashed),
+        ),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: accent, width: 2),
+        ),
       ),
     );
   }
