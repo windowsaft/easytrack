@@ -98,7 +98,8 @@ void main() {
 
     await show(tester, const HistoryScreen());
 
-    expect(find.text('KALORIEN VS. ZIEL'), findsOneWidget);
+    expect(find.text('KALORIEN'), findsOneWidget);
+    expect(find.text('ÜBERBLICK'), findsOneWidget);
     expect(find.text('ZIEL-TREUE'), findsOneWidget);
     expect(find.text('MAKRO-SPLIT Ø'), findsOneWidget);
     expect(find.text('Gewicht verwalten'), findsOneWidget);

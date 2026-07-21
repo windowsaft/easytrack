@@ -58,8 +58,20 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         if (summary.daysLogged == 0)
           const _EmptyState()
         else ...[
-          _KcalCard(days: days, summary: summary),
-          const SizedBox(height: AppTheme.rowGap),
+          SectionHeader(
+            title: 'KALORIEN',
+            trailing: Text(
+              'Ø ${summary.avgKcal.round()} kcal',
+              style: AppText.grotesk(
+                size: 11,
+                weight: 600,
+                color: AppColors.textMute,
+                letterSpacing: 0.4,
+              ),
+            ),
+          ),
+          _KcalCard(days: days),
+          const SectionHeader(title: 'ÜBERBLICK'),
           _TilePair(
             left: StatTile(
               label: 'ZIEL-TREUE',
@@ -74,8 +86,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               accent: AppColors.coral,
             ),
           ),
-          const SectionHeader(title: 'MAKRO-SPLIT Ø'),
-          _MacroSplitCard(summary: summary),
           const SizedBox(height: AppTheme.rowGap),
           _TilePair(
             left: StatTile(
@@ -91,6 +101,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               accent: AppColors.coral,
             ),
           ),
+          const SectionHeader(title: 'MAKRO-SPLIT Ø'),
+          _MacroSplitCard(summary: summary),
         ],
         const SectionHeader(title: 'GEWICHT'),
         _WeightTrendCard(
@@ -147,60 +159,25 @@ class _PeriodTabs extends StatelessWidget {
   }
 }
 
-/// Kalorien vs. Ziel: a per-day bar chart with a dashed target line.
+/// Kalorien vs. Ziel: a per-day bar chart with a dashed target line. The title
+/// and Ø caption live in the section header above it.
 class _KcalCard extends StatelessWidget {
-  const _KcalCard({required this.days, required this.summary});
+  const _KcalCard({required this.days});
 
   final List<DayHistory> days;
-  final HistorySummary summary;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
       color: AppColors.surface,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Expanded(
-                child: Text(
-                  'KALORIEN VS. ZIEL',
-                  style: AppText.grotesk(
-                    size: 11,
-                    weight: 700,
-                    color: AppColors.textMute,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-              Text(
-                'Ø ${summary.avgKcal.round()}',
-                style: AppText.anton(size: 18),
-              ),
-              Text(
-                ' kcal',
-                style: AppText.grotesk(
-                  size: 11,
-                  weight: 600,
-                  color: AppColors.textUnit,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            height: 120,
-            child: CustomPaint(
-              size: Size.infinite,
-              painter: _KcalBarsPainter(days),
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      child: SizedBox(
+        height: 120,
+        child: CustomPaint(
+          size: Size.infinite,
+          painter: _KcalBarsPainter(days),
+        ),
       ),
     );
   }
