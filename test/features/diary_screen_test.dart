@@ -30,6 +30,7 @@ import 'package:easytrack/data/repositories/settings_repository.dart';
 import 'package:easytrack/domain/tdee.dart';
 import 'package:easytrack/features/diary/diary_screen.dart';
 import 'package:easytrack/features/diary/meal_detail_screen.dart';
+import 'package:easytrack/features/goals/goals_screen.dart';
 import 'package:easytrack/features/profile/profile_edit_screen.dart';
 import 'package:easytrack/features/profile/profile_screen.dart';
 import 'package:easytrack/features/settings/settings_screen.dart';
@@ -198,28 +199,15 @@ void main() {
   });
 
   group('settings', () {
-    testWidgets('renders every group', (tester) async {
+    testWidgets('renders app-preference groups, no goals', (tester) async {
       await show(tester, const SettingsScreen());
 
       expect(find.text('EINSTELLUNGEN'), findsOneWidget);
-      expect(find.text('Sicherheitsfaktor'), findsOneWidget);
-      expect(find.text('0,80'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-
-      await unmount(tester);
-    });
-
-    testWidgets('changing the safety factor persists', (tester) async {
-      await show(tester, const SettingsScreen());
-
-      await tester.tap(find.text('Sicherheitsfaktor'));
-      await settle(tester);
-      await tester.tap(find.text('0,90'));
-      await settle(tester);
-
-      // The row reads its value back through the profile stream, so seeing
-      // 0,90 here is the full round trip through the database.
-      expect(find.text('0,90'), findsOneWidget);
+      expect(find.text('Aktivität erhöht Budget'), findsOneWidget);
+      expect(find.text('PRODUKTDATEN'), findsOneWidget);
+      // Goals moved to the Ziele-Seite.
+      expect(find.text('Sicherheitsfaktor'), findsNothing);
+      expect(find.text('Tageskalorien'), findsNothing);
       expect(tester.takeException(), isNull);
 
       await unmount(tester);
@@ -243,20 +231,42 @@ void main() {
     });
   });
 
-  group('profile', () {
-    testWidgets('shows only real figures and distinct destinations', (
+  group('goals (Ziele-Seite)', () {
+    testWidgets('shows the targets and edits the safety factor', (
       tester,
     ) async {
+      await show(tester, const GoalsScreen());
+
+      expect(find.text('DEINE ZIELE'), findsOneWidget);
+      expect(find.text('WEITERE ZIELE'), findsOneWidget);
+      expect(find.text('Sicherheitsfaktor'), findsOneWidget);
+      expect(find.text('0,80'), findsOneWidget); // default factor
+
+      await tester.tap(find.text('Sicherheitsfaktor'));
+      await settle(tester);
+      await tester.tap(find.text('0,90'));
+      await settle(tester);
+
+      // The value reads back through the profile stream — a full round trip.
+      expect(find.text('0,90'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await unmount(tester);
+    });
+  });
+
+  group('profile', () {
+    testWidgets('is a glance plus doorways', (tester) async {
       await show(tester, const ProfileScreen());
 
       expect(find.text('PROFIL'), findsOneWidget);
       expect(find.text('LOKAL · KEIN KONTO'), findsOneWidget);
-      // Goal tiles are backed by the real target, not invented.
+      // The kept three-target overview, backed by the real target.
       expect(find.text('DEINE ZIELE'), findsOneWidget);
       expect(find.text('2.000'), findsOneWidget); // fallback kcal goal
       expect(find.text('0,80'), findsOneWidget); // default safety factor
-      // The rows go to different places.
-      expect(find.text('Körperdaten & Ziel'), findsOneWidget);
+      // Doorways.
+      expect(find.text('Gewicht'), findsOneWidget);
       expect(find.text('Einstellungen'), findsOneWidget);
       expect(find.text('Datenquellen & Lizenzen'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -286,8 +296,8 @@ void main() {
       await tester.enterText(fields.at(2), '80'); // Gewicht
       await settle(tester);
 
-      // Moderate + maintain: 1780 BMR * 1.55 = 2759.
-      expect(find.text('2.759'), findsOneWidget);
+      // Moderate + maintain: 1780 BMR * 1.55 = 2759, shown as "Ergibt 2.759".
+      expect(find.textContaining('2.759'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await unmount(tester);
