@@ -231,24 +231,27 @@ class _RangeTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Five ranges now, so a horizontal scroll rather than equal thirds — the
-    // chips size to their content and slide if they run past the edge.
+    // chips size to their content and slide if they run past the edge. The row
+    // is tall enough that the chip labels are not vertically clipped.
     return SizedBox(
-      height: 44,
+      height: 52,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(
           AppTheme.screenPadding,
-          8,
+          10,
           AppTheme.screenPadding,
-          8,
+          10,
         ),
         children: [
           for (final range in _Range.values) ...[
             if (range != _Range.values.first) const SizedBox(width: 8),
-            BoldChip(
-              label: range.label,
-              selected: current == range,
-              onTap: () => onSelect(range),
+            Center(
+              child: BoldChip(
+                label: range.label,
+                selected: current == range,
+                onTap: () => onSelect(range),
+              ),
             ),
           ],
         ],
@@ -476,10 +479,7 @@ class _EntryRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 13),
                 Expanded(
-                  child: Text(
-                    DateFormat('EEEE, d. MMM y', 'de').format(day.toDateTime()),
-                    style: AppText.rowTitle(),
-                  ),
+                  child: Text(_entryDate(day), style: AppText.rowTitle()),
                 ),
                 if (change != null && change != 0) ...[
                   Text(
@@ -554,6 +554,15 @@ String formatKg(double kg) =>
 String formatDelta(double kg) {
   final sign = kg > 0 ? '+' : (kg < 0 ? '−' : '±');
   return '$sign${formatKg(kg.abs())}';
+}
+
+/// A compact entry date: "FR · 17. Juli" — a two-letter German weekday and the
+/// day + month, without the year or a spelled-out weekday.
+String _entryDate(DayKey day) {
+  const weekdays = ['MO', 'DI', 'MI', 'DO', 'FR', 'SA', 'SO'];
+  final date = day.toDateTime();
+  return '${weekdays[date.weekday - 1]} · ${date.day}. '
+      '${DateFormat('MMMM', 'de').format(date)}';
 }
 
 /// Asks for a weight and the day it was measured. Returns null if dismissed.
