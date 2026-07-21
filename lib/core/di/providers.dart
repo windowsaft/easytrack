@@ -21,11 +21,13 @@ import '../../data/pack/pack_installer.dart';
 import '../../data/pack/pack_service.dart';
 import '../../data/repositories/custom_food_repository.dart';
 import '../../data/repositories/diary_repository.dart';
+import '../../data/repositories/history_repository.dart';
 import '../../data/repositories/off_cache_repository.dart';
 import '../../data/repositories/pinned_foods_repository.dart';
 import '../../data/repositories/recipe_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../domain/day_summary.dart';
+import '../../domain/history.dart';
 import '../nutrition/food_ref.dart';
 import '../time/day_key.dart';
 
@@ -219,6 +221,21 @@ final latestWeightProvider = StreamProvider<double?>(
 final weightLogProvider = StreamProvider<List<WeightEntry>>(
   (ref) => ref.watch(settingsRepositoryProvider).watchWeightLog(),
 );
+
+final historyRepositoryProvider = Provider<HistoryRepository>(
+  (ref) => HistoryRepository(ref.watch(userDatabaseProvider)),
+);
+
+/// Per-day rolled-up history for the Verlauf tab, over the last [days] days
+/// (7 for Woche, 30 for Monat), ending today.
+final historyProvider = StreamProvider.family<List<DayHistory>, int>((
+  ref,
+  days,
+) {
+  final to = DayKey.today();
+  final from = to.addDays(-(days - 1));
+  return ref.watch(historyRepositoryProvider).watchRange(from, to);
+});
 
 /// The target in force today, used by the settings screen. The diary reads the
 /// target for the day it is showing instead, via [daySummaryProvider].

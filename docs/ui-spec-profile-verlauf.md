@@ -1,5 +1,13 @@
 # UI spec — Verlauf & Profile (design handoff)
 
+> **Update (2026-07-21):** the design rework from `Calories Tracker App Design.zip`
+> (turn 7) has since been implemented — Profil direction 7a (with the original
+> three-`StatTile` "DEINE ZIELE" overview kept per request), a built **Verlauf**
+> screen (kcal-vs-Ziel bars, adherence/deviation tiles, macro-split, water/
+> activity, weight-trend card), extra Gewicht range chips, a coral safety-factor
+> row and a rounded ÜBERNEHMEN button. The "blank placeholder" notes below are
+> historical.
+
 A snapshot of the **current** layout, elements, data and settings for the
 **Verlauf** and **Profile** areas, so the UX/visuals can be reworked in a design
 pass. Everything below is what the code renders today (2026-07-20); "Gaps" call

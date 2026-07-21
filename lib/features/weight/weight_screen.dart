@@ -26,8 +26,10 @@ class WeightScreen extends ConsumerStatefulWidget {
 }
 
 enum _Range {
-  d30('30 Tage', 30),
-  d90('90 Tage', 90),
+  d7('7 T', 7),
+  d30('30 T', 30),
+  d90('90 T', 90),
+  y1('1 J', 365),
   all('Alle', null);
 
   const _Range(this.label, this.days);
@@ -228,25 +230,25 @@ class _RangeTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppTheme.screenPadding,
-        10,
-        AppTheme.screenPadding,
-        6,
-      ),
-      child: Row(
+    // Five ranges now, so a horizontal scroll rather than equal thirds — the
+    // chips size to their content and slide if they run past the edge.
+    return SizedBox(
+      height: 44,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.screenPadding,
+          8,
+          AppTheme.screenPadding,
+          8,
+        ),
         children: [
           for (final range in _Range.values) ...[
             if (range != _Range.values.first) const SizedBox(width: 8),
-            // Equal thirds so three German labels fit a phone width without the
-            // fixed-width chips overflowing the row.
-            Expanded(
-              child: BoldChip(
-                label: range.label,
-                selected: current == range,
-                onTap: () => onSelect(range),
-              ),
+            BoldChip(
+              label: range.label,
+              selected: current == range,
+              onTap: () => onSelect(range),
             ),
           ],
         ],

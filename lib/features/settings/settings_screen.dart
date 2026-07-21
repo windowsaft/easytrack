@@ -88,6 +88,7 @@ class SettingsScreen extends ConsumerWidget {
                         label: 'Sicherheitsfaktor',
                         subtitle: 'Skaliert manuell erfasste Aktivität',
                         highlight: true,
+                        highlightColor: AppColors.coral,
                         trailing: Text(
                           factor.toStringAsFixed(2).replaceAll('.', ','),
                           style: AppText.anton(size: 18, color: AppColors.lime),

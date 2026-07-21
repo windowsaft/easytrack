@@ -343,6 +343,8 @@ class _PreviewBar extends StatelessWidget {
               label: 'ÜBERNEHMEN',
               icon: Icons.check_circle,
               height: 52,
+              // Rounded to echo the nav FAB, not the square cards (design 7e).
+              radius: AppRadii.fab,
               onPressed: onSave,
             ),
           ),

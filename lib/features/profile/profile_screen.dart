@@ -1,23 +1,25 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/time/day_key.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../core/ui/widgets/calorie_gauge.dart';
+import '../../data/db/user_database.dart';
 import '../../data/repositories/settings_repository.dart';
+import '../../domain/weight_trend.dart';
 import '../settings/settings_screen.dart';
 import '../weight/weight_screen.dart';
 import 'profile_edit_screen.dart';
 
-/// Screen 6a — who you are, your current goals at a glance, and the way into
-/// settings.
+/// Screen 7a — the profile "snapshot": who you are, your targets at a glance,
+/// and your weight trend, with the ways into the body form and settings.
 ///
-/// Reworked from the handoff, which showed a streak, a weight figure and a
-/// weight-goal progress bar — all of which need data this app does not yet
-/// collect (weight logging is phase 14), so they could only have been faked.
-/// This screen shows only what is real: the local profile and today's targets.
-/// Every figure here is backed by an actual value.
+/// Follows the reworked handoff (turn 7a): weight is surfaced as its own card
+/// instead of a buried list row, and the header carries a settings shortcut. The
+/// three targets keep the original "DEINE ZIELE" three-`StatTile` overview.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -32,17 +34,24 @@ class ProfileScreen extends ConsumerWidget {
     final isAuto = target?.isAuto ?? false;
 
     return ListView(
-      // Top-only inset: the diary shell owns the bottom bar.
       padding: EdgeInsets.only(
         top: MediaQuery.paddingOf(context).top,
         bottom: 24,
       ),
       children: [
-        // No settings cog: it duplicated the "Einstellungen" row below, which
-        // is the one obvious way in.
-        const BoldHeader(title: 'PROFIL'),
+        BoldHeader(
+          title: 'PROFIL',
+          trailing: SquareIconButton(
+            icon: Icons.settings,
+            tooltip: 'Einstellungen',
+            onPressed: () => _open(context, const SettingsScreen()),
+          ),
+        ),
         const SizedBox(height: 12),
-        _IdentityCard(weightKg: weight, onEdit: () => _openEdit(context)),
+        _IdentityCard(
+          weightKg: weight,
+          onEdit: () => _open(context, const ProfileEditScreen()),
+        ),
         SectionHeader(
           title: 'DEINE ZIELE',
           trailing: Text(
@@ -89,6 +98,8 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
         ),
+        const SizedBox(height: AppTheme.rowGap),
+        _WeightCard(onTap: () => _open(context, const WeightScreen())),
         const SectionHeader(title: 'MEHR'),
         Padding(
           padding: const EdgeInsets.symmetric(
@@ -96,30 +107,18 @@ class ProfileScreen extends ConsumerWidget {
           ),
           child: Column(
             children: [
-              // Distinct destinations, not three doors to the same room.
               BoldListRow(
                 icon: Icons.straighten,
                 label: 'Körperdaten & Ziel',
                 subtitle: 'Kalorienziel aus Größe, Gewicht & Alter berechnen',
-                onTap: () => _openEdit(context),
-              ),
-              const SizedBox(height: AppTheme.rowGap),
-              BoldListRow(
-                icon: Icons.monitor_weight_outlined,
-                label: 'Gewicht',
-                subtitle: 'Verlauf erfassen und den Trend verfolgen',
-                onTap: () => Navigator.of(context).push<void>(
-                  MaterialPageRoute(builder: (_) => const WeightScreen()),
-                ),
+                onTap: () => _open(context, const ProfileEditScreen()),
               ),
               const SizedBox(height: AppTheme.rowGap),
               BoldListRow(
                 icon: Icons.settings,
                 label: 'Einstellungen',
                 subtitle: 'Ziele, Sicherheitsfaktor, Anzeige',
-                onTap: () => Navigator.of(context).push<void>(
-                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                ),
+                onTap: () => _open(context, const SettingsScreen()),
               ),
               const SizedBox(height: AppTheme.rowGap),
               BoldListRow(
@@ -138,9 +137,10 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  static Future<void> _openEdit(BuildContext context) => Navigator.of(
-    context,
-  ).push<void>(MaterialPageRoute(builder: (_) => const ProfileEditScreen()));
+  static Future<void> _open(BuildContext context, Widget screen) =>
+      Navigator.of(
+        context,
+      ).push<void>(MaterialPageRoute(builder: (_) => screen));
 
   static String _litres(int ml) {
     final l = ml / 1000;
@@ -149,6 +149,8 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
+/// Identity header card (→ Körperdaten). The original layout: monogram, name,
+/// and a one-line status subtitle.
 class _IdentityCard extends StatelessWidget {
   const _IdentityCard({required this.weightKg, required this.onEdit});
 
@@ -157,8 +159,6 @@ class _IdentityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Once a weight is on record the card shows it; until then it states the
-    // one fact that is always true — this is a local, account-free profile.
     final subtitle = weightKg == null
         ? 'LOKAL · KEIN KONTO'
         : 'AKTUELL ${_trim(weightKg!)} KG';
@@ -222,4 +222,170 @@ class _IdentityCard extends StatelessWidget {
   static String _trim(double value) => value == value.roundToDouble()
       ? value.round().toString()
       : value.toStringAsFixed(1).replaceAll('.', ',');
+}
+
+/// The weight snapshot: current kg + change + a sparkline, or a prompt to start.
+class _WeightCard extends ConsumerWidget {
+  const _WeightCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rows = ref.watch(weightLogProvider).value ?? const <WeightEntry>[];
+    final series = WeightSeries.of([
+      for (final r in rows)
+        WeightPoint(day: DayKey(r.measuredOn), kg: r.weightKg),
+    ]);
+
+    return Material(
+      color: AppColors.surface,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.symmetric(
+            horizontal: AppTheme.screenPadding,
+          ),
+          decoration: const BoxDecoration(
+            border: Border(left: BorderSide(color: AppColors.lime, width: 3)),
+          ),
+          padding: const EdgeInsets.fromLTRB(15, 14, 12, 14),
+          child: series.isEmpty ? _emptyBody() : _dataBody(series),
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyBody() => Row(
+    children: [
+      const Icon(
+        Icons.monitor_weight_outlined,
+        size: 24,
+        color: AppColors.lime,
+      ),
+      const SizedBox(width: 13),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('GEWICHT', style: _labelStyle),
+            const SizedBox(height: 2),
+            Text(
+              'Noch nichts erfasst — tippen zum Starten',
+              style: AppText.rowSubtitle(),
+            ),
+          ],
+        ),
+      ),
+      const Icon(Icons.chevron_right, size: 22, color: AppColors.chevron),
+    ],
+  );
+
+  Widget _dataBody(WeightSeries series) {
+    final change = series.changeKg;
+    return Row(
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('GEWICHT', style: _labelStyle),
+            const SizedBox(height: 2),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  formatKg(series.latestKg!),
+                  style: AppText.anton(size: 26, height: 1),
+                ),
+                Text(
+                  ' kg',
+                  style: AppText.grotesk(
+                    size: 12,
+                    weight: 600,
+                    color: AppColors.textUnit,
+                  ),
+                ),
+              ],
+            ),
+            if (change != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                '${formatDelta(change)} kg',
+                style: AppText.grotesk(
+                  size: 11,
+                  weight: 600,
+                  color: AppColors.textMute,
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: SizedBox(
+            height: 44,
+            child: series.length < 2
+                ? const SizedBox.shrink()
+                : _Sparkline(series: series),
+          ),
+        ),
+        const SizedBox(width: 6),
+        const Icon(Icons.chevron_right, size: 22, color: AppColors.chevron),
+      ],
+    );
+  }
+
+  static final _labelStyle = AppText.grotesk(
+    size: 10,
+    weight: 700,
+    color: AppColors.textMute,
+    letterSpacing: 1.2,
+  );
+}
+
+/// A minimal weight sparkline — the Gewicht chart style, stripped to a line.
+class _Sparkline extends StatelessWidget {
+  const _Sparkline({required this.series});
+
+  final WeightSeries series;
+
+  @override
+  Widget build(BuildContext context) {
+    final origin = series.points.first.day;
+    final spots = [
+      for (final p in series.points)
+        FlSpot(origin.daysUntil(p.day).toDouble(), p.kg),
+    ];
+    final minKg = series.minKg!;
+    final maxKg = series.maxKg!;
+    final pad = (maxKg - minKg) < 1 ? 1.0 : (maxKg - minKg) * 0.15;
+
+    return LineChart(
+      LineChartData(
+        minX: 0,
+        maxX: spots.last.x <= 0 ? 1 : spots.last.x,
+        minY: minKg - pad,
+        maxY: maxKg + pad,
+        lineTouchData: const LineTouchData(enabled: false),
+        gridData: const FlGridData(show: false),
+        titlesData: const FlTitlesData(show: false),
+        borderData: FlBorderData(show: false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            curveSmoothness: 0.2,
+            color: AppColors.lime,
+            barWidth: 2,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              color: AppColors.lime.withValues(alpha: 0.08),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

@@ -157,6 +157,7 @@ class PrimaryButton extends StatelessWidget {
     this.icon,
     this.onPressed,
     this.height = 54,
+    this.radius = AppRadii.button,
     super.key,
   });
 
@@ -165,6 +166,10 @@ class PrimaryButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final double height;
 
+  /// Corner radius. Defaults to the square-ish button radius; the profile
+  /// preview's ÜBERNEHMEN uses the rounder [AppRadii.fab] to echo the nav FAB.
+  final double radius;
+
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
@@ -172,7 +177,7 @@ class PrimaryButton extends StatelessWidget {
       height: height,
       child: Material(
         color: enabled ? AppColors.lime : AppColors.surfaceAlt,
-        borderRadius: BorderRadius.circular(AppRadii.button),
+        borderRadius: BorderRadius.circular(radius),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onPressed,
@@ -475,6 +480,7 @@ class BoldListRow extends StatelessWidget {
     this.onTap,
     this.chevron = true,
     this.highlight = false,
+    this.highlightColor = AppColors.lime,
     this.iconColor = AppColors.lime,
     this.labelColor = AppColors.text,
     super.key,
@@ -488,9 +494,11 @@ class BoldListRow extends StatelessWidget {
   final VoidCallback? onTap;
   final bool chevron;
 
-  /// Draws the selected treatment: lifted background plus a 3px lime left
-  /// border. The design uses it to mark the row a screen was reached from.
+  /// Draws the selected treatment: lifted background plus a 3px left border in
+  /// [highlightColor]. The design uses it to mark a row that stands out —
+  /// [AppColors.lime] by default, coral for the safety-factor row.
   final bool highlight;
+  final Color highlightColor;
   final Color iconColor;
   final Color labelColor;
 
@@ -502,9 +510,9 @@ class BoldListRow extends StatelessWidget {
         onTap: onTap,
         child: Container(
           decoration: highlight
-              ? const BoxDecoration(
+              ? BoxDecoration(
                   border: Border(
-                    left: BorderSide(color: AppColors.lime, width: 3),
+                    left: BorderSide(color: highlightColor, width: 3),
                   ),
                 )
               : null,

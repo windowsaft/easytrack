@@ -9,6 +9,7 @@ import '../activity/add_activity_screen.dart';
 import '../diary/diary_screen.dart';
 import '../diary/meal_detail_screen.dart';
 import '../diary/widgets/meal_row.dart';
+import '../history/history_screen.dart';
 import '../profile/profile_screen.dart';
 import '../recipes/recipe_edit_screen.dart';
 import '../recipes/recipes_screen.dart';
@@ -37,11 +38,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         children: const [
           DiaryScreen(),
           RecipesScreen(),
-          _Placeholder(
-            title: 'Verlauf',
-            icon: Icons.insights,
-            note: 'Auswertungen folgen, sobald mehr Tage erfasst sind.',
-          ),
+          HistoryScreen(),
           ProfileScreen(),
         ],
       ),
@@ -217,41 +214,3 @@ MealType mealForTimeOfDay(TimeOfDay now) => switch (now.hour) {
   >= 17 && < 22 => MealType.dinner,
   _ => MealType.snacks,
 };
-
-/// Stand-in until each feature lands in its own phase.
-class _Placeholder extends StatelessWidget {
-  const _Placeholder({
-    required this.title,
-    required this.icon,
-    required this.note,
-  });
-
-  final String title;
-  final IconData icon;
-  final String note;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 48, color: AppColors.chevron),
-              const SizedBox(height: 14),
-              Text(title.toUpperCase(), style: AppText.section(size: 20)),
-              const SizedBox(height: 6),
-              Text(
-                note,
-                textAlign: TextAlign.center,
-                style: AppText.grotesk(size: 13, color: AppColors.textMute),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
