@@ -108,7 +108,7 @@ describe('buildPack', () => {
     const meta = Object.fromEntries(
       db.prepare('SELECT key, value FROM pack_meta').all().map((r) => [r.key, r.value]),
     );
-    assert.equal(meta.schema_version, '1');
+    assert.equal(meta.schema_version, '2');
     assert.equal(meta.off_region, 'dach');
     assert.match(meta.off_license, /ODbL/);
     assert.match(meta.off_attribution, /Open Food Facts/);

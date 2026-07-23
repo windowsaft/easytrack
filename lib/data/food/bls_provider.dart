@@ -1,6 +1,7 @@
 import 'package:sqlite3/sqlite3.dart';
 
 import '../../core/nutrition/food_ref.dart';
+import '../../core/nutrition/measure_unit.dart';
 import '../../core/nutrition/nutrients.dart';
 import '../../core/text/german_normalizer.dart';
 import '../db/reference_database.dart';
@@ -86,10 +87,15 @@ class BlsProvider implements FoodProvider {
   FoodItem _toItem(Row row) {
     double? opt(String column) => row[column] as double?;
 
+    final name = row['name_de'] as String;
+    final foodGroup = row['food_group'] as String?;
+
     return FoodItem(
       ref: FoodRef(FoodSourceType.bls, row['bls_code'] as String),
-      name: row['name_de'] as String,
-      foodGroup: row['food_group'] as String?,
+      name: name,
+      foodGroup: foodGroup,
+      // BLS has no serving data, so a detected drink just logs in ml.
+      measure: detectMeasure(category: foodGroup, name: name),
       nutrients: Nutrients(
         kcal: (row['kcal'] as num).toDouble(),
         // BLS macro coverage is >99%, but the few gaps are genuinely unknown

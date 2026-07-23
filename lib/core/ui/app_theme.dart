@@ -22,6 +22,7 @@ abstract final class AppColors {
   static const dragHint = Color(0xFF3F4436); // drag_indicator on swipe rows
 
   static const lime = Color(0xFFC6FF3A); // primary accent
+  static const brandGreen = Color(0xFF0E3B23); // launch mark + icon backdrop
   static const coral = Color(0xFFFF5A3C); // burned calories
 
   static const carbs = Color(0xFFF2A93B);
@@ -32,6 +33,11 @@ abstract final class AppColors {
   static const protein = Color(0xFFFF5A3C);
   static const fat = Color(0xFF7C9CFF);
   static const water = Color(0xFF3FB6E6);
+
+  /// Ballaststoffe. Its own line on the nutrient sheet — not a "davon" under
+  /// carbohydrate — so it carries a dot like the other top-level nutrients. A
+  /// muted plant green, kept clear of the neon lime accent and the cyan water.
+  static const fiber = Color(0xFF5FB98E);
 
   static const textHi = Color(0xFFFFFFFF);
   static const text = Color(0xFFF2F3EC);

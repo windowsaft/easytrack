@@ -7,6 +7,7 @@ import '../../core/nutrition/food_ref.dart';
 import '../../core/nutrition/nutrients.dart';
 import '../../core/time/day_key.dart';
 import '../../core/ui/app_theme.dart';
+import '../../core/ui/day_picker.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../core/ui/widgets/calorie_gauge.dart';
 import '../../data/db/user_database.dart';
@@ -175,6 +176,7 @@ class _DateHeader extends ConsumerWidget {
       titleSize: 30,
       overline: DateFormat('E · d. MMM', 'de').format(date).toUpperCase(),
       title: _relativeName(day, date),
+      onTitleTap: () => _pickDay(context, notifier, day),
       leading: SquareIconButton(
         icon: Icons.chevron_left,
         tooltip: 'Vorheriger Tag',
@@ -186,6 +188,19 @@ class _DateHeader extends ConsumerWidget {
         onPressed: () => notifier.select(day.next),
       ),
     );
+  }
+
+  /// Tapping the date opens a calendar to jump to any day directly (with a
+  /// Heute shortcut), rather than stepping there one chevron at a time. The
+  /// chevrons can already have walked into the future, so that day is passed as
+  /// the latest selectable one to keep it reachable.
+  Future<void> _pickDay(
+    BuildContext context,
+    SelectedDay notifier,
+    DayKey day,
+  ) async {
+    final picked = await showDayPicker(context, initial: day, last: day);
+    if (picked != null) notifier.select(picked);
   }
 
   static String _relativeName(DayKey day, DateTime date) {
@@ -289,32 +304,71 @@ class _MacroBlocks extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: StatTile(
-              label: 'KOHLENH.',
-              value: consumed.carbsG.round().toString(),
-              suffix: _targetSuffix(summary.target.carbsG),
-              accent: AppColors.carbs,
+          // The tiles open the full breakdown (sugar, fibre, sat. fat, salt),
+          // which has no room on the dashboard but is a tap away.
+          InkWell(
+            onTap: () => _showNutrientDetails(context, summary),
+            child: Row(
+              children: [
+                Expanded(
+                  child: StatTile(
+                    label: 'KOHLENH.',
+                    value: consumed.carbsG.round().toString(),
+                    suffix: _targetSuffix(summary.target.carbsG),
+                    accent: AppColors.carbs,
+                  ),
+                ),
+                const SizedBox(width: AppTheme.rowGap),
+                Expanded(
+                  child: StatTile(
+                    label: 'EIWEISS',
+                    value: consumed.proteinG.round().toString(),
+                    suffix: _targetSuffix(summary.target.proteinG),
+                    accent: AppColors.protein,
+                  ),
+                ),
+                const SizedBox(width: AppTheme.rowGap),
+                Expanded(
+                  child: StatTile(
+                    label: 'FETT',
+                    value: consumed.fatG.round().toString(),
+                    suffix: _targetSuffix(summary.target.fatG),
+                    accent: AppColors.fat,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: AppTheme.rowGap),
-          Expanded(
-            child: StatTile(
-              label: 'EIWEISS',
-              value: consumed.proteinG.round().toString(),
-              suffix: _targetSuffix(summary.target.proteinG),
-              accent: AppColors.protein,
-            ),
-          ),
-          const SizedBox(width: AppTheme.rowGap),
-          Expanded(
-            child: StatTile(
-              label: 'FETT',
-              value: consumed.fatG.round().toString(),
-              suffix: _targetSuffix(summary.target.fatG),
-              accent: AppColors.fat,
+          const SizedBox(height: 6),
+          Align(
+            alignment: Alignment.centerRight,
+            child: InkWell(
+              onTap: () => _showNutrientDetails(context, summary),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'ALLE NÄHRWERTE',
+                      style: AppText.grotesk(
+                        size: 10,
+                        weight: 700,
+                        color: AppColors.textFaint,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 15,
+                      color: AppColors.textFaint,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
@@ -326,6 +380,216 @@ class _MacroBlocks extends StatelessWidget {
   /// grams alone rather than inventing one.
   static String _targetSuffix(double? target) =>
       target == null ? ' g' : '/${target.round()}';
+}
+
+/// The full nutrient breakdown for the day — the macros already on the
+/// dashboard plus the sub-nutrients (sugar, fibre, saturated fat, salt) that do
+/// not fit there. Unknown values read "—" rather than 0: a food that never
+/// declared its salt has not been measured as salt-free.
+Future<void> _showNutrientDetails(BuildContext context, DaySummary summary) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) => _NutrientDetailsSheet(summary: summary),
+  );
+}
+
+class _NutrientDetailsSheet extends StatelessWidget {
+  const _NutrientDetailsSheet({required this.summary});
+
+  final DaySummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = summary.consumed;
+    final t = summary.target;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.screenPadding,
+          4,
+          AppTheme.screenPadding,
+          20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('NÄHRWERTE HEUTE', style: AppText.section(size: 18)),
+            const SizedBox(height: 4),
+            Text(
+              DateFormat(
+                'EEEE, d. MMMM',
+                'de',
+              ).format(summary.day.toDateTime()),
+              style: AppText.grotesk(
+                size: 12,
+                weight: 500,
+                color: AppColors.textMute,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _NutrientRow(
+              label: 'Energie',
+              value: '${c.kcal.round()}',
+              unit: 'kcal',
+              target: t.kcal.round().toString(),
+              accent: AppColors.lime,
+            ),
+            const Divider(height: 18, color: AppColors.stroke),
+            _NutrientRow(
+              label: 'Kohlenhydrate',
+              value: _g(c.carbsG),
+              unit: 'g',
+              target: t.carbsG?.round().toString(),
+              accent: AppColors.carbs,
+            ),
+            _NutrientRow(label: 'davon Zucker', value: _gN(c.sugarG), sub: true),
+            const SizedBox(height: 6),
+            // Ballaststoffe are their own nutrient, not a "davon" of carbohydrate,
+            // so they read as a top-level row with a dot rather than an indented
+            // sub-line.
+            _NutrientRow(
+              label: 'Ballaststoffe',
+              value: _gN(c.fiberG),
+              unit: 'g',
+              accent: AppColors.fiber,
+            ),
+            const SizedBox(height: 6),
+            _NutrientRow(
+              label: 'Eiweiß',
+              value: _g(c.proteinG),
+              unit: 'g',
+              target: t.proteinG?.round().toString(),
+              accent: AppColors.protein,
+            ),
+            const SizedBox(height: 6),
+            _NutrientRow(
+              label: 'Fett',
+              value: _g(c.fatG),
+              unit: 'g',
+              target: t.fatG?.round().toString(),
+              accent: AppColors.fat,
+            ),
+            _NutrientRow(
+              label: 'davon gesättigt',
+              value: _gN(c.satFatG),
+              sub: true,
+            ),
+            const SizedBox(height: 6),
+            _NutrientRow(
+              label: 'Salz',
+              value: _gN(c.saltG),
+              unit: 'g',
+              accent: AppColors.water,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// A known gram value, rounded, German decimal comma for sub-gram amounts.
+  static String _g(double v) =>
+      v >= 10 || v == v.roundToDouble()
+      ? v.round().toString()
+      : v.toStringAsFixed(1).replaceAll('.', ',');
+
+  /// A nullable gram value: "—" when the food never declared it.
+  static String _gN(double? v) => v == null ? '—' : _g(v);
+}
+
+class _NutrientRow extends StatelessWidget {
+  const _NutrientRow({
+    required this.label,
+    required this.value,
+    this.unit,
+    this.target,
+    this.accent,
+    this.sub = false,
+  });
+
+  final String label;
+  final String value;
+  final String? unit;
+  final String? target;
+  final Color? accent;
+
+  /// A "davon …" sub-nutrient: indented and muted under its parent.
+  final bool sub;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(left: sub ? 14 : 0, top: sub ? 4 : 2, bottom: 2),
+      // Centre the row so the dot lines up with the label. Only the value
+      // cluster (number + unit + target) is baseline-aligned, internally — a
+      // baseline row here would drop the dot, which has no text baseline.
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (accent != null) ...[
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 8),
+          ] else if (!sub)
+            const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              label,
+              style: AppText.grotesk(
+                size: sub ? 12 : 14,
+                weight: sub ? 500 : 600,
+                color: sub ? AppColors.textMute : AppColors.text,
+              ),
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                value,
+                style: sub
+                    ? AppText.grotesk(
+                        size: 12,
+                        weight: 600,
+                        color: AppColors.textMute,
+                      )
+                    : AppText.anton(size: 18),
+              ),
+              if (unit != null) ...[
+                const SizedBox(width: 3),
+                Text(
+                  unit!,
+                  style: AppText.grotesk(
+                    size: 11,
+                    weight: 600,
+                    color: AppColors.textUnit,
+                  ),
+                ),
+              ],
+              if (target != null)
+                Text(
+                  ' / $target',
+                  style: AppText.grotesk(
+                    size: 12,
+                    weight: 600,
+                    color: AppColors.textUnit,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// The day's logged activity. Read separately from the summary because the

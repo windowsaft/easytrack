@@ -76,9 +76,26 @@ dependencies:
 dev_dependencies:
   build_runner: ^2.15.1
   drift_dev: ^2.34.0
+  # Generates the platform launcher icons from assets/icon/*.png.
+  flutter_launcher_icons: ^0.14.4
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
+  # Draws the launcher-icon PNGs in tool/gen_icon.dart. Dev-only.
+  image: ^4.5.4
+
+# Launcher icons: lime tile + ascending near-black bars, matching the splash.
+# Regenerate the source PNGs with `dart run tool/gen_icon.dart`, then run
+# `dart run flutter_launcher_icons`.
+# iOS is intentionally off: this is an Android sideload build with no iOS
+# project (no ios/ directory), so there is no asset catalog to write into.
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#0E3B23"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -98,6 +115,8 @@ flutter:
     - assets/data/bls.sqlite
     # Shared with the ETL so the runtime and the index agree on compound splits.
     - tools/etl/de_food_morphemes.txt
+    # The app mark, shown in the About sheet. Also the launcher-icon source.
+    - assets/icon/icon.png
 
   # Bundled rather than fetched via google_fonts: the app must render correctly
   # on a fresh sideload with no network, and the design leans on Anton hard

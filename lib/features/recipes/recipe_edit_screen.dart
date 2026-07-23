@@ -31,6 +31,7 @@ class RecipeEditScreen extends ConsumerStatefulWidget {
 class _RecipeEditScreenState extends ConsumerState<RecipeEditScreen> {
   final _name = TextEditingController();
   final _cookedWeight = TextEditingController();
+  final _portionSize = TextEditingController();
   final _components = <RecipeComponent>[];
   var _loaded = false;
 
@@ -48,6 +49,7 @@ class _RecipeEditScreenState extends ConsumerState<RecipeEditScreen> {
   void dispose() {
     _name.dispose();
     _cookedWeight.dispose();
+    _portionSize.dispose();
     super.dispose();
   }
 
@@ -61,6 +63,8 @@ class _RecipeEditScreenState extends ConsumerState<RecipeEditScreen> {
         _name.text = detail.recipe.name;
         final cooked = detail.recipe.cookedWeightG;
         if (cooked != null) _cookedWeight.text = _trim(cooked);
+        final portion = detail.recipe.portionSizeG;
+        if (portion != null) _portionSize.text = _trim(portion);
         _components
           ..clear()
           ..addAll(detail.components);
@@ -74,10 +78,31 @@ class _RecipeEditScreenState extends ConsumerState<RecipeEditScreen> {
     return (value != null && value > 0) ? value : null;
   }
 
-  RecipeScaling get _scaling =>
-      RecipeScaling.of(_components, cookedWeightG: _cookedWeightG);
+  double? get _portionSizeG {
+    final value = double.tryParse(_portionSize.text.replaceAll(',', '.'));
+    return (value != null && value > 0) ? value : null;
+  }
+
+  RecipeScaling get _scaling => RecipeScaling.of(
+    _components,
+    cookedWeightG: _cookedWeightG,
+    portionSizeG: _portionSizeG,
+  );
 
   bool get _canSave => _name.text.trim().isNotEmpty && _components.isNotEmpty;
+
+  /// Live feedback under the portion field: how many portions the current yield
+  /// makes at the entered size, and the kcal in one of them.
+  String get _portionHint {
+    final scaling = _scaling;
+    final count = scaling.portionCount;
+    if (count == null || scaling.isEmpty) {
+      return 'Teile das Gericht in gleich große Portionen. Beim Eintragen '
+          'kannst du dann "1 Portion" wählen.';
+    }
+    final kcal = scaling.forPortion(scaling.portionSizeG!).kcal.round();
+    return 'Ergibt ≈ $count Portionen · $kcal kcal pro Portion.';
+  }
 
   /// Picks a food, then its weight, and stages it as an ingredient.
   Future<void> _addIngredient() async {
@@ -136,6 +161,7 @@ class _RecipeEditScreenState extends ConsumerState<RecipeEditScreen> {
         name: name,
         components: _components,
         cookedWeightG: _cookedWeightG,
+        portionSizeG: _portionSizeG,
       );
     } else {
       await repository.updateRecipe(
@@ -143,6 +169,7 @@ class _RecipeEditScreenState extends ConsumerState<RecipeEditScreen> {
         name: name,
         components: _components,
         cookedWeightG: _cookedWeightG,
+        portionSizeG: _portionSizeG,
       );
     }
     navigator.pop();
@@ -254,6 +281,26 @@ class _RecipeEditScreenState extends ConsumerState<RecipeEditScreen> {
                     'Wiegt das fertige Gericht weniger als die Summe der Zutaten '
                     '(z. B. weil Wasser verkocht ist), hier eintragen. Portionen '
                     'werden dann darauf bezogen.',
+                    style: AppText.grotesk(
+                      size: 12,
+                      color: AppColors.textMute,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _label('PORTIONSGRÖSSE (OPTIONAL)'),
+                  _TextField(
+                    controller: _portionSize,
+                    hint: _components.isEmpty
+                        ? '—'
+                        : 'z. B. ${(_scaling.yieldWeightG / 2).round()} g',
+                    suffix: 'g',
+                    number: true,
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _portionHint,
                     style: AppText.grotesk(
                       size: 12,
                       color: AppColors.textMute,

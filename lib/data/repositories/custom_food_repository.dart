@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../core/nutrition/food_ref.dart';
+import '../../core/nutrition/measure_unit.dart';
 import '../../core/nutrition/nutrients.dart';
 import '../../core/text/german_normalizer.dart';
 import '../db/user_database.dart';
@@ -51,9 +52,11 @@ class CustomFoodRepository {
   Future<FoodItem> create({
     required String name,
     required Nutrients nutrients,
+    String? brand,
     double? servingG,
     String? servingLabel,
     String? barcode,
+    MeasureUnit measure = MeasureUnit.grams,
     bool isFavorite = false,
   }) async {
     final row = await _db
@@ -61,9 +64,11 @@ class CustomFoodRepository {
         .insertReturning(
           CustomFoodsCompanion.insert(
             name: name,
-            // Kept in sync with the name here because [CustomFoodProvider]
-            // searches this column, not the display name.
-            searchText: Value(normalizeGerman(name)),
+            brand: Value(brand),
+            // Search matches the product name and the brand, so both feed the
+            // normalized column.
+            searchText: Value(normalizeGerman([name, ?brand].join(' '))),
+            unit: Value(measure.wire),
             // A barcode makes a manually-created food resolvable by a later
             // scan — the scan → "Produkt anlegen" → rescan loop.
             barcode: Value(barcode),
@@ -95,27 +100,32 @@ class CustomFoodRepository {
     );
   }
 
-  FoodItem _toItem(CustomFood row) => FoodItem(
-    ref: FoodRef(FoodSourceType.custom, row.id),
-    name: row.name,
-    brand: row.brand,
-    barcode: row.barcode,
-    nutrients: Nutrients(
-      kcal: row.kcal,
-      proteinG: row.proteinG,
-      carbsG: row.carbsG,
-      fatG: row.fatG,
-      sugarG: row.sugarG,
-      fiberG: row.fiberG,
-      satFatG: row.satFatG,
-      saltG: row.saltG,
-    ),
-    servings: [
-      if (row.defaultServingG != null)
-        ServingOption(
-          label: row.defaultServingLabel ?? 'Portion',
-          grams: row.defaultServingG!,
-        ),
-    ],
-  );
+  FoodItem _toItem(CustomFood row) {
+    final measure = MeasureUnit.fromWire(row.unit);
+    return FoodItem(
+      ref: FoodRef(FoodSourceType.custom, row.id),
+      name: row.name,
+      brand: row.brand,
+      barcode: row.barcode,
+      measure: measure,
+      nutrients: Nutrients(
+        kcal: row.kcal,
+        proteinG: row.proteinG,
+        carbsG: row.carbsG,
+        fatG: row.fatG,
+        sugarG: row.sugarG,
+        fiberG: row.fiberG,
+        satFatG: row.satFatG,
+        saltG: row.saltG,
+      ),
+      servings: [
+        if (row.defaultServingG != null)
+          ServingOption(
+            unit: row.defaultServingLabel ?? 'Portion',
+            grams: row.defaultServingG!,
+            measure: measure,
+          ),
+      ],
+    );
+  }
 }

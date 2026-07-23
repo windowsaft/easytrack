@@ -19,6 +19,7 @@ class RecipeDetail {
       scaling = RecipeScaling.of(
         ingredients.map(_componentOf),
         cookedWeightG: recipe.cookedWeightG,
+        portionSizeG: recipe.portionSizeG,
       );
 
   final Recipe recipe;
@@ -29,19 +30,19 @@ class RecipeDetail {
   /// The recipe as a loggable food.
   ///
   /// Its nutrients are per 100 g of the finished dish, so it flows through the
-  /// exact same portion picker and diary snapshot path as any other food. The
-  /// yield weight is offered as a named "whole batch" serving; the picker's
-  /// grams fallback covers weighing an actual plate.
+  /// exact same portion picker and diary snapshot path as any other food. A
+  /// portion (when the recipe defines one) is the default serving; the whole
+  /// yield is offered as a named "whole batch" serving; the picker's grams
+  /// fallback covers weighing an actual plate.
   FoodItem toFoodItem() => FoodItem(
     ref: FoodRef(FoodSourceType.recipe, recipe.id),
     name: recipe.name,
     nutrients: scaling.per100g,
     servings: [
+      if (scaling.portionSizeG != null)
+        ServingOption(unit: 'Portion', grams: scaling.portionSizeG!),
       if (scaling.yieldWeightG > 0)
-        ServingOption(
-          label: 'Ganze Menge (${scaling.yieldWeightG.round()} g)',
-          grams: scaling.yieldWeightG,
-        ),
+        ServingOption(unit: 'Ganze Menge', grams: scaling.yieldWeightG),
     ],
   );
 
@@ -135,6 +136,7 @@ class RecipeRepository {
     required List<RecipeComponent> components,
     String? notes,
     double? cookedWeightG,
+    double? portionSizeG,
     bool isFavorite = false,
   }) {
     return _db.transaction(() async {
@@ -148,6 +150,7 @@ class RecipeRepository {
               searchText: Value(normalizeGerman(name)),
               notes: Value(notes),
               cookedWeightG: Value(cookedWeightG),
+              portionSizeG: Value(portionSizeG),
               isFavorite: Value(isFavorite),
             ),
           );
@@ -168,6 +171,7 @@ class RecipeRepository {
     required List<RecipeComponent> components,
     String? notes,
     double? cookedWeightG,
+    double? portionSizeG,
   }) {
     return _db.transaction(() async {
       await (_db.update(_db.recipes)..where((t) => t.id.equals(id))).write(
@@ -176,6 +180,7 @@ class RecipeRepository {
           searchText: Value(normalizeGerman(name)),
           notes: Value(notes),
           cookedWeightG: Value(cookedWeightG),
+          portionSizeG: Value(portionSizeG),
         ),
       );
 

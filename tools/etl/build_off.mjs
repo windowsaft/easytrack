@@ -30,8 +30,14 @@ import { buildSearchText, loadMorphemes } from './normalize.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-/** Schema version of the product pack. The app refuses a pack it cannot read. */
-const PACK_SCHEMA_VERSION = 1;
+/** Schema version of the product pack. The app refuses a pack it cannot read.
+ *
+ * v2 adds the `categories` column (space-joined Open Food Facts category tags),
+ * which the app uses for robust drink detection — a Coca-Cola is a beverage
+ * because its tags say `en:sodas`, not because its name happens to contain a
+ * keyword. A v1 pack (no column) still installs; the app falls back to name
+ * detection for it. */
+const PACK_SCHEMA_VERSION = 2;
 
 /** Schema version of manifest.json itself. */
 const MANIFEST_SCHEMA_VERSION = 1;
@@ -97,7 +103,10 @@ CREATE TABLE off_foods (
   sat_fat_g          REAL,
   salt_g             REAL,
   fiber_g            REAL,
-  completeness_score REAL
+  completeness_score REAL,
+  -- Space-joined Open Food Facts category tags (e.g. "en:sodas en:beverages"),
+  -- or NULL when the source has none. Read on device for drink detection.
+  categories         TEXT
 );
 
 -- External-content FTS: the text lives in off_foods, so it is not stored twice.
@@ -139,11 +148,11 @@ export async function buildPack({ products, region, version, outPath, morphemes 
     INSERT OR IGNORE INTO off_foods
       (barcode, name, brands, search_text, serving_size_g,
        kcal, protein_g, carbs_g, fat_g, sugar_g, sat_fat_g, salt_g, fiber_g,
-       completeness_score)
+       completeness_score, categories)
     VALUES
       (@barcode, @name, @brands, @search_text, @serving_size_g,
        @kcal, @protein_g, @carbs_g, @fat_g, @sugar_g, @sat_fat_g, @salt_g,
-       @fiber_g, @completeness_score)
+       @fiber_g, @completeness_score, @categories)
   `);
 
   let rowCount = 0;
@@ -158,6 +167,13 @@ export async function buildPack({ products, region, version, outPath, morphemes 
       }
       const name = String(p.name).trim();
       const brands = p.brands ? String(p.brands).trim() : null;
+      // Category tags arrive as an array from DuckDB; the seed has none. Store
+      // them space-joined (tags never break a needle across the space) or NULL.
+      const cats = Array.isArray(p.categories_tags)
+        ? p.categories_tags.map((t) => String(t).trim()).filter(Boolean).join(' ')
+        : typeof p.categories_tags === 'string'
+          ? p.categories_tags.trim()
+          : '';
       const info = insert.run({
         barcode: String(p.barcode).trim(),
         name,
@@ -173,6 +189,7 @@ export async function buildPack({ products, region, version, outPath, morphemes 
         salt_g: opt(p.salt_g),
         fiber_g: opt(p.fiber_g),
         completeness_score: opt(p.completeness_score),
+        categories: cats.length > 0 ? cats : null,
       });
       if (info.changes > 0) rowCount++;
       else skipped++; // duplicate barcode ignored

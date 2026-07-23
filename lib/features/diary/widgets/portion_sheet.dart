@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/nutrition/food_ref.dart';
 import '../../../core/nutrition/nutrients.dart';
+import '../../../core/ui/app_theme.dart';
+import '../../../core/ui/widgets/bold_controls.dart';
 import '../../../data/food/food_item.dart';
 
 /// What the user chose to log.
@@ -75,15 +77,16 @@ class _PortionSheetState extends ConsumerState<_PortionSheet> {
   @override
   void initState() {
     super.initState();
-    _serving = widget.food.servingChoices.first;
-    // A serving defaults to one of it; grams default to a portion people
-    // actually eat rather than a single gram.
-    _count = _serving.grams == 100 ? 100 : 1;
-    // Reopening an existing weight (editing a recipe ingredient): keep it, but
-    // only in grams mode, where the number is grams rather than a serving count.
+    // Reopening an existing weight (editing a recipe ingredient) always lands in
+    // raw mode with that exact amount; otherwise the first serving is picked at
+    // its natural default (one unit, or 100 g/ml raw).
     final initial = widget.initialGrams;
-    if (initial != null && initial > 0 && _isGramsMode) {
+    if (initial != null && initial > 0) {
+      _serving = ServingOption.raw(widget.food.measure);
       _count = initial;
+    } else {
+      _serving = widget.food.servingChoices.first;
+      _count = _serving.defaultAmount;
     }
     _controller = TextEditingController(text: _formatCount(_count));
   }
@@ -94,21 +97,42 @@ class _PortionSheetState extends ConsumerState<_PortionSheet> {
     super.dispose();
   }
 
-  /// For the 100 g option the number typed is grams; otherwise it is a count
-  /// of servings.
-  bool get _isGramsMode => _serving.grams == 100 && _serving.label == '100 g';
+  /// In raw mode the number typed is the amount (g/ml); otherwise a unit count.
+  bool get _isRawMode => _serving.isRaw;
 
-  double get _grams => _isGramsMode ? _count : _count * _serving.grams;
+  /// The food's unit suffix — "g" for solids, "ml" for drinks.
+  String get _suffix => widget.food.measure.suffix;
+
+  double get _grams => _isRawMode ? _count : _count * _serving.grams;
+
+  void _selectServing(ServingOption option) {
+    setState(() {
+      _serving = option;
+      _count = option.defaultAmount;
+      _controller.text = _formatCount(_count);
+    });
+  }
+
+  void _setCount(double value) {
+    setState(() {
+      _count = value;
+      _controller.text = _formatCount(value);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final nutrients = widget.food.nutrients.forGrams(_grams);
     final choices = widget.food.servingChoices;
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        padding: const EdgeInsets.fromLTRB(
+          AppTheme.screenPadding,
+          0,
+          AppTheme.screenPadding,
+          20,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,24 +142,46 @@ class _PortionSheetState extends ConsumerState<_PortionSheet> {
                 Expanded(
                   child: Text(
                     widget.food.displayTitle,
-                    style: theme.textTheme.titleLarge,
+                    style: AppText.grotesk(size: 17, weight: 700),
                   ),
                 ),
                 if (widget.allowFavorite) _FavoriteStar(food: widget.food),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               widget.food.sourceLabel,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              style: AppText.grotesk(
+                size: 12,
+                weight: 500,
+                color: AppColors.textMute,
               ),
             ),
             const SizedBox(height: 16),
+            // Serving units read as "Portion (30 g)", "Cookie (25 g)", "Gramm" —
+            // one unit each, never "1 Portion …": the count field carries the
+            // multiplier, so folding it into the label would double it.
+            if (choices.length > 1)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final option in choices)
+                    BoldChip(
+                      label: option.isRaw
+                          ? (option.measure.isLiquid ? 'Milliliter' : 'Gramm')
+                          : option.label,
+                      selected: option == _serving,
+                      onTap: () => _selectServing(option),
+                    ),
+                ],
+              ),
+            if (choices.length > 1) const SizedBox(height: 16),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 SizedBox(
-                  width: 110,
+                  width: 120,
                   child: TextField(
                     controller: _controller,
                     autofocus: true,
@@ -145,62 +191,90 @@ class _PortionSheetState extends ConsumerState<_PortionSheet> {
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                     ],
+                    style: AppText.grotesk(size: 20, weight: 700),
                     decoration: InputDecoration(
-                      labelText: _isGramsMode ? 'Gramm' : 'Portionen',
-                      suffixText: _isGramsMode ? 'g' : null,
+                      labelText: _isRawMode
+                          ? (widget.food.measure.isLiquid
+                                ? 'Milliliter'
+                                : 'Gramm')
+                          : 'Anzahl',
+                      suffixText: _isRawMode ? _suffix : '×',
+                      labelStyle: AppText.grotesk(
+                        size: 13,
+                        weight: 500,
+                        color: AppColors.textMute,
+                      ),
+                      suffixStyle: AppText.grotesk(
+                        size: 13,
+                        weight: 600,
+                        color: AppColors.textMute,
+                      ),
+                      isDense: true,
+                      enabledBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.strokeDashed),
+                      ),
+                      focusedBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: AppColors.lime, width: 2),
+                      ),
                     ),
                     onChanged: (value) {
                       // German keyboards produce a decimal comma.
-                      final parsed = double.tryParse(
-                        value.replaceAll(',', '.'),
-                      );
+                      final parsed = double.tryParse(value.replaceAll(',', '.'));
                       setState(() => _count = parsed ?? 0);
                     },
                   ),
                 ),
-                const SizedBox(width: 12),
-                if (choices.length > 1)
+                const SizedBox(width: 14),
+                // In unit mode the resolved amount is not obvious, so show it.
+                if (!_isRawMode)
                   Expanded(
-                    child: DropdownButtonFormField<ServingOption>(
-                      initialValue: _serving,
-                      decoration: const InputDecoration(labelText: 'Portion'),
-                      items: [
-                        for (final option in choices)
-                          DropdownMenuItem(
-                            value: option,
-                            child: Text(option.label, maxLines: 1),
-                          ),
-                      ],
-                      onChanged: (option) {
-                        if (option == null) return;
-                        setState(() {
-                          _serving = option;
-                          _count = option.grams == 100 ? 100 : 1;
-                          _controller.text = _formatCount(_count);
-                        });
-                      },
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        '= ${_formatCount(_grams)} $_suffix',
+                        style: AppText.grotesk(
+                          size: 14,
+                          weight: 600,
+                          color: AppColors.textMute,
+                        ),
+                      ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 16),
-            _NutrientPreview(grams: _grams, nutrients: nutrients),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                icon: const Icon(Icons.check),
-                label: const Text('Hinzufügen'),
-                onPressed: _grams <= 0
-                    ? null
-                    : () => Navigator.of(context).pop(
-                        PickedPortion(
-                          grams: _grams,
-                          label: _isGramsMode ? null : _serving.label,
-                          count: _isGramsMode ? null : _count,
-                        ),
+            // Quick multipliers for the common "one, two, three of them" case.
+            if (!_isRawMode) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  for (final n in const [1.0, 2.0, 3.0]) ...[
+                    if (n != 1.0) const SizedBox(width: 8),
+                    Expanded(
+                      child: _CountChip(
+                        label: '${n.round()}×',
+                        selected: _count == n,
+                        onTap: () => _setCount(n),
                       ),
+                    ),
+                  ],
+                ],
               ),
+            ],
+            const SizedBox(height: 16),
+            _NutrientPreview(nutrients: nutrients),
+            const SizedBox(height: 18),
+            PrimaryButton(
+              label: 'Hinzufügen',
+              icon: Icons.check_circle,
+              onPressed: _grams <= 0
+                  ? null
+                  : () => Navigator.of(context).pop(
+                      PickedPortion(
+                        grams: _grams,
+                        label: _isRawMode ? null : _serving.label,
+                        count: _isRawMode ? null : _count,
+                      ),
+                    ),
             ),
           ],
         ),
@@ -210,33 +284,89 @@ class _PortionSheetState extends ConsumerState<_PortionSheet> {
 
   static String _formatCount(double value) => value == value.roundToDouble()
       ? value.round().toString()
-      : value.toString();
+      : value.toStringAsFixed(1).replaceAll('.', ',');
+}
+
+/// A selectable quick-count chip (1×, 2×, 3×).
+class _CountChip extends StatelessWidget {
+  const _CountChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AppColors.selectedRow : AppColors.surfaceAlt,
+      borderRadius: BorderRadius.circular(AppRadii.chip),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          decoration: selected
+              ? const BoxDecoration(
+                  border: Border(
+                    left: BorderSide(color: AppColors.lime, width: 3),
+                  ),
+                )
+              : null,
+          padding: const EdgeInsets.symmetric(vertical: 11),
+          child: Center(
+            child: Text(
+              label,
+              style: AppText.grotesk(
+                size: 15,
+                weight: 700,
+                color: selected ? AppColors.lime : AppColors.text,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _NutrientPreview extends StatelessWidget {
-  const _NutrientPreview({required this.grams, required this.nutrients});
+  const _NutrientPreview({required this.nutrients});
 
-  final double grams;
   final Nutrients nutrients;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final n = nutrients;
 
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      color: AppColors.surfaceAlt,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _Value(label: 'kcal', value: n.kcal.round().toString()),
-          _Value(label: 'Eiweiß', value: '${n.proteinG.toStringAsFixed(1)} g'),
-          _Value(label: 'Kohlenh.', value: '${n.carbsG.toStringAsFixed(1)} g'),
-          _Value(label: 'Fett', value: '${n.fatG.toStringAsFixed(1)} g'),
+          _Value(
+            label: 'KCAL',
+            value: n.kcal.round().toString(),
+            accent: AppColors.lime,
+          ),
+          _Value(
+            label: 'EIWEISS',
+            value: n.proteinG.toStringAsFixed(0),
+            accent: AppColors.protein,
+          ),
+          _Value(
+            label: 'KOHLENH.',
+            value: n.carbsG.toStringAsFixed(0),
+            accent: AppColors.carbs,
+          ),
+          _Value(
+            label: 'FETT',
+            value: n.fatG.toStringAsFixed(0),
+            accent: AppColors.fat,
+          ),
         ],
       ),
     );
@@ -244,18 +374,27 @@ class _NutrientPreview extends StatelessWidget {
 }
 
 class _Value extends StatelessWidget {
-  const _Value({required this.label, required this.value});
+  const _Value({required this.label, required this.value, required this.accent});
 
   final String label;
   final String value;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Column(
       children: [
-        Text(value, style: theme.textTheme.titleMedium),
-        Text(label, style: theme.textTheme.labelSmall),
+        Text(value, style: AppText.anton(size: 22)),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: AppText.grotesk(
+            size: 9,
+            weight: 700,
+            color: accent,
+            letterSpacing: 0.8,
+          ),
+        ),
       ],
     );
   }

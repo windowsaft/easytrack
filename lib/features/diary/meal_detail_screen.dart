@@ -275,7 +275,11 @@ class _EntryRow extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       child: Row(
         children: [
-          TileIcon(icon: mealIcons[meal] ?? Icons.restaurant),
+          TileIcon(
+            icon: entry.unit == 'ml'
+                ? Icons.local_drink
+                : (mealIcons[meal] ?? Icons.restaurant),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -310,9 +314,9 @@ class _EntryRow extends StatelessWidget {
   /// Shows what the user picked, with the gram weight it resolved to — the
   /// serving alone hides how much food that actually was.
   static String _portionLabel(DiaryEntry entry) {
-    final grams = '${_trim(entry.amountG)} g';
-    if (entry.servingLabel == null || entry.servingCount == null) return grams;
-    return '${_trim(entry.servingCount!)} × ${entry.servingLabel} · $grams';
+    final amount = '${_trim(entry.amountG)} ${entry.unit}';
+    if (entry.servingLabel == null || entry.servingCount == null) return amount;
+    return '${_trim(entry.servingCount!)} × ${entry.servingLabel} · $amount';
   }
 
   static String _trim(double value) => value == value.roundToDouble()

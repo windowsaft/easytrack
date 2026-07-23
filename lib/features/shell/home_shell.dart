@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
 import '../../core/nutrition/food_ref.dart';
+import '../../core/time/day_key.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/app_bottom_nav.dart';
 import '../activity/add_activity_screen.dart';
@@ -13,6 +14,7 @@ import '../history/history_screen.dart';
 import '../profile/profile_screen.dart';
 import '../recipes/recipe_edit_screen.dart';
 import '../recipes/recipes_screen.dart';
+import '../weight/weight_screen.dart';
 
 /// Bottom-navigation shell. The diary is the landing screen because logging is
 /// the action the user opens the app to perform.
@@ -62,6 +64,21 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       await Navigator.of(
         context,
       ).push<void>(MaterialPageRoute(builder: (_) => const RecipeEditScreen()));
+      return;
+    }
+
+    // On the Verlauf tab it logs a weight, pre-filled with the last weigh-in —
+    // the metric that page is about, entered without leaving it.
+    if (_index == 2) {
+      final draft = await showWeightSheet(
+        context,
+        initialDay: DayKey.today(),
+        lastKg: ref.read(latestWeightProvider).value,
+      );
+      if (draft == null) return;
+      await ref
+          .read(settingsRepositoryProvider)
+          .recordWeightOn(day: draft.day, kg: draft.kg);
       return;
     }
 

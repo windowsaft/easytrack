@@ -50,14 +50,20 @@ class RecipeScaling {
     required this.batchNutrients,
     required this.batchWeightG,
     required double? cookedWeightG,
+    required double? portionSizeG,
   }) : yieldWeightG = (cookedWeightG != null && cookedWeightG > 0)
            ? cookedWeightG
-           : batchWeightG;
+           : batchWeightG,
+       portionSizeG = (portionSizeG != null && portionSizeG > 0)
+           ? portionSizeG
+           : null;
 
-  /// Sums the components into a batch, optionally overriding its yield weight.
+  /// Sums the components into a batch, optionally overriding its yield weight
+  /// and carving it into portions of [portionSizeG].
   factory RecipeScaling.of(
     Iterable<RecipeComponent> components, {
     double? cookedWeightG,
+    double? portionSizeG,
   }) {
     var total = Nutrients.zero;
     var batch = 0.0;
@@ -69,6 +75,7 @@ class RecipeScaling {
       batchNutrients: total,
       batchWeightG: batch,
       cookedWeightG: cookedWeightG,
+      portionSizeG: portionSizeG,
     );
   }
 
@@ -82,6 +89,16 @@ class RecipeScaling {
   /// The weight a portion is measured against — the cooked weight when one was
   /// recorded, otherwise the raw batch weight.
   final double yieldWeightG;
+
+  /// The served portion weight, or null when the dish is not divided up.
+  /// Normalised: a non-positive input is treated as "no portion".
+  final double? portionSizeG;
+
+  /// How many whole portions the yield makes, rounded, or null without a
+  /// portion size. A 500 g yield at 250 g reads as 2.
+  int? get portionCount => (portionSizeG == null || yieldWeightG <= 0)
+      ? null
+      : (yieldWeightG / portionSizeG!).round().clamp(1, 999);
 
   /// True when there is nothing to scale, so [per100g] and [forPortion] would
   /// otherwise divide by zero.

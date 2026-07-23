@@ -5,7 +5,7 @@ import 'package:sqlite3/sqlite3.dart';
 /// the ETL having run.
 void writeOffPack(
   String path, {
-  int schemaVersion = 1,
+  int schemaVersion = 2,
   String region = 'dach',
   String version = '2026-07-20',
 }) {
@@ -27,7 +27,8 @@ CREATE TABLE off_foods (
   sat_fat_g          REAL,
   salt_g             REAL,
   fiber_g            REAL,
-  completeness_score REAL
+  completeness_score REAL,
+  categories         TEXT
 );
 CREATE VIRTUAL TABLE off_fts USING fts5(
   search_text, content='off_foods', content_rowid='id',
@@ -40,11 +41,13 @@ CREATE TABLE pack_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
       INSERT INTO off_foods
         (barcode, name, brands, search_text, serving_size_g, kcal,
          protein_g, carbs_g, fat_g, sugar_g, sat_fat_g, salt_g, fiber_g,
-         completeness_score)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         completeness_score, categories)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''');
 
     // search_text is pre-normalized the way normalizeGerman would fold it.
+    // Coca-Cola carries beverage tags so drink detection has a real signal to
+    // read; the spread does not, and must stay grams.
     insert.execute([
       '5449000000996',
       'Coca-Cola',
@@ -60,6 +63,7 @@ CREATE TABLE pack_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
       0.0,
       0.0,
       0.9,
+      'en:beverages en:carbonated-drinks en:sodas en:colas',
     ]);
     insert.execute([
       '3017620422003',
@@ -76,6 +80,7 @@ CREATE TABLE pack_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
       0.107,
       null,
       0.95,
+      'en:spreads en:sweet-spreads en:hazelnut-spreads',
     ]);
     insert.close();
 

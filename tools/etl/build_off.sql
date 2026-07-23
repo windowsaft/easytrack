@@ -58,6 +58,10 @@ COPY (
       list_filter(nutriments, n -> n.name = 'fiber')[1]."100g"       AS fiber_g,
       serving_quantity AS serving_size_g,
       completeness AS completeness_score,
+      -- OFF category slugs, e.g. ['en:beverages','en:sodas']. The app reads them
+      -- for robust drink detection (ml vs g), so a Cola is a beverage by tag,
+      -- not by a fragile name-keyword guess.
+      categories_tags,
       countries_tags
     FROM read_parquet('food.parquet')
   )
@@ -65,7 +69,7 @@ COPY (
     barcode, name, brands, serving_size_g,
     kcal, protein_g, carbs_g, fat_g,
     sugar_g, sat_fat_g, salt_g, fiber_g,
-    completeness_score
+    completeness_score, categories_tags
   FROM raw
   WHERE
     barcode IS NOT NULL

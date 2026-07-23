@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../core/nutrition/food_ref.dart';
+import '../../core/nutrition/measure_unit.dart';
 import '../../core/nutrition/nutrients.dart';
 import 'food_item.dart';
 
@@ -79,12 +80,16 @@ class OffApiClient {
     final brands = (product['brands'] as String?)?.trim();
 
     final serving = _grams(product['serving_quantity']);
+    // OFF classifies beverages in categories_tags (en:beverages, en:sodas …).
+    final tags = (product['categories_tags'] as List?)?.whereType<String>();
+    final measure = detectMeasure(name: name, categoryTags: tags);
 
     return FoodItem(
       ref: FoodRef(FoodSourceType.offOnline, barcode),
       name: name,
       brand: brands != null && brands.isNotEmpty ? brands : null,
       barcode: barcode,
+      measure: measure,
       nutrients: Nutrients(
         kcal: kcal,
         proteinG: per100('proteins') ?? 0,
@@ -97,10 +102,7 @@ class OffApiClient {
       ),
       servings: [
         if (serving != null && serving > 0)
-          ServingOption(
-            label: '1 Portion (${_trim(serving)} g)',
-            grams: serving,
-          ),
+          ServingOption(unit: 'Portion', grams: serving, measure: measure),
       ],
     );
   }
@@ -110,9 +112,6 @@ class OffApiClient {
     if (raw is String) return double.tryParse(raw.replaceAll(',', '.'));
     return null;
   }
-
-  static String _trim(double g) =>
-      g == g.roundToDouble() ? g.round().toString() : g.toStringAsFixed(1);
 
   void close() => _client.close();
 }

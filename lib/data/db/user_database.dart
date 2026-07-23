@@ -34,7 +34,7 @@ class UserDatabase extends _$UserDatabase {
   UserDatabase.forTesting() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 4;
 
   static QueryExecutor _open() => driftDatabase(name: 'user');
 
@@ -65,6 +65,18 @@ class UserDatabase extends _$UserDatabase {
       // 250 ml default onto existing profile rows.
       if (from < 2) {
         await m.addColumn(userProfile, userProfile.waterCupMl);
+      }
+      // v3 added a per-recipe portion size. Nullable, so existing recipes keep
+      // their "Ganze Menge" serving and simply gain no portion option.
+      if (from < 3) {
+        await m.addColumn(recipes, recipes.portionSizeG);
+      }
+      // v4 added a g/ml measure to custom foods, diary entries and the OFF
+      // cache. Each defaults to 'g', so existing rows stay solids.
+      if (from < 4) {
+        await m.addColumn(customFoods, customFoods.unit);
+        await m.addColumn(diaryEntries, diaryEntries.unit);
+        await m.addColumn(offCache, offCache.unit);
       }
     },
     beforeOpen: (details) async {

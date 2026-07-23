@@ -38,7 +38,11 @@ Future<FoodItem?> resolveScannedBarcode(
           .read(customFoodRepositoryProvider)
           .create(
             name: draft.name,
+            brand: draft.brand,
             nutrients: draft.nutrients,
+            servingG: draft.servingG,
+            servingLabel: draft.servingUnit,
+            measure: draft.measure,
             barcode: draft.barcode,
           );
       if (context.mounted) {

@@ -18,9 +18,15 @@ class OffPackDatabase {
 
   /// Pack schema this build understands. A pack declaring a higher version is
   /// refused rather than read with the wrong column expectations.
-  static const supportedSchemaVersion = 1;
+  static const supportedSchemaVersion = 2;
 
   Database get raw => _db;
+
+  /// Whether this pack carries the `categories` column (schema v2+). A v1 pack
+  /// predates it, so the provider must not SELECT the column and falls back to
+  /// name-based drink detection.
+  bool get hasCategories =>
+      (int.tryParse(meta['schema_version'] ?? '') ?? 0) >= 2;
 
   int get foodCount => int.tryParse(meta['off_row_count'] ?? '') ?? 0;
   String get region => meta['off_region'] ?? '';

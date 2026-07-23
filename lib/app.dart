@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/ui/app_theme.dart';
-import 'features/shell/home_shell.dart';
+import 'features/splash/splash_screen.dart';
 
 class EasyTrackApp extends StatelessWidget {
   const EasyTrackApp({super.key});
@@ -24,7 +24,7 @@ class EasyTrackApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const HomeShell(),
+      home: const SplashScreen(),
     );
   }
 }

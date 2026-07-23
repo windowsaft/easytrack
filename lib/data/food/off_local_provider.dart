@@ -1,6 +1,7 @@
 import 'package:sqlite3/sqlite3.dart';
 
 import '../../core/nutrition/food_ref.dart';
+import '../../core/nutrition/measure_unit.dart';
 import '../../core/nutrition/nutrients.dart';
 import '../../core/text/german_normalizer.dart';
 import '../pack/off_pack_database.dart';
@@ -33,10 +34,13 @@ class OffLocalProvider implements FoodProvider {
   @override
   Future<bool> isAvailable() async => true;
 
-  static const _columns = '''
+  /// The columns each query selects. `categories` only exists in a v2+ pack, so
+  /// it is added conditionally — SELECTing it from a v1 pack would throw.
+  String get _columns =>
+      '''
     f.barcode, f.name, f.brands, f.search_text, f.serving_size_g,
     f.kcal, f.protein_g, f.carbs_g, f.fat_g,
-    f.sugar_g, f.sat_fat_g, f.salt_g, f.fiber_g
+    f.sugar_g, f.sat_fat_g, f.salt_g, f.fiber_g${_pack.hasCategories ? ', f.categories' : ''}
   ''';
 
   @override
@@ -95,12 +99,25 @@ class OffLocalProvider implements FoodProvider {
     double? opt(String column) => (row[column] as num?)?.toDouble();
     final serving = opt('serving_size_g');
     final brands = row['brands'] as String?;
+    final name = row['name'] as String;
+    // Category tags are the reliable drink signal ("en:sodas" ⇒ a beverage);
+    // the name is only the fallback for a v1 pack or a product with no tags.
+    // The stored string is space-joined tags, which detectMeasure scans as one
+    // haystack — a needle can only match inside a tag, never across the join.
+    final categories = _pack.hasCategories ? row['categories'] as String? : null;
+    final measure = detectMeasure(
+      name: name,
+      categoryTags: (categories != null && categories.isNotEmpty)
+          ? [categories]
+          : null,
+    );
 
     return FoodItem(
       ref: FoodRef(FoodSourceType.offLocal, row['barcode'] as String),
-      name: row['name'] as String,
+      name: name,
       brand: brands != null && brands.isNotEmpty ? brands : null,
       barcode: row['barcode'] as String,
+      measure: measure,
       nutrients: Nutrients(
         kcal: (row['kcal'] as num).toDouble(),
         proteinG: opt('protein_g') ?? 0,
@@ -113,16 +130,10 @@ class OffLocalProvider implements FoodProvider {
       ),
       servings: [
         // A branded product usually declares a serving; offer it, still with the
-        // 100 g fallback the picker always adds.
+        // raw fallback the picker always adds.
         if (serving != null && serving > 0)
-          ServingOption(
-            label: '1 Portion (${_trimGrams(serving)} g)',
-            grams: serving,
-          ),
+          ServingOption(unit: 'Portion', grams: serving, measure: measure),
       ],
     );
   }
-
-  static String _trimGrams(double g) =>
-      g == g.roundToDouble() ? g.round().toString() : g.toStringAsFixed(1);
 }

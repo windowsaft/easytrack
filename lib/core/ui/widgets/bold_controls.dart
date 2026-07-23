@@ -52,6 +52,7 @@ class BoldHeader extends StatelessWidget {
     this.leading,
     this.trailing,
     this.titleSize = 28,
+    this.onTitleTap,
     super.key,
   });
 
@@ -61,8 +62,38 @@ class BoldHeader extends StatelessWidget {
   final Widget? trailing;
   final double titleSize;
 
+  /// When set, the overline + title become tappable (the diary uses it to open
+  /// a date picker). The leading/trailing buttons keep their own gestures.
+  final VoidCallback? onTitleTap;
+
   @override
   Widget build(BuildContext context) {
+    final titleColumn = Column(
+      children: [
+        if (overline != null)
+          Text(
+            overline!,
+            style: AppText.overline(),
+            textAlign: TextAlign.center,
+          ),
+        // German meal names are far longer than the English ones the
+        // design was drawn with ("FRÜHSTÜCK" vs "BREAKFAST"), so the
+        // Anton title shrinks rather than wrapping or clipping.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            title,
+            maxLines: 1,
+            style: AppText.anton(
+              size: titleSize,
+              color: AppColors.text,
+              height: 1.05,
+            ),
+          ),
+        ),
+      ],
+    );
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.screenPadding,
@@ -74,31 +105,13 @@ class BoldHeader extends StatelessWidget {
         children: [
           leading ?? const SizedBox(width: 44, height: 44),
           Expanded(
-            child: Column(
-              children: [
-                if (overline != null)
-                  Text(
-                    overline!,
-                    style: AppText.overline(),
-                    textAlign: TextAlign.center,
+            child: onTitleTap == null
+                ? titleColumn
+                : GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onTitleTap,
+                    child: titleColumn,
                   ),
-                // German meal names are far longer than the English ones the
-                // design was drawn with ("FRÜHSTÜCK" vs "BREAKFAST"), so the
-                // Anton title shrinks rather than wrapping or clipping.
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    style: AppText.anton(
-                      size: titleSize,
-                      color: AppColors.text,
-                      height: 1.05,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
           trailing ?? const SizedBox(width: 44, height: 44),
         ],

@@ -77,19 +77,13 @@ void showAbout(BuildContext context, PackageInfo? info) {
           children: [
             Row(
               children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceAlt,
-                    borderRadius: BorderRadius.circular(AppRadii.tile),
-                    border: Border.all(color: AppColors.lime, width: 2),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'ET',
-                      style: AppText.anton(size: 22, color: AppColors.lime),
-                    ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadii.tile),
+                  child: Image.asset(
+                    'assets/icon/icon.png',
+                    width: 52,
+                    height: 52,
+                    filterQuality: FilterQuality.medium,
                   ),
                 ),
                 const SizedBox(width: 14),

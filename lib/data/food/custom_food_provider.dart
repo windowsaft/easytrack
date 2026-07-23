@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../core/nutrition/food_ref.dart';
+import '../../core/nutrition/measure_unit.dart';
 import '../../core/nutrition/nutrients.dart';
 import '../../core/text/german_normalizer.dart';
 import '../db/user_database.dart';
@@ -78,27 +79,32 @@ class CustomFoodProvider implements FoodProvider {
     return row == null ? null : _toItem(row);
   }
 
-  FoodItem _toItem(CustomFood row) => FoodItem(
-    ref: FoodRef(FoodSourceType.custom, row.id),
-    name: row.name,
-    brand: row.brand,
-    barcode: row.barcode,
-    nutrients: Nutrients(
-      kcal: row.kcal,
-      proteinG: row.proteinG,
-      carbsG: row.carbsG,
-      fatG: row.fatG,
-      sugarG: row.sugarG,
-      fiberG: row.fiberG,
-      satFatG: row.satFatG,
-      saltG: row.saltG,
-    ),
-    servings: [
-      if (row.defaultServingG != null)
-        ServingOption(
-          label: row.defaultServingLabel ?? 'Portion',
-          grams: row.defaultServingG!,
-        ),
-    ],
-  );
+  FoodItem _toItem(CustomFood row) {
+    final measure = MeasureUnit.fromWire(row.unit);
+    return FoodItem(
+      ref: FoodRef(FoodSourceType.custom, row.id),
+      name: row.name,
+      brand: row.brand,
+      barcode: row.barcode,
+      measure: measure,
+      nutrients: Nutrients(
+        kcal: row.kcal,
+        proteinG: row.proteinG,
+        carbsG: row.carbsG,
+        fatG: row.fatG,
+        sugarG: row.sugarG,
+        fiberG: row.fiberG,
+        satFatG: row.satFatG,
+        saltG: row.saltG,
+      ),
+      servings: [
+        if (row.defaultServingG != null)
+          ServingOption(
+            unit: row.defaultServingLabel ?? 'Portion',
+            grams: row.defaultServingG!,
+            measure: measure,
+          ),
+      ],
+    );
+  }
 }

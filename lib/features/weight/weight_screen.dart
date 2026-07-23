@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../core/di/providers.dart';
 import '../../core/time/day_key.dart';
 import '../../core/ui/app_theme.dart';
+import '../../core/ui/day_picker.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/db/user_database.dart';
 import '../../domain/weight_trend.dart';
@@ -125,6 +126,7 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
       context,
       initialDay: day ?? DayKey.today(),
       initialKg: kg,
+      lastKg: ref.read(latestWeightProvider).value,
     );
     if (draft == null) return;
     await ref
@@ -566,10 +568,15 @@ String _entryDate(DayKey day) {
 }
 
 /// Asks for a weight and the day it was measured. Returns null if dismissed.
+///
+/// [lastKg] pre-fills a brand-new entry with the most recent weigh-in, so the
+/// common case — nudging yesterday's number by a few hundred grams — is a couple
+/// of taps on the +/- chips rather than typing a fresh figure.
 Future<({DayKey day, double kg})?> showWeightSheet(
   BuildContext context, {
   required DayKey initialDay,
   double? initialKg,
+  double? lastKg,
 }) {
   return showModalBottomSheet<({DayKey day, double kg})>(
     context: context,
@@ -578,16 +585,21 @@ Future<({DayKey day, double kg})?> showWeightSheet(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: _WeightSheet(initialDay: initialDay, initialKg: initialKg),
+      child: _WeightSheet(
+        initialDay: initialDay,
+        initialKg: initialKg,
+        lastKg: lastKg,
+      ),
     ),
   );
 }
 
 class _WeightSheet extends StatefulWidget {
-  const _WeightSheet({required this.initialDay, this.initialKg});
+  const _WeightSheet({required this.initialDay, this.initialKg, this.lastKg});
 
   final DayKey initialDay;
   final double? initialKg;
+  final double? lastKg;
 
   @override
   State<_WeightSheet> createState() => _WeightSheetState();
@@ -601,9 +613,11 @@ class _WeightSheetState extends State<_WeightSheet> {
   void initState() {
     super.initState();
     _day = widget.initialDay;
-    _kg = TextEditingController(
-      text: widget.initialKg == null ? '' : formatKg(widget.initialKg!),
-    )..addListener(() => setState(() {}));
+    // Editing a day shows that day's value; a new entry starts from the last
+    // weigh-in so the +/- chips have a sensible base.
+    final seed = widget.initialKg ?? widget.lastKg;
+    _kg = TextEditingController(text: seed == null ? '' : formatKg(seed))
+      ..addListener(() => setState(() {}));
   }
 
   @override
@@ -618,6 +632,28 @@ class _WeightSheetState extends State<_WeightSheet> {
   }
 
   bool get _atToday => _day.value >= DayKey.today().value;
+
+  /// Opens a calendar to jump to any past day (with a Heute shortcut), rather
+  /// than stepping one chevron at a time. Today is the latest selectable day —
+  /// a weight cannot be recorded for a day that has not happened.
+  Future<void> _pickDay() async {
+    final picked = await showDayPicker(
+      context,
+      initial: _day,
+      last: DayKey.today(),
+    );
+    if (picked != null) setState(() => _day = picked);
+  }
+
+  /// Nudges the field by [delta] kg, seeding from the last weigh-in when empty
+  /// so the very first tap still produces a plausible number.
+  void _adjust(double delta) {
+    final base = _value ?? widget.lastKg ?? 70.0;
+    final next = (base + delta).clamp(1.0, 499.0);
+    setState(() {
+      _kg.text = formatKg(double.parse(next.toStringAsFixed(1)));
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -645,15 +681,26 @@ class _WeightSheetState extends State<_WeightSheet> {
                   onPressed: () => setState(() => _day = _day.previous),
                 ),
                 Expanded(
-                  child: Text(
-                    _day.isToday
-                        ? 'Heute'
-                        : DateFormat(
-                            'EEEE, d. MMM',
-                            'de',
-                          ).format(_day.toDateTime()),
-                    textAlign: TextAlign.center,
-                    style: AppText.grotesk(size: 15, weight: 600),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _pickDay,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          // The compact "FR · 17. Juli" form the entry rows use,
+                          // so the sheet's day reads the same as the list below.
+                          _entryDate(_day),
+                          style: AppText.grotesk(size: 15, weight: 600),
+                        ),
+                        const SizedBox(width: 6),
+                        const Icon(
+                          Icons.calendar_today,
+                          size: 14,
+                          color: AppColors.textMute,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 SquareIconButton(
@@ -680,6 +727,14 @@ class _WeightSheetState extends State<_WeightSheet> {
               decoration: InputDecoration(
                 labelText: 'Gewicht',
                 suffixText: 'kg',
+                helperText: widget.initialKg == null && widget.lastKg != null
+                    ? 'Zuletzt ${formatKg(widget.lastKg!)} kg'
+                    : null,
+                helperStyle: AppText.grotesk(
+                  size: 12,
+                  weight: 500,
+                  color: AppColors.textFaint,
+                ),
                 labelStyle: AppText.grotesk(
                   size: 13,
                   weight: 500,
@@ -693,6 +748,17 @@ class _WeightSheetState extends State<_WeightSheet> {
                 ),
               ),
               onSubmitted: (_) => _submit(value),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                for (final step in const [-0.5, -0.1, 0.1, 0.5]) ...[
+                  if (step != -0.5) const SizedBox(width: 8),
+                  Expanded(
+                    child: _AdjustChip(step: step, onTap: () => _adjust(step)),
+                  ),
+                ],
+              ],
             ),
             const SizedBox(height: 20),
             PrimaryButton(
@@ -709,5 +775,36 @@ class _WeightSheetState extends State<_WeightSheet> {
   void _submit(double? value) {
     if (value == null) return;
     Navigator.of(context).pop((day: _day, kg: value));
+  }
+}
+
+/// A +/- quick-adjust chip for the weight field (−0,5 … +0,5 kg).
+class _AdjustChip extends StatelessWidget {
+  const _AdjustChip({required this.step, required this.onTap});
+
+  final double step;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final sign = step > 0 ? '+' : '−';
+    final magnitude = formatKg(step.abs());
+    return Material(
+      color: AppColors.surfaceAlt,
+      borderRadius: BorderRadius.circular(AppRadii.chip),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Center(
+            child: Text(
+              '$sign$magnitude',
+              style: AppText.grotesk(size: 14, weight: 700),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

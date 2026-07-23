@@ -61,8 +61,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
 
   double get _selectedKcal => _selected.values.fold(
     0,
-    (sum, food) =>
-        sum + food.nutrients.forGrams(food.defaultServing.grams).kcal,
+    (sum, food) => sum + food.nutrients.forGrams(food.defaultGrams).kcal,
   );
 
   void _toggle(FoodItem food) {
@@ -86,11 +85,11 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
         day: day,
         meal: meal,
         food: food,
-        amountG: serving.grams,
-        // A bare 100 g is the fallback, not a choice the user made, so it is
-        // not recorded as a named serving.
-        servingLabel: serving == ServingOption.per100g ? null : serving.label,
-        servingCount: serving == ServingOption.per100g ? null : 1,
+        amountG: serving.defaultGrams,
+        // A bare gram amount is the fallback, not a choice the user made, so it
+        // is not recorded as a named serving.
+        servingLabel: serving.isRaw ? null : serving.label,
+        servingCount: serving.isRaw ? null : 1,
       );
     }
 
@@ -210,9 +209,11 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
           day: ref.read(selectedDayProvider),
           meal: meal,
           food: food,
-          amountG: food.defaultServing.grams,
-          servingLabel: food.defaultServing.label,
-          servingCount: 1,
+          amountG: food.defaultServing.defaultGrams,
+          servingLabel: food.defaultServing.isRaw
+              ? null
+              : food.defaultServing.label,
+          servingCount: food.defaultServing.isRaw ? null : 1,
         );
     messenger.showSnackBar(SnackBar(content: Text('${food.name} hinzugefügt')));
   }
@@ -224,7 +225,14 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
 
     final food = await ref
         .read(customFoodRepositoryProvider)
-        .create(name: draft.name, nutrients: draft.nutrients);
+        .create(
+          name: draft.name,
+          brand: draft.brand,
+          nutrients: draft.nutrients,
+          servingG: draft.servingG,
+          servingLabel: draft.servingUnit,
+          measure: draft.measure,
+        );
 
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -616,7 +624,7 @@ class _ResultRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final serving = item.defaultServing;
-    final kcal = item.nutrients.forGrams(serving.grams).kcal;
+    final kcal = item.nutrients.forGrams(serving.defaultGrams).kcal;
 
     return Material(
       color: selected ? AppColors.selectedRow : AppColors.surface,
@@ -634,7 +642,7 @@ class _ResultRow extends StatelessWidget {
           child: Row(
             children: [
               TileIcon(
-                icon: Icons.restaurant,
+                icon: item.isLiquid ? Icons.local_drink : Icons.restaurant,
                 color: selected ? AppColors.lime : AppColors.textMute,
               ),
               const SizedBox(width: 12),
@@ -650,7 +658,7 @@ class _ResultRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${serving.label} · ${item.sourceLabel}',
+                      '${serving.portionLabel} · ${item.sourceLabel}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppText.rowSubtitle(),
@@ -844,7 +852,7 @@ class _FoodItemList extends StatelessWidget {
       itemBuilder: (context, index) {
         final food = foods[index];
         final serving = food.defaultServing;
-        final kcal = food.nutrients.forGrams(serving.grams).kcal;
+        final kcal = food.nutrients.forGrams(serving.defaultGrams).kcal;
 
         return Material(
           color: AppColors.surface,
@@ -854,7 +862,11 @@ class _FoodItemList extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
               child: Row(
                 children: [
-                  const TileIcon(icon: Icons.restaurant),
+                  TileIcon(
+                    icon: food.isLiquid
+                        ? Icons.local_drink
+                        : Icons.restaurant,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -867,7 +879,10 @@ class _FoodItemList extends StatelessWidget {
                           style: AppText.rowTitle(),
                         ),
                         const SizedBox(height: 2),
-                        Text(serving.label, style: AppText.rowSubtitle()),
+                        Text(
+                          serving.portionLabel,
+                          style: AppText.rowSubtitle(),
+                        ),
                       ],
                     ),
                   ),

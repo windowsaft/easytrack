@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../core/nutrition/food_ref.dart';
+import '../../core/nutrition/measure_unit.dart';
 import '../../core/nutrition/nutrients.dart';
 import '../../core/text/german_normalizer.dart';
 import '../db/user_database.dart';
@@ -54,6 +55,7 @@ class OffCacheRepository {
       fiberG: Value(n.fiberG),
       satFatG: Value(n.satFatG),
       saltG: Value(n.saltG),
+      unit: Value(item.measure.wire),
       fetchedAt: Value(DateTime.now()),
     );
 
@@ -81,37 +83,40 @@ class OffCacheRepository {
             fiberG: Value(n.fiberG),
             satFatG: Value(n.satFatG),
             saltG: Value(n.saltG),
+            unit: Value(item.measure.wire),
           ),
         );
   }
 
-  FoodItem _toItem(CachedProduct row) => FoodItem(
-    // Labelled offOnline: it is Open Food Facts data, just persisted. The
-    // display label is the same either way, and the diary snapshots nutrients
-    // regardless of source.
-    ref: FoodRef(FoodSourceType.offOnline, row.barcode),
-    name: row.name,
-    brand: row.brand,
-    barcode: row.barcode,
-    nutrients: Nutrients(
-      kcal: row.kcal,
-      proteinG: row.proteinG,
-      carbsG: row.carbsG,
-      fatG: row.fatG,
-      sugarG: row.sugarG,
-      fiberG: row.fiberG,
-      satFatG: row.satFatG,
-      saltG: row.saltG,
-    ),
-    servings: [
-      if (row.servingSizeG != null && row.servingSizeG! > 0)
-        ServingOption(
-          label: '1 Portion (${_trim(row.servingSizeG!)} g)',
-          grams: row.servingSizeG!,
-        ),
-    ],
-  );
-
-  static String _trim(double g) =>
-      g == g.roundToDouble() ? g.round().toString() : g.toStringAsFixed(1);
+  FoodItem _toItem(CachedProduct row) {
+    final measure = MeasureUnit.fromWire(row.unit);
+    return FoodItem(
+      // Labelled offOnline: it is Open Food Facts data, just persisted. The
+      // display label is the same either way, and the diary snapshots nutrients
+      // regardless of source.
+      ref: FoodRef(FoodSourceType.offOnline, row.barcode),
+      name: row.name,
+      brand: row.brand,
+      barcode: row.barcode,
+      measure: measure,
+      nutrients: Nutrients(
+        kcal: row.kcal,
+        proteinG: row.proteinG,
+        carbsG: row.carbsG,
+        fatG: row.fatG,
+        sugarG: row.sugarG,
+        fiberG: row.fiberG,
+        satFatG: row.satFatG,
+        saltG: row.saltG,
+      ),
+      servings: [
+        if (row.servingSizeG != null && row.servingSizeG! > 0)
+          ServingOption(
+            unit: 'Portion',
+            grams: row.servingSizeG!,
+            measure: measure,
+          ),
+      ],
+    );
+  }
 }

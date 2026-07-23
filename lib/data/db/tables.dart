@@ -77,6 +77,11 @@ class CustomFoods extends Table with SyncableTable, Per100gColumns {
 
   RealColumn get defaultServingG => real().nullable()();
   TextColumn get defaultServingLabel => text().nullable().withLength(max: 60)();
+
+  /// Measured in grams or millilitres ('g' / 'ml'). Drinks are 'ml'.
+  TextColumn get unit =>
+      text().withLength(max: 4).withDefault(const Constant('g'))();
+
   BoolColumn get isFavorite => boolean().withDefault(const Constant(false))();
 
   /// If this food was forked from a reference entry, where it came from.
@@ -97,6 +102,13 @@ class Recipes extends Table with SyncableTable {
   /// When set, portions scale against this instead of the ingredient sum, which
   /// is the difference between an honest and a misleading calorie count.
   RealColumn get cookedWeightG => real().nullable()();
+
+  /// Weight of one served portion, when the user divides the batch up.
+  ///
+  /// A 500 g dish with a 250 g portion logs as "1 Portion (250 g)" without
+  /// re-weighing a plate. Independent of [cookedWeightG]: the portion is carved
+  /// out of the finished yield, whatever that yield turned out to be.
+  RealColumn get portionSizeG => real().nullable()();
 }
 
 @DataClassName('RecipeIngredient')
@@ -124,8 +136,14 @@ class DiaryEntries extends Table
   TextColumn get nameSnapshot => text().withLength(min: 1, max: 200)();
   TextColumn get brandSnapshot => text().nullable().withLength(max: 120)();
 
-  /// Always grams internally, so all arithmetic is unit-free.
+  /// The logged amount, in the entry's [unit]. Named `amountG` for history; for a
+  /// drink it holds millilitres (1 ml ≈ 1 g, so the nutrient maths is unchanged).
   RealColumn get amountG => real()();
+
+  /// Snapshot of the food's measure ('g' / 'ml'), so a logged drink still shows
+  /// and reopens in millilitres even if the source food later changes or is gone.
+  TextColumn get unit =>
+      text().withLength(max: 4).withDefault(const Constant('g'))();
 
   /// What the user actually picked ("2 Scheiben"), preserved so that reopening
   /// an entry shows their choice rather than a bare gram count.
@@ -229,6 +247,12 @@ class OffCache extends Table with SyncableTable, Per100gColumns {
   TextColumn get brand => text().nullable().withLength(max: 120)();
   TextColumn get searchText => text().withDefault(const Constant(''))();
   RealColumn get servingSizeG => real().nullable()();
+
+  /// Measured in grams or millilitres ('g' / 'ml'), so a cached drink keeps its
+  /// unit on re-read without re-detecting.
+  TextColumn get unit =>
+      text().withLength(max: 4).withDefault(const Constant('g'))();
+
   DateTimeColumn get fetchedAt => dateTime().withDefault(currentDateAndTime)();
 
   @override

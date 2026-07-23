@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:easytrack/core/nutrition/food_ref.dart';
+import 'package:easytrack/core/nutrition/measure_unit.dart';
 import 'package:easytrack/data/food/off_local_provider.dart';
 import 'package:easytrack/data/pack/off_pack_database.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -64,5 +65,18 @@ void main() {
 
   test('an unknown barcode resolves to null', () async {
     expect(await provider.byBarcode('0000000000000'), isNull);
+  });
+
+  test('detects a drink from its category tags, not its name', () async {
+    // "Coca-Cola" would also match the name fallback, but the point is the
+    // category signal: en:sodas/en:beverages makes this millilitres.
+    final item = await provider.byBarcode('5449000000996');
+    expect(item!.measure, MeasureUnit.milliliters);
+    expect(item.isLiquid, isTrue);
+  });
+
+  test('a food with non-beverage tags stays grams', () async {
+    final item = await provider.byBarcode('3017620422003');
+    expect(item!.measure, MeasureUnit.grams);
   });
 }

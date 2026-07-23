@@ -57,7 +57,7 @@ void main() {
       },
     );
 
-    test('does not overwrite a manual target', () async {
+    test('recomputes over a manual target when the calculator is run', () async {
       // User computes a target, then types their own.
       await saveMaintain();
       await repo.setTarget(kcal: 1800); // manual: isAuto defaults false
@@ -66,11 +66,12 @@ void main() {
       expect(manual!.isAuto, isFalse);
       expect(manual.kcal, 1800);
 
-      // Re-running the calculator must respect the override.
+      // Re-running the calculator is an explicit "neu berechnen": the computed
+      // value must win over the stale manual override and become auto again.
       await saveMaintain();
       final after = await repo.currentTarget();
-      expect(after!.kcal, 1800);
-      expect(after.isAuto, isFalse);
+      expect(after!.kcal, closeTo(2759, 0.5));
+      expect(after.isAuto, isTrue);
     });
 
     test('a loss goal lands below maintenance', () async {

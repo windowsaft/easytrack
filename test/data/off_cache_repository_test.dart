@@ -21,7 +21,7 @@ void main() {
     brand: 'Coca-Cola',
     barcode: '5449000000996',
     nutrients: Nutrients(kcal: kcal, proteinG: 0, carbsG: 10.6, fatG: 0),
-    servings: const [ServingOption(label: '1 Portion (250 g)', grams: 250)],
+    servings: const [ServingOption(unit: 'Portion', grams: 250)],
   );
 
   test('caches a product and reads it back by barcode', () async {
