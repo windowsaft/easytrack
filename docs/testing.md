@@ -3,7 +3,7 @@
 ## Running
 
 ```bash
-flutter test                 # Dart: 247 tests
+flutter test                 # Dart: 277 tests
 cd tools/etl && npm test     # Node: 26 tests (the ETLs and the normalizer)
 ```
 
@@ -27,9 +27,13 @@ patterns relative to the working directory.
 | Favorites + re-log | `test/data/{pinned_foods_repository,diary_repository}_test.dart` | Pin revive/tombstone, repeat-meal source day |
 | Verlauf history | `test/{domain/history,data/history_repository}_test.dart` + `test/features/history_screen_test.dart` | Per-day rollup, target-per-day, adherence, render |
 | Ranking & merging | `test/data/search_orchestrator_test.dart` | Uses provider stubs |
-| Diary logic | `test/data/diary_repository_test.dart` | Logging, editing, budget, water |
+| Diary logic | `test/data/diary_repository_test.dart` | Logging, editing, budget, water, bad-meal resilience |
+| Data backup | `test/data/backup/backup_service_test.dart` | Export/stage round trip, WAL-sidecar cleanup, bad-input rejection |
 | Search UI | `test/features/food_search_screen_test.dart` | Real widget, real pack |
 | Diary/settings/profile UI | `test/features/diary_screen_test.dart` | Phone-sized, catches layout overflow |
+
+See `docs/backup.md` for the backup design and the `tool/make_sample_backup.dart`
+sample-data generator (run with `flutter test tool/make_sample_backup.dart`).
 
 ## Widget tests over drift streams
 

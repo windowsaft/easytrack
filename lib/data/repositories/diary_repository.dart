@@ -459,7 +459,22 @@ abstract final class Rx {
                 seen[i] = true;
                 pending--;
               }
-              if (pending == 0) controller.add(combine(latest));
+              if (pending == 0) {
+                // Guard the combiner: it runs here inside a source's onData, so
+                // a throw (e.g. a diary row with an unrecognised meal, as a
+                // hand-edited or foreign import can carry) would escape as an
+                // uncaught zone error and the stream would simply never emit —
+                // an indefinite loading spinner. Routing it to addError instead
+                // surfaces it as the screen's visible "Fehler beim Laden".
+                final R combined;
+                try {
+                  combined = combine(latest);
+                } catch (error, stack) {
+                  controller.addError(error, stack);
+                  return;
+                }
+                controller.add(combined);
+              }
             }, onError: controller.addError),
         ];
       },

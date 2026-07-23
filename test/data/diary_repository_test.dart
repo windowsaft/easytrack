@@ -402,4 +402,37 @@ void main() {
       expect(summary.consumed.kcal, closeTo(348, 0.01));
     });
   });
+
+  group('resilience', () {
+    test(
+      'a row with an unrecognised meal surfaces as a stream error, not a hang',
+      () async {
+        // A hand-edited or foreign import can carry a meal string the app does
+        // not know. Building the summary throws on it (MealType.fromWire); that
+        // throw must reach the stream as an error — the diary shows "Fehler beim
+        // Laden" — rather than silently never emitting (an infinite spinner).
+        await db
+            .into(db.diaryEntries)
+            .insert(
+              DiaryEntriesCompanion.insert(
+                loggedOn: today,
+                meal: 'brunch', // not one of MealType's wire names
+                sourceType: 'bls',
+                sourceId: 'X1',
+                nameSnapshot: 'Etwas',
+                amountG: 100,
+                kcal: 100,
+                proteinG: 1,
+                carbsG: 1,
+                fatG: 1,
+              ),
+            );
+
+        await expectLater(
+          repository.watchDay(today).first.timeout(const Duration(seconds: 5)),
+          throwsA(isA<ArgumentError>()),
+        );
+      },
+    );
+  });
 }

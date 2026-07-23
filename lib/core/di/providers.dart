@@ -5,6 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../data/backup/backup_service.dart';
 import '../../data/db/reference_database.dart';
 import '../../data/db/user_database.dart';
 import '../../data/food/barcode_resolver.dart';
@@ -129,6 +130,20 @@ final packageInfoProvider = FutureProvider<PackageInfo>(
 final sharedPreferencesProvider = FutureProvider<SharedPreferences>(
   (ref) => SharedPreferences.getInstance(),
 );
+
+/// Exports and imports the whole user database as a zip. Async because the
+/// manifest records the running build, read from [packageInfoProvider].
+final backupServiceProvider = FutureProvider<BackupService>((ref) async {
+  final db = ref.watch(userDatabaseProvider);
+  final info = await ref.watch(packageInfoProvider.future);
+  return BackupService(
+    db: db,
+    documentsDirectory: getApplicationDocumentsDirectory,
+    temporaryDirectory: getTemporaryDirectory,
+    appVersion: '${info.version}+${info.buildNumber}',
+    schemaVersion: db.schemaVersion,
+  );
+});
 
 /// Remembers whether first-run onboarding has been completed.
 final onboardingServiceProvider = FutureProvider<OnboardingService>((ref) async {

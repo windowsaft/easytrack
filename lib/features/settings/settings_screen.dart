@@ -13,6 +13,7 @@ import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/pack/off_region.dart';
 import '../../data/pack/pack_service.dart';
+import '../backup/backup_flow.dart';
 
 /// Screen 6b — settings, reached from the profile.
 ///
@@ -106,6 +107,23 @@ class SettingsScreen extends ConsumerWidget {
                         label: 'Paket aus Datei laden',
                         subtitle: 'Produktdaten aus lokalem Zip importieren',
                         onTap: () => _importPack(context, ref),
+                      ),
+                    ],
+                  ),
+                  const _GroupHeader('DATENSICHERUNG'),
+                  _Group(
+                    children: [
+                      BoldListRow(
+                        icon: Icons.ios_share,
+                        label: 'Daten sichern',
+                        subtitle: 'Alle Einträge als Zip teilen oder speichern',
+                        onTap: () => exportBackup(context, ref),
+                      ),
+                      BoldListRow(
+                        icon: Icons.settings_backup_restore,
+                        label: 'Daten wiederherstellen',
+                        subtitle: 'Sicherung aus Zip importieren',
+                        onTap: () => importBackup(context, ref),
                       ),
                     ],
                   ),

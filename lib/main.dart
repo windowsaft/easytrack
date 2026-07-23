@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:path_provider/path_provider.dart';
 
-import 'app.dart';
+import 'app_boot.dart';
 import 'core/diagnostics/app_log.dart';
+import 'data/backup/backup_service.dart';
 
 void main() {
   // Everything runs inside a guarded zone so uncaught async errors also reach
@@ -46,7 +47,25 @@ void main() {
       // constructed with an explicit 'de' locale throws at first use, which is a
       // crash on the diary's date header rather than a wrong-looking label.
       await initializeDateFormatting('de');
-      runApp(const ProviderScope(child: EasyTrackApp()));
+
+      // Apply a restore staged in a previous session before any connection opens
+      // the database. Harmless when nothing is staged; guarded so a failure here
+      // can never stop the app from starting.
+      try {
+        await BackupService.applyPendingImport(
+          documentsDirectory: getApplicationDocumentsDirectory,
+        );
+      } on Object catch (error, stack) {
+        AppLog.instance.log(
+          'Import beim Start fehlgeschlagen',
+          tag: 'backup',
+          level: LogLevel.error,
+          error: error,
+          stack: stack,
+        );
+      }
+
+      runApp(const AppBoot());
     },
     (error, stack) {
       AppLog.instance.log(

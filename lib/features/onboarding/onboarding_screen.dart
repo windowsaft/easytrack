@@ -8,6 +8,7 @@ import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/body_data_fields.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../domain/tdee.dart';
+import '../backup/backup_flow.dart';
 import '../shell/home_shell.dart';
 
 /// The first-run setup. Walks a new user from a welcome through the same body
@@ -178,7 +179,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 controller: _pager,
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  const _WelcomeStep(),
+                  _WelcomeStep(onRestore: () => importBackup(context, ref)),
                   _BodyStep(
                     sex: _sex,
                     onSex: (s) => setState(() => _sex = s),
@@ -266,7 +267,12 @@ const _stepPadding = EdgeInsets.fromLTRB(
 );
 
 class _WelcomeStep extends StatelessWidget {
-  const _WelcomeStep();
+  const _WelcomeStep({required this.onRestore});
+
+  /// Restore a backup instead of setting up fresh — for someone reinstalling or
+  /// moving to a new phone. Succeeds into an app restart, so this step is torn
+  /// down rather than advanced.
+  final VoidCallback onRestore;
 
   @override
   Widget build(BuildContext context) {
@@ -305,6 +311,38 @@ class _WelcomeStep extends StatelessWidget {
             weight: 500,
             color: AppColors.textMute,
             height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 20),
+        DashedBox(
+          radius: AppRadii.chip,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Schon EasyTrack genutzt?',
+                  style: AppText.grotesk(size: 13, weight: 700),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Stelle deine Daten aus einer Sicherung wieder her.',
+                  style: AppText.grotesk(
+                    size: 12,
+                    weight: 500,
+                    color: AppColors.textMute,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                OutlineActionButton(
+                  label: 'SICHERUNG WIEDERHERSTELLEN',
+                  icon: Icons.settings_backup_restore,
+                  onPressed: onRestore,
+                ),
+              ],
+            ),
           ),
         ),
       ],
