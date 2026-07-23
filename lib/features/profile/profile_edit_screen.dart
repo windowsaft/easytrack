@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
 import '../../core/ui/app_theme.dart';
+import '../../core/ui/widgets/body_data_fields.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../core/ui/widgets/calorie_gauge.dart';
 import '../../domain/tdee.dart';
@@ -161,7 +161,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: _NumberField(
+                        child: LabeledNumberField(
                           controller: _age,
                           label: 'Alter',
                           suffix: 'Jahre',
@@ -169,7 +169,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: _NumberField(
+                        child: LabeledNumberField(
                           controller: _height,
                           label: 'Größe',
                           suffix: 'cm',
@@ -177,7 +177,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: _NumberField(
+                        child: LabeledNumberField(
                           controller: _weight,
                           label: 'Gewicht',
                           suffix: 'kg',
@@ -190,7 +190,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   for (final level in ActivityLevel.values) ...[
                     if (level != ActivityLevel.values.first)
                       const SizedBox(height: AppTheme.rowGap),
-                    _ActivityRow(
+                    ActivityLevelRow(
                       level: level,
                       selected: _activity == level,
                       onTap: () => setState(() => _activity = level),
@@ -215,7 +215,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   ),
                   if (_goal != WeightGoal.maintain) ...[
                     const SizedBox(height: 12),
-                    _NumberField(
+                    LabeledNumberField(
                       controller: _rate,
                       label: _goal == WeightGoal.lose
                           ? 'Abnehmen pro Woche'
@@ -282,7 +282,7 @@ class _PreviewBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Flexible(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -325,7 +325,10 @@ class _PreviewBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 14),
-          Expanded(
+          // Hugs the right edge (the preview eats the free space) rather than
+          // stretching across the bar. IntrinsicWidth gives the button a bounded
+          // width equal to its content, which its inner Center requires.
+          IntrinsicWidth(
             child: PrimaryButton(
               label: 'ÜBERNEHMEN',
               icon: Icons.check_circle,
@@ -340,101 +343,3 @@ class _PreviewBar extends StatelessWidget {
   }
 }
 
-class _ActivityRow extends StatelessWidget {
-  const _ActivityRow({
-    required this.level,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final ActivityLevel level;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppColors.selectedRow : AppColors.surface,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          decoration: selected
-              ? const BoxDecoration(
-                  border: Border(
-                    left: BorderSide(color: AppColors.lime, width: 3),
-                  ),
-                )
-              : null,
-          padding: EdgeInsets.fromLTRB(selected ? 11 : 14, 12, 14, 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      level.label,
-                      style: AppText.grotesk(size: 14, weight: 600),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(level.hint, style: AppText.rowSubtitle()),
-                  ],
-                ),
-              ),
-              Text(
-                '×${level.factor}',
-                style: AppText.anton(
-                  size: 16,
-                  color: selected ? AppColors.lime : AppColors.textMute,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NumberField extends StatelessWidget {
-  const _NumberField({
-    required this.controller,
-    required this.label,
-    required this.suffix,
-  });
-
-  final TextEditingController controller;
-  final String label;
-  final String suffix;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
-      style: AppText.grotesk(size: 16, weight: 600),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: AppText.grotesk(
-          size: 13,
-          weight: 500,
-          color: AppColors.textMute,
-        ),
-        suffixText: suffix,
-        suffixStyle: AppText.grotesk(
-          size: 12,
-          weight: 600,
-          color: AppColors.textMute,
-        ),
-        isDense: true,
-        enabledBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: AppColors.strokeDashed),
-        ),
-        focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: AppColors.lime, width: 2),
-        ),
-      ),
-    );
-  }
-}

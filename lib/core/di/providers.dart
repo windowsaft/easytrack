@@ -29,6 +29,7 @@ import '../../data/repositories/recipe_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../domain/day_summary.dart';
 import '../../domain/history.dart';
+import '../../features/onboarding/onboarding_service.dart';
 import '../nutrition/food_ref.dart';
 import '../time/day_key.dart';
 
@@ -128,6 +129,29 @@ final packageInfoProvider = FutureProvider<PackageInfo>(
 final sharedPreferencesProvider = FutureProvider<SharedPreferences>(
   (ref) => SharedPreferences.getInstance(),
 );
+
+/// Remembers whether first-run onboarding has been completed.
+final onboardingServiceProvider = FutureProvider<OnboardingService>((ref) async {
+  final prefs = await ref.watch(sharedPreferencesProvider.future);
+  return OnboardingService(prefs);
+});
+
+/// Whether the first-run onboarding should be shown, decided once at launch.
+///
+/// Skips onboarding when it has been completed before, and — so a returning
+/// install that predates onboarding is never sent through it — also when a
+/// configured profile already exists, marking it complete in passing.
+final shouldOnboardProvider = FutureProvider<bool>((ref) async {
+  final service = await ref.watch(onboardingServiceProvider.future);
+  if (service.isComplete) return false;
+
+  final profile = await ref.watch(settingsRepositoryProvider).currentProfile();
+  if (profile?.birthDate != null) {
+    await service.markComplete();
+    return false;
+  }
+  return true;
+});
 
 /// Owns the downloadable Open Food Facts pack: region, install state, updates.
 final packServiceProvider = FutureProvider<PackService>((ref) async {

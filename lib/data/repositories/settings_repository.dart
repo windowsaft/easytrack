@@ -37,6 +37,17 @@ class SettingsRepository {
             ..limit(1))
           .watchSingleOrNull();
 
+  /// A one-shot read of the profile row, or null before one exists.
+  ///
+  /// A direct query rather than `watchProfile().first`, for the same reason
+  /// [currentTarget] avoids the stream: the onboarding gate awaits this before
+  /// any widget pumps, and a query-stream would only resolve once it emits.
+  Future<UserProfileRow?> currentProfile() =>
+      (_db.select(_db.userProfile)
+            ..where((t) => t.deletedAt.isNull())
+            ..limit(1))
+          .getSingleOrNull();
+
   Future<UserProfileRow> _ensureProfile() async {
     final existing =
         await (_db.select(_db.userProfile)
@@ -145,13 +156,17 @@ class SettingsRepository {
     );
   }
 
-  /// Saves the physical profile, records the weight, and — unless the user has
-  /// pinned a manual calorie target — recomputes the target from Mifflin-St
-  /// Jeor and stores it as today's target.
+  /// Saves the physical profile, records the weight, and recomputes the target
+  /// from Mifflin-St Jeor, storing it as today's auto-managed target.
   ///
   /// One call rather than three so the profile, the weight log and the target
   /// can never drift out of step: a saved profile always implies a target
   /// computed from exactly those numbers.
+  ///
+  /// This always overwrites the current target, even a manual one. The only way
+  /// to reach the calculator is the Kalorien-Sheet's explicit "neu berechnen",
+  /// so pressing ÜBERNEHMEN *is* the user asking for the computed value to win —
+  /// silently keeping their old manual figure here was the bug this replaces.
   Future<void> saveProfileAndTarget({
     required Sex sex,
     required DateTime birthDate,
@@ -187,12 +202,6 @@ class SettingsRepository {
       goal: goal,
       rateKgPerWeek: rateKgPerWeek,
     );
-
-    // Only overwrite the target when it is still auto-managed. Once the user
-    // has typed a manual calorie goal, recomputing here would silently discard
-    // it — the manual override must win until they clear it.
-    final current = await currentTarget();
-    if (current != null && !current.isAuto) return;
 
     final kcal = recommendedCalorieTarget(inputs);
     final macros = defaultMacrosFor(kcal);
