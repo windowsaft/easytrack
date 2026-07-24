@@ -11,6 +11,7 @@ import '../../data/db/user_database.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../domain/nutrients_targets.dart';
 import '../../domain/tdee.dart';
+import '../../l10n/app_localizations.dart';
 import '../profile/profile_edit_screen.dart';
 
 /// Screen 12b — the Ziele-Seite: the one place to *view* the targets and the
@@ -30,6 +31,7 @@ class GoalsScreen extends ConsumerWidget {
     final waterMl = target?.waterMl ?? SettingsRepository.defaultWaterMl;
     final macros = _macrosOf(target, kcal);
     final isAuto = target?.isAuto ?? false;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -38,10 +40,10 @@ class GoalsScreen extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: 28),
           children: [
             BoldHeader(
-              title: 'DEINE ZIELE',
+              title: l10n.goalsTitle.toUpperCase(),
               leading: SquareIconButton(
                 icon: Icons.arrow_back,
-                tooltip: 'Zurück',
+                tooltip: l10n.commonBack,
                 onPressed: Navigator.of(context).pop,
               ),
             ),
@@ -52,7 +54,7 @@ class GoalsScreen extends ConsumerWidget {
               isAuto: isAuto,
               onEdit: () => _editKcal(context, ref, kcal),
             ),
-            const SectionHeader(title: 'WEITERE ZIELE'),
+            SectionHeader(title: l10n.goalsMoreGoals.toUpperCase()),
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppTheme.screenPadding,
@@ -61,7 +63,7 @@ class GoalsScreen extends ConsumerWidget {
                 children: [
                   BoldListRow(
                     icon: Icons.pie_chart,
-                    label: 'Makro-Verteilung',
+                    label: l10n.goalsMacroSplit,
                     value:
                         '${macros.carbsG.round()} / ${macros.proteinG.round()} '
                         '/ ${macros.fatG.round()} g',
@@ -79,12 +81,12 @@ class GoalsScreen extends ConsumerWidget {
                   const SizedBox(height: AppTheme.rowGap),
                   BoldListRow(
                     icon: Icons.water_drop,
-                    label: 'Wasserziel',
+                    label: l10n.goalsWaterGoal,
                     value: '$waterMl ml',
                     onTap: () async {
                       final v = await promptNumber(
                         context,
-                        title: 'Wasserziel',
+                        title: l10n.goalsWaterGoal,
                         suffix: 'ml',
                         initial: waterMl.toDouble(),
                       );
@@ -96,12 +98,12 @@ class GoalsScreen extends ConsumerWidget {
                   const SizedBox(height: AppTheme.rowGap),
                   BoldListRow(
                     icon: Icons.local_drink,
-                    label: 'Glasgröße',
+                    label: l10n.goalsGlassSize,
                     value: '$cupMl ml',
                     onTap: () async {
                       final v = await promptNumber(
                         context,
-                        title: 'Glasgröße',
+                        title: l10n.goalsGlassSize,
                         suffix: 'ml',
                         initial: cupMl.toDouble(),
                       );
@@ -113,8 +115,8 @@ class GoalsScreen extends ConsumerWidget {
                   const SizedBox(height: AppTheme.rowGap),
                   BoldListRow(
                     icon: Icons.shield,
-                    label: 'Sicherheitsfaktor',
-                    subtitle: 'Skaliert manuell erfasste Aktivität',
+                    label: l10n.factorTitle,
+                    subtitle: l10n.goalsFactorSubtitle,
                     iconColor: AppColors.coral,
                     trailing: Text(
                       factor.toStringAsFixed(2).replaceAll('.', ','),
@@ -195,6 +197,7 @@ class _KcalHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Material(
       color: AppColors.surface,
       child: InkWell(
@@ -215,7 +218,7 @@ class _KcalHero extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'TAGESKALORIEN',
+                          l10n.goalsDailyCalories.toUpperCase(),
                           style: AppText.grotesk(
                             size: 11,
                             weight: 700,
@@ -256,10 +259,7 @@ class _KcalHero extends StatelessWidget {
               _MacroBar(macros: macros),
               const SizedBox(height: 12),
               Text(
-                isAuto
-                    ? 'Zuletzt aus deinen Körperdaten berechnet · manuell '
-                          'überschreibbar'
-                    : 'Manuell gesetzt · antippen zum Ändern',
+                isAuto ? l10n.goalsAutoNote : l10n.goalsManualNote,
                 style: AppText.grotesk(
                   size: 11,
                   weight: 500,
@@ -292,7 +292,7 @@ class _ChangePill extends StatelessWidget {
           const Icon(Icons.edit, size: 15, color: AppColors.lime),
           const SizedBox(width: 6),
           Text(
-            'ÄNDERN',
+            AppLocalizations.of(context).goalsChange.toUpperCase(),
             style: AppText.grotesk(
               size: 11,
               weight: 700,
@@ -340,12 +340,17 @@ class _MacroBar extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-            _MacroValue('Kohlenh.', AppColors.carbs, macros.carbsG),
-            _MacroValue('Eiweiß', AppColors.protein, macros.proteinG),
-            _MacroValue('Fett', AppColors.fat, macros.fatG),
-          ],
+        Builder(
+          builder: (context) {
+            final l10n = AppLocalizations.of(context);
+            return Row(
+              children: [
+                _MacroValue(l10n.macroCarbsShort, AppColors.carbs, macros.carbsG),
+                _MacroValue(l10n.macroProteinShort, AppColors.protein, macros.proteinG),
+                _MacroValue(l10n.macroFatShort, AppColors.fat, macros.fatG),
+              ],
+            );
+          },
         ),
       ],
     );
@@ -463,6 +468,7 @@ class _MacroSheetState extends State<_MacroSheet> {
     // visible and can be lined up with the calorie target.
     final kcal = (carbs * 4 + protein * 4 + fat * 9).round();
     final valid = carbs > 0 || protein > 0 || fat > 0;
+    final l10n = AppLocalizations.of(context);
 
     return SafeArea(
       child: Padding(
@@ -476,10 +482,10 @@ class _MacroSheetState extends State<_MacroSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('MAKRO-VERTEILUNG', style: AppText.section(size: 18)),
+            Text(l10n.goalsMacroSplit.toUpperCase(), style: AppText.section(size: 18)),
             const SizedBox(height: 4),
             Text(
-              'Nährwerte in Gramm. Ergibt ≈ $kcal kcal.',
+              l10n.goalsMacroSheetHint(kcal),
               style: AppText.grotesk(
                 size: 13,
                 weight: 500,
@@ -492,7 +498,7 @@ class _MacroSheetState extends State<_MacroSheet> {
                 Expanded(
                   child: _MacroField(
                     controller: _carbs,
-                    label: 'Kohlenh.',
+                    label: l10n.macroCarbsShort,
                     accent: AppColors.carbs,
                   ),
                 ),
@@ -500,7 +506,7 @@ class _MacroSheetState extends State<_MacroSheet> {
                 Expanded(
                   child: _MacroField(
                     controller: _protein,
-                    label: 'Eiweiß',
+                    label: l10n.macroProteinShort,
                     accent: AppColors.protein,
                   ),
                 ),
@@ -508,7 +514,7 @@ class _MacroSheetState extends State<_MacroSheet> {
                 Expanded(
                   child: _MacroField(
                     controller: _fat,
-                    label: 'Fett',
+                    label: l10n.macroFatShort,
                     accent: AppColors.fat,
                   ),
                 ),
@@ -516,7 +522,7 @@ class _MacroSheetState extends State<_MacroSheet> {
             ),
             const SizedBox(height: 20),
             PrimaryButton(
-              label: 'SPEICHERN',
+              label: l10n.commonSave.toUpperCase(),
               icon: Icons.check_circle,
               radius: AppRadii.fab,
               onPressed: valid
@@ -642,6 +648,7 @@ class _KcalSheetState extends State<_KcalSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -654,7 +661,7 @@ class _KcalSheetState extends State<_KcalSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('TAGESKALORIEN ANPASSEN', style: AppText.section(size: 18)),
+            Text(l10n.goalsAdjustCalories.toUpperCase(), style: AppText.section(size: 18)),
             const SizedBox(height: 16),
             Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -711,7 +718,7 @@ class _KcalSheetState extends State<_KcalSheet> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Text(
-                    'ODER',
+                    l10n.commonOr.toUpperCase(),
                     style: AppText.grotesk(
                       size: 11,
                       weight: 700,
@@ -728,7 +735,7 @@ class _KcalSheetState extends State<_KcalSheet> {
             ),
             const SizedBox(height: 18),
             PrimaryButton(
-              label: 'SPEICHERN',
+              label: l10n.commonSave.toUpperCase(),
               icon: Icons.check_circle,
               radius: AppRadii.fab,
               onPressed: _value == null
@@ -777,6 +784,7 @@ class _RecalculateRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Material(
       color: AppColors.surface,
       child: InkWell(
@@ -799,12 +807,12 @@ class _RecalculateRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Aus Körperdaten neu berechnen',
+                      l10n.goalsRecalculate,
                       style: AppText.grotesk(size: 14, weight: 600),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Alter, Größe, Gewicht, Aktivität & Ziel',
+                      l10n.goalsRecalculateSubtitle,
                       style: AppText.rowSubtitle(),
                     ),
                   ],

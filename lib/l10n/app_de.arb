@@ -176,5 +176,35 @@
   "unitMilliliters": "Milliliter",
 
   "scanTorch": "Blitz",
-  "scanHint": "Barcode in den Rahmen halten"
+  "scanHint": "Barcode in den Rahmen halten",
+
+  "commonOr": "Oder",
+
+  "goalsTitle": "Deine Ziele",
+  "goalsMoreGoals": "Weitere Ziele",
+  "goalsMacroSplit": "Makro-Verteilung",
+  "goalsWaterGoal": "Wasserziel",
+  "goalsGlassSize": "Glasgröße",
+  "goalsFactorSubtitle": "Skaliert manuell erfasste Aktivität",
+  "goalsDailyCalories": "Tageskalorien",
+  "goalsChange": "Ändern",
+  "goalsAutoNote": "Zuletzt aus deinen Körperdaten berechnet · manuell überschreibbar",
+  "goalsManualNote": "Manuell gesetzt · antippen zum Ändern",
+  "goalsMacroSheetHint": "Nährwerte in Gramm. Ergibt ≈ {kcal} kcal.",
+  "goalsAdjustCalories": "Tageskalorien anpassen",
+  "goalsRecalculate": "Aus Körperdaten neu berechnen",
+  "goalsRecalculateSubtitle": "Alter, Größe, Gewicht, Aktivität & Ziel",
+
+  "weightLog": "Gewicht eintragen",
+  "weightEntries": "Einträge",
+  "weightCurrent": "Aktuell",
+  "weightTotal": "Gesamt",
+  "weightNotEnough": "Nicht genug Messungen im Zeitraum",
+  "weightEmptyTitle": "Noch kein Gewicht erfasst",
+  "weightEmptyBody": "Trage dein Gewicht regelmäßig ein. Der Verlauf glättet die täglichen Schwankungen und dein Kalorienziel nutzt den neuesten Wert.",
+  "weightLast": "Zuletzt {value} kg",
+  "rangeD7": "7 T",
+  "rangeD30": "30 T",
+  "rangeD90": "90 T",
+  "rangeY1": "1 J"
 }

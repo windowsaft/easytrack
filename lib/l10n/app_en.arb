@@ -723,5 +723,122 @@
   "scanHint": "Hold the barcode in the frame",
   "@scanHint": {
     "description": "Instruction shown under the scanner's aiming window."
+  },
+
+  "commonOr": "Or",
+  "@commonOr": {
+    "description": "Divider label between two alternatives. Shown upper-cased."
+  },
+
+  "goalsTitle": "Your goals",
+  "@goalsTitle": {
+    "description": "Header of the goals screen. Shown upper-cased."
+  },
+  "goalsMoreGoals": "More goals",
+  "@goalsMoreGoals": {
+    "description": "Section header over the secondary goals. Shown upper-cased."
+  },
+  "goalsMacroSplit": "Macro split",
+  "@goalsMacroSplit": {
+    "description": "Row label / sheet title for the macro distribution. Shown upper-cased as a title."
+  },
+  "goalsWaterGoal": "Water goal",
+  "@goalsWaterGoal": {
+    "description": "Row label and editor title for the daily water target."
+  },
+  "goalsGlassSize": "Glass size",
+  "@goalsGlassSize": {
+    "description": "Row label and editor title for the water-glass volume."
+  },
+  "goalsFactorSubtitle": "Scales manually recorded activity",
+  "@goalsFactorSubtitle": {
+    "description": "Sub-label of the safety-factor row."
+  },
+  "goalsDailyCalories": "Daily calories",
+  "@goalsDailyCalories": {
+    "description": "Label over the daily calorie target. Shown upper-cased."
+  },
+  "goalsChange": "Change",
+  "@goalsChange": {
+    "description": "Pill on the calorie hero that opens the editor. Shown upper-cased."
+  },
+  "goalsAutoNote": "Last calculated from your body data · can be overridden manually",
+  "@goalsAutoNote": {
+    "description": "Caption under the calorie hero when the target is auto-calculated."
+  },
+  "goalsManualNote": "Set manually · tap to change",
+  "@goalsManualNote": {
+    "description": "Caption under the calorie hero when the target was set manually."
+  },
+  "goalsMacroSheetHint": "Nutrients in grams. Yields ≈ {kcal} kcal.",
+  "@goalsMacroSheetHint": {
+    "description": "Hint in the macro-split editor showing the resulting energy.",
+    "placeholders": {
+      "kcal": { "type": "int" }
+    }
+  },
+  "goalsAdjustCalories": "Adjust daily calories",
+  "@goalsAdjustCalories": {
+    "description": "Title of the calorie-target editor sheet. Shown upper-cased."
+  },
+  "goalsRecalculate": "Recalculate from body data",
+  "@goalsRecalculate": {
+    "description": "Action in the calorie sheet that reopens the TDEE calculator."
+  },
+  "goalsRecalculateSubtitle": "Age, height, weight, activity & goal",
+  "@goalsRecalculateSubtitle": {
+    "description": "Sub-label listing the inputs the recalculation uses."
+  },
+
+  "weightLog": "Log weight",
+  "@weightLog": {
+    "description": "Action to record a body weight (button, tooltip, sheet title). The button and title are shown upper-cased."
+  },
+  "weightEntries": "Entries",
+  "@weightEntries": {
+    "description": "Section header over the list of weigh-ins. Shown upper-cased."
+  },
+  "weightCurrent": "Current",
+  "@weightCurrent": {
+    "description": "Label over the latest weight. Shown upper-cased."
+  },
+  "weightTotal": "Total",
+  "@weightTotal": {
+    "description": "Label for the total change when the range is 'All'. Shown upper-cased."
+  },
+  "weightNotEnough": "Not enough measurements in this range",
+  "@weightNotEnough": {
+    "description": "Chart placeholder when fewer than two points fall in the range."
+  },
+  "weightEmptyTitle": "No weight recorded yet",
+  "@weightEmptyTitle": {
+    "description": "Title of the weight screen's empty state."
+  },
+  "weightEmptyBody": "Log your weight regularly. The trend smooths out daily fluctuations and your calorie goal uses the latest value.",
+  "@weightEmptyBody": {
+    "description": "Body of the weight screen's empty state."
+  },
+  "weightLast": "Last {value} kg",
+  "@weightLast": {
+    "description": "Helper text prefilling the weight field from the last weigh-in.",
+    "placeholders": {
+      "value": { "type": "String", "example": "72.4" }
+    }
+  },
+  "rangeD7": "7 D",
+  "@rangeD7": {
+    "description": "Weight-chart range: last 7 days. 'D' abbreviates days."
+  },
+  "rangeD30": "30 D",
+  "@rangeD30": {
+    "description": "Weight-chart range: last 30 days."
+  },
+  "rangeD90": "90 D",
+  "@rangeD90": {
+    "description": "Weight-chart range: last 90 days."
+  },
+  "rangeY1": "1 Y",
+  "@rangeY1": {
+    "description": "Weight-chart range: last year. 'Y' abbreviates year."
   }
 }

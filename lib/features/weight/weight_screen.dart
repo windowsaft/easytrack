@@ -11,6 +11,7 @@ import '../../core/ui/day_picker.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/db/user_database.dart';
 import '../../domain/weight_trend.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Phase 14 — the body-weight log and its trend.
 ///
@@ -27,15 +28,22 @@ class WeightScreen extends ConsumerStatefulWidget {
 }
 
 enum _Range {
-  d7('7 T', 7),
-  d30('30 T', 30),
-  d90('90 T', 90),
-  y1('1 J', 365),
-  all('Alle', null);
+  d7(7),
+  d30(30),
+  d90(90),
+  y1(365),
+  all(null);
 
-  const _Range(this.label, this.days);
-  final String label;
+  const _Range(this.days);
   final int? days;
+
+  String label(AppLocalizations l10n) => switch (this) {
+    _Range.d7 => l10n.rangeD7,
+    _Range.d30 => l10n.rangeD30,
+    _Range.d90 => l10n.rangeD90,
+    _Range.y1 => l10n.rangeY1,
+    _Range.all => l10n.searchTabAll,
+  };
 }
 
 class _WeightScreenState extends ConsumerState<WeightScreen> {
@@ -53,21 +61,22 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
         ? series
         : series.since(DayKey.today().addDays(-(_range.days! - 1)));
 
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
             BoldHeader(
-              title: 'GEWICHT',
+              title: l10n.fieldWeight.toUpperCase(),
               leading: SquareIconButton(
                 icon: Icons.arrow_back,
-                tooltip: 'Zurück',
+                tooltip: l10n.commonBack,
                 onPressed: Navigator.of(context).pop,
               ),
               trailing: SquareIconButton(
                 icon: Icons.add,
-                tooltip: 'Gewicht eintragen',
+                tooltip: l10n.weightLog,
                 onPressed: () => _add(),
               ),
             ),
@@ -87,7 +96,7 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
                           onSelect: (r) => setState(() => _range = r),
                         ),
                         _ChartCard(series: windowed),
-                        const SectionHeader(title: 'EINTRÄGE'),
+                        SectionHeader(title: l10n.weightEntries.toUpperCase()),
                         _EntryList(
                           rows: rows,
                           onEdit: (entry) => _add(
@@ -110,7 +119,7 @@ class _WeightScreenState extends ConsumerState<WeightScreen> {
                   24,
                 ),
                 child: PrimaryButton(
-                  label: 'GEWICHT EINTRAGEN',
+                  label: l10n.weightLog.toUpperCase(),
                   icon: Icons.add,
                   onPressed: () => _add(),
                 ),
@@ -151,6 +160,7 @@ class _Summary extends StatelessWidget {
   Widget build(BuildContext context) {
     final current = full.latestKg;
     final change = windowed.changeKg;
+    final l10n = AppLocalizations.of(context);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -166,7 +176,7 @@ class _Summary extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'AKTUELL',
+                l10n.weightCurrent.toUpperCase(),
                 style: AppText.grotesk(
                   size: 10,
                   weight: 700,
@@ -207,7 +217,9 @@ class _Summary extends StatelessWidget {
                     style: AppText.anton(size: 22, color: AppColors.text),
                   ),
                   Text(
-                    range.days == null ? 'GESAMT' : range.label.toUpperCase(),
+                    range.days == null
+                        ? l10n.weightTotal.toUpperCase()
+                        : range.label(l10n).toUpperCase(),
                     style: AppText.grotesk(
                       size: 10,
                       weight: 600,
@@ -250,7 +262,7 @@ class _RangeTabs extends StatelessWidget {
             if (range != _Range.values.first) const SizedBox(width: 8),
             Center(
               child: BoldChip(
-                label: range.label,
+                label: range.label(AppLocalizations.of(context)),
                 selected: current == range,
                 onTap: () => onSelect(range),
               ),
@@ -278,7 +290,7 @@ class _ChartCard extends StatelessWidget {
       child: series.length < 2
           ? Center(
               child: Text(
-                'Nicht genug Messungen im Zeitraum',
+                AppLocalizations.of(context).weightNotEnough,
                 style: AppText.grotesk(size: 13, color: AppColors.textMute),
               ),
             )
@@ -524,14 +536,12 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Noch kein Gewicht erfasst',
+              AppLocalizations.of(context).weightEmptyTitle,
               style: AppText.grotesk(size: 15, weight: 700),
             ),
             const SizedBox(height: 4),
             Text(
-              'Trage dein Gewicht regelmäßig ein. Der Verlauf glättet die '
-              'täglichen Schwankungen und dein Kalorienziel nutzt den neuesten '
-              'Wert.',
+              AppLocalizations.of(context).weightEmptyBody,
               textAlign: TextAlign.center,
               style: AppText.grotesk(
                 size: 13,
@@ -557,13 +567,13 @@ String formatDelta(double kg) {
   return '$sign${formatKg(kg.abs())}';
 }
 
-/// A compact entry date: "FR · 17. Juli" — a two-letter German weekday and the
-/// day + month, without the year or a spelled-out weekday.
+/// A compact entry date: "FR · 17. Juli" — an abbreviated weekday and the day +
+/// month, without the year. Locale-aware via [Intl.defaultLocale], which the
+/// active language pins, so the weekday and month names follow the UI language.
 String _entryDate(DayKey day) {
-  const weekdays = ['MO', 'DI', 'MI', 'DO', 'FR', 'SA', 'SO'];
   final date = day.toDateTime();
-  return '${weekdays[date.weekday - 1]} · ${date.day}. '
-      '${DateFormat('MMMM').format(date)}';
+  return '${DateFormat('EE').format(date).toUpperCase()} · '
+      '${DateFormat('d. MMMM').format(date)}';
 }
 
 /// Asks for a weight and the day it was measured. Returns null if dismissed.
@@ -657,6 +667,7 @@ class _WeightSheetState extends State<_WeightSheet> {
   @override
   Widget build(BuildContext context) {
     final value = _value;
+    final l10n = AppLocalizations.of(context);
 
     return SafeArea(
       child: Padding(
@@ -670,13 +681,13 @@ class _WeightSheetState extends State<_WeightSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('GEWICHT EINTRAGEN', style: AppText.section(size: 18)),
+            Text(l10n.weightLog.toUpperCase(), style: AppText.section(size: 18)),
             const SizedBox(height: 16),
             Row(
               children: [
                 SquareIconButton(
                   icon: Icons.chevron_left,
-                  tooltip: 'Vorheriger Tag',
+                  tooltip: l10n.diaryPreviousDay,
                   onPressed: () => setState(() => _day = _day.previous),
                 ),
                 Expanded(
@@ -704,7 +715,7 @@ class _WeightSheetState extends State<_WeightSheet> {
                 ),
                 SquareIconButton(
                   icon: Icons.chevron_right,
-                  tooltip: 'Nächster Tag',
+                  tooltip: l10n.diaryNextDay,
                   // A weight cannot be recorded for a day that has not happened.
                   onPressed: _atToday
                       ? null
@@ -724,10 +735,10 @@ class _WeightSheetState extends State<_WeightSheet> {
               ],
               style: AppText.grotesk(size: 20, weight: 700),
               decoration: InputDecoration(
-                labelText: 'Gewicht',
+                labelText: l10n.fieldWeight,
                 suffixText: 'kg',
                 helperText: widget.initialKg == null && widget.lastKg != null
-                    ? 'Zuletzt ${formatKg(widget.lastKg!)} kg'
+                    ? l10n.weightLast(formatKg(widget.lastKg!))
                     : null,
                 helperStyle: AppText.grotesk(
                   size: 12,
@@ -761,7 +772,7 @@ class _WeightSheetState extends State<_WeightSheet> {
             ),
             const SizedBox(height: 20),
             PrimaryButton(
-              label: 'SPEICHERN',
+              label: l10n.commonSave.toUpperCase(),
               icon: Icons.check_circle,
               onPressed: value == null ? null : () => _submit(value),
             ),
