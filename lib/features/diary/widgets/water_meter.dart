@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/ui/app_theme.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// The bar-based water meter.
 ///
@@ -53,7 +54,7 @@ class WaterMeter extends StatelessWidget {
               const Icon(Icons.water_drop, size: 18, color: AppColors.water),
               const SizedBox(width: 7),
               Text(
-                'WASSER',
+                AppLocalizations.of(context).diaryWater.toUpperCase(),
                 style: AppText.grotesk(
                   size: 12,
                   weight: 700,

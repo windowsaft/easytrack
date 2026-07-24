@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/i18n/enum_labels.dart';
 import '../../core/nutrition/food_ref.dart';
 import '../../core/nutrition/nutrients.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../core/ui/widgets/macro_donut.dart';
 import '../../data/db/user_database.dart';
+import '../../l10n/app_localizations.dart';
 import '../scan/barcode_flow.dart';
 import '../search/food_search_screen.dart';
 import 'widgets/meal_row.dart';
@@ -51,6 +53,7 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
   /// being shown.
   Future<void> _repeat() async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     final day = ref.read(selectedDayProvider);
     final count = await ref
         .read(diaryRepositoryProvider)
@@ -59,8 +62,8 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
       SnackBar(
         content: Text(
           count == 0
-              ? 'Keine frühere ${widget.meal.displayLabel} gefunden'
-              : '$count Einträge übernommen',
+              ? l10n.mealDetailNoEarlier(widget.meal.label(l10n))
+              : l10n.mealDetailEntriesCopied(count),
         ),
       ),
     );
@@ -72,6 +75,7 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
     final summary = ref.watch(daySummaryProvider(day)).value;
     final entries = summary?.entriesFor(widget.meal) ?? const <DiaryEntry>[];
     final nutrients = summary?.nutrientsFor(widget.meal) ?? Nutrients.zero;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -82,7 +86,7 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
             // way out, and the system back gesture still works.
             BoldHeader(
               overline: _dayLabel(day.toDateTime()),
-              title: widget.meal.displayLabel.toUpperCase(),
+              title: widget.meal.label(l10n).toUpperCase(),
             ),
             _EntryActions(
               onSearch: _openSearch,
@@ -96,7 +100,7 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
                 4,
               ),
               child: DashedActionChip(
-                label: 'Mahlzeit wiederholen',
+                label: l10n.mealDetailRepeat,
                 icon: Icons.replay,
                 onTap: _repeat,
               ),
@@ -106,10 +110,9 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
                 padding: const EdgeInsets.only(bottom: 24),
                 children: [
                   SectionHeader(
-                    title: 'IN DIESER MAHLZEIT',
+                    title: l10n.mealDetailInThisMeal.toUpperCase(),
                     trailing: Text(
-                      '${entries.length} '
-                      '${entries.length == 1 ? 'EINTRAG' : 'EINTRÄGE'}',
+                      l10n.mealDetailEntryCount(entries.length).toUpperCase(),
                       style: AppText.grotesk(
                         size: 11,
                         weight: 600,
@@ -141,7 +144,7 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
                         ],
                       ),
                     ),
-                  const SectionHeader(title: 'NÄHRSTOFFE'),
+                  SectionHeader(title: l10n.mealDetailNutrients.toUpperCase()),
                   _MacroSplit(nutrients: nutrients),
                 ],
               ),
@@ -166,6 +169,7 @@ class _EntryActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppTheme.screenPadding,
@@ -193,7 +197,7 @@ class _EntryActions extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Lebensmittel suchen',
+                          l10n.mealDetailSearchFood,
                           style: AppText.grotesk(
                             size: 15,
                             weight: 700,
@@ -238,7 +242,7 @@ class _EntryActions extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'SCAN',
+                      l10n.commonScan.toUpperCase(),
                       style: AppText.grotesk(
                         size: 8,
                         weight: 700,
@@ -303,7 +307,7 @@ class _EntryRow extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.close, size: 20, color: AppColors.chevron),
-            tooltip: 'Entfernen',
+            tooltip: AppLocalizations.of(context).commonRemove,
             onPressed: onRemove,
           ),
         ],
@@ -336,7 +340,7 @@ class _EmptyMeal extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 26),
           child: Center(
             child: Text(
-              'Noch nichts eingetragen',
+              AppLocalizations.of(context).mealDetailEmpty,
               style: AppText.rowSubtitle(color: AppColors.textFaint),
             ),
           ),
@@ -359,6 +363,7 @@ class _MacroSplit extends StatelessWidget {
       fatG: nutrients.fatG,
     );
 
+    final l10n = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
       color: AppColors.surface,
@@ -376,21 +381,21 @@ class _MacroSplit extends StatelessWidget {
             child: Column(
               children: [
                 MacroLegendRow(
-                  label: 'Kohlenhydrate',
+                  label: l10n.nutrientCarbs,
                   color: AppColors.carbs,
                   grams: nutrients.carbsG,
                   share: shares.carbs,
                 ),
                 const SizedBox(height: 11),
                 MacroLegendRow(
-                  label: 'Eiweiß',
+                  label: l10n.nutrientProtein,
                   color: AppColors.protein,
                   grams: nutrients.proteinG,
                   share: shares.protein,
                 ),
                 const SizedBox(height: 11),
                 MacroLegendRow(
-                  label: 'Fett',
+                  label: l10n.nutrientFat,
                   color: AppColors.fat,
                   grams: nutrients.fatG,
                   share: shares.fat,
@@ -411,6 +416,7 @@ class _MealTotalBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.bar,
@@ -446,7 +452,7 @@ class _MealTotalBar extends StatelessWidget {
                 ],
               ),
               Text(
-                'MAHLZEIT GESAMT',
+                l10n.mealDetailTotal.toUpperCase(),
                 style: AppText.grotesk(
                   size: 11,
                   weight: 600,
@@ -459,7 +465,7 @@ class _MealTotalBar extends StatelessWidget {
           const SizedBox(width: 14),
           Expanded(
             child: OutlineActionButton(
-              label: 'FERTIG',
+              label: l10n.commonDone.toUpperCase(),
               icon: Icons.done,
               onPressed: Navigator.of(context).pop,
             ),

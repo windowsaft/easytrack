@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
+import '../../../core/i18n/enum_labels.dart';
 import '../../../core/nutrition/food_ref.dart';
 import '../../../core/ui/app_theme.dart';
 import '../../../data/db/user_database.dart';
+import '../../../l10n/app_localizations.dart';
 
 const mealIcons = {
   MealType.breakfast: Icons.bakery_dining,
@@ -38,6 +40,7 @@ class MealRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEmpty = entries.isEmpty;
+    final l10n = AppLocalizations.of(context);
 
     return Slidable(
       key: ValueKey(meal.wireName),
@@ -69,7 +72,7 @@ class MealRow extends StatelessWidget {
                 const Icon(Icons.add, size: 26, color: AppColors.bg),
                 const SizedBox(height: 2),
                 Text(
-                  'HINZUFÜGEN',
+                  l10n.commonAdd.toUpperCase(),
                   style: AppText.grotesk(
                     size: 9,
                     weight: 700,
@@ -102,7 +105,7 @@ class MealRow extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          meal.displayLabel,
+                          meal.label(l10n),
                           style: AppText.rowTitle(
                             color: isEmpty
                                 ? AppColors.textMute2
@@ -112,7 +115,7 @@ class MealRow extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           isEmpty
-                              ? 'Zum Hinzufügen wischen oder tippen'
+                              ? l10n.diaryMealEmptyHint
                               : _foodSummary(entries),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

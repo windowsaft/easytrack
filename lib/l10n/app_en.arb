@@ -195,5 +195,218 @@
   "settingsLogCleared": "Log cleared",
   "@settingsLogCleared": {
     "description": "Snackbar confirming the diagnostic log was cleared."
+  },
+
+  "commonAdd": "Add",
+  "@commonAdd": {
+    "description": "Generic 'add' action. Shown upper-cased on the swipe-to-add button."
+  },
+  "commonDone": "Done",
+  "@commonDone": {
+    "description": "Generic 'done'/finish action. Shown upper-cased."
+  },
+  "commonScan": "Scan",
+  "@commonScan": {
+    "description": "Generic 'scan a barcode' action. Shown upper-cased."
+  },
+  "commonRemove": "Remove",
+  "@commonRemove": {
+    "description": "Generic 'remove' action, used as a button tooltip."
+  },
+  "commonActivity": "Activity",
+  "@commonActivity": {
+    "description": "The word 'activity' (exercise). Shown upper-cased as a section header."
+  },
+  "commonToday": "Today",
+  "@commonToday": {
+    "description": "Relative day name for the current day. Shown upper-cased."
+  },
+  "commonYesterday": "Yesterday",
+  "@commonYesterday": {
+    "description": "Relative day name for the previous day. Shown upper-cased."
+  },
+  "commonTomorrow": "Tomorrow",
+  "@commonTomorrow": {
+    "description": "Relative day name for the next day. Shown upper-cased."
+  },
+
+  "macroCarbsShort": "Carbs",
+  "@macroCarbsShort": {
+    "description": "Abbreviated label for carbohydrates on stat tiles. Shown upper-cased."
+  },
+  "macroProteinShort": "Protein",
+  "@macroProteinShort": {
+    "description": "Abbreviated label for protein on stat tiles. Shown upper-cased."
+  },
+  "macroFatShort": "Fat",
+  "@macroFatShort": {
+    "description": "Abbreviated label for fat on stat tiles. Shown upper-cased."
+  },
+
+  "nutrientEnergy": "Energy",
+  "@nutrientEnergy": {
+    "description": "Nutrient row label for energy (kcal)."
+  },
+  "nutrientCarbs": "Carbohydrates",
+  "@nutrientCarbs": {
+    "description": "Nutrient row / legend label for carbohydrates (full word)."
+  },
+  "nutrientSugar": "of which sugar",
+  "@nutrientSugar": {
+    "description": "Sub-nutrient of carbohydrates: sugars."
+  },
+  "nutrientFiber": "Fibre",
+  "@nutrientFiber": {
+    "description": "Nutrient row label for dietary fibre."
+  },
+  "nutrientProtein": "Protein",
+  "@nutrientProtein": {
+    "description": "Nutrient row / legend label for protein (full word)."
+  },
+  "nutrientFat": "Fat",
+  "@nutrientFat": {
+    "description": "Nutrient row / legend label for fat (full word)."
+  },
+  "nutrientSaturated": "of which saturated",
+  "@nutrientSaturated": {
+    "description": "Sub-nutrient of fat: saturated fat."
+  },
+  "nutrientSalt": "Salt",
+  "@nutrientSalt": {
+    "description": "Nutrient row label for salt."
+  },
+
+  "mealBreakfast": "Breakfast",
+  "@mealBreakfast": {
+    "description": "Name of the breakfast meal."
+  },
+  "mealLunch": "Lunch",
+  "@mealLunch": {
+    "description": "Name of the lunch meal."
+  },
+  "mealDinner": "Dinner",
+  "@mealDinner": {
+    "description": "Name of the dinner meal."
+  },
+  "mealSnacks": "Snacks",
+  "@mealSnacks": {
+    "description": "Name of the snacks meal."
+  },
+
+  "diaryLoadError": "Error loading:\n{error}",
+  "@diaryLoadError": {
+    "description": "Shown when the day's diary fails to load.",
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "diaryMeals": "Meals",
+  "@diaryMeals": {
+    "description": "Section header over the day's meals. Shown upper-cased."
+  },
+  "diarySwipe": "Swipe",
+  "@diarySwipe": {
+    "description": "Hint next to the meals header that rows can be swiped. Shown upper-cased."
+  },
+  "diaryPreviousDay": "Previous day",
+  "@diaryPreviousDay": {
+    "description": "Tooltip on the button that steps back one day."
+  },
+  "diaryNextDay": "Next day",
+  "@diaryNextDay": {
+    "description": "Tooltip on the button that steps forward one day."
+  },
+  "diaryEaten": "Eaten",
+  "@diaryEaten": {
+    "description": "Label under the calories-consumed figure. Shown upper-cased."
+  },
+  "diaryBurned": "Burned",
+  "@diaryBurned": {
+    "description": "Label under the calories-burned figure. Shown upper-cased."
+  },
+  "diaryAllNutrients": "All nutrients",
+  "@diaryAllNutrients": {
+    "description": "Link opening the full nutrient breakdown. Shown upper-cased."
+  },
+  "diaryNutrientsToday": "Nutrients today",
+  "@diaryNutrientsToday": {
+    "description": "Title of the full nutrient-breakdown sheet. Shown upper-cased."
+  },
+  "diaryNoActivity": "No activity recorded",
+  "@diaryNoActivity": {
+    "description": "Empty state when no exercise is logged for the day."
+  },
+  "diaryActivityManual": "Entered manually",
+  "@diaryActivityManual": {
+    "description": "Activity-row subtitle when only a manual calorie figure was entered."
+  },
+  "diaryMinutesShort": "{minutes} min",
+  "@diaryMinutesShort": {
+    "description": "A duration in minutes, e.g. an activity's length.",
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "diaryActivityBurnFactor": "{kcal} kcal × {factor}",
+  "@diaryActivityBurnFactor": {
+    "description": "Activity-row subtitle: the raw burned calories times the safety factor.",
+    "placeholders": {
+      "kcal": { "type": "int" },
+      "factor": { "type": "String", "example": "0.85" }
+    }
+  },
+  "diaryMealEmptyHint": "Swipe or tap to add",
+  "@diaryMealEmptyHint": {
+    "description": "Subtitle of an empty meal row."
+  },
+  "diaryWater": "Water",
+  "@diaryWater": {
+    "description": "Label of the water meter. Shown upper-cased."
+  },
+
+  "mealDetailRepeat": "Repeat meal",
+  "@mealDetailRepeat": {
+    "description": "Action that copies this meal from the most recent earlier day."
+  },
+  "mealDetailNoEarlier": "No earlier {meal} found",
+  "@mealDetailNoEarlier": {
+    "description": "Snackbar when 'repeat meal' finds nothing to copy.",
+    "placeholders": {
+      "meal": { "type": "String", "example": "Lunch" }
+    }
+  },
+  "mealDetailEntriesCopied": "{count, plural, one{{count} entry copied} other{{count} entries copied}}",
+  "@mealDetailEntriesCopied": {
+    "description": "Snackbar after 'repeat meal' copies entries.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "mealDetailInThisMeal": "In this meal",
+  "@mealDetailInThisMeal": {
+    "description": "Section header listing the meal's entries. Shown upper-cased."
+  },
+  "mealDetailEntryCount": "{count, plural, one{{count} entry} other{{count} entries}}",
+  "@mealDetailEntryCount": {
+    "description": "Count of entries in a meal, shown next to the section header (upper-cased).",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "mealDetailSearchFood": "Search food",
+  "@mealDetailSearchFood": {
+    "description": "Primary button in a meal that opens food search."
+  },
+  "mealDetailNutrients": "Nutrients",
+  "@mealDetailNutrients": {
+    "description": "Section header over the meal's macro split. Shown upper-cased."
+  },
+  "mealDetailEmpty": "Nothing logged yet",
+  "@mealDetailEmpty": {
+    "description": "Empty state inside a meal with no entries."
+  },
+  "mealDetailTotal": "Meal total",
+  "@mealDetailTotal": {
+    "description": "Label under the meal's total calories in the bottom bar. Shown upper-cased."
   }
 }

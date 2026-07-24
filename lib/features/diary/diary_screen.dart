@@ -12,6 +12,7 @@ import '../../core/ui/widgets/bold_controls.dart';
 import '../../core/ui/widgets/calorie_gauge.dart';
 import '../../data/db/user_database.dart';
 import '../../domain/day_summary.dart';
+import '../../l10n/app_localizations.dart';
 import '../activity/activity_types.dart';
 import '../search/food_search_screen.dart';
 import 'meal_detail_screen.dart';
@@ -33,7 +34,7 @@ class DiaryScreen extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Text(
-            'Fehler beim Laden:\n$error',
+            AppLocalizations.of(context).diaryLoadError(error.toString()),
             textAlign: TextAlign.center,
             style: AppText.grotesk(size: 14, color: AppColors.textMute),
           ),
@@ -54,6 +55,7 @@ class _DayView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final consumed = summary.consumed;
+    final l10n = AppLocalizations.of(context);
 
     // Top-only: the diary lives inside the nav shell, so the bar owns the
     // bottom inset. Without this the date header rides under the status bar.
@@ -83,7 +85,7 @@ class _DayView extends ConsumerWidget {
           ),
         ),
         SectionHeader(
-          title: 'MAHLZEITEN',
+          title: l10n.diaryMeals.toUpperCase(),
           size: 18,
           color: AppColors.text,
           padding: const EdgeInsets.fromLTRB(
@@ -102,7 +104,7 @@ class _DayView extends ConsumerWidget {
               ),
               const SizedBox(width: 3),
               Text(
-                'WISCHEN',
+                l10n.diarySwipe.toUpperCase(),
                 style: AppText.grotesk(
                   size: 10,
                   weight: 600,
@@ -135,8 +137,8 @@ class _DayView extends ConsumerWidget {
         ),
         // Activity is added through the centre nav button's chooser, so the
         // section is just a heading over the day's entries.
-        const SectionHeader(
-          title: 'AKTIVITÄT',
+        SectionHeader(
+          title: l10n.commonActivity.toUpperCase(),
           size: 18,
           color: AppColors.text,
         ),
@@ -171,20 +173,21 @@ class _DateHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(selectedDayProvider.notifier);
     final date = day.toDateTime();
+    final l10n = AppLocalizations.of(context);
 
     return BoldHeader(
       titleSize: 30,
       overline: DateFormat('E · d. MMM').format(date).toUpperCase(),
-      title: _relativeName(day, date),
+      title: _relativeName(l10n, day, date),
       onTitleTap: () => _pickDay(context, notifier, day),
       leading: SquareIconButton(
         icon: Icons.chevron_left,
-        tooltip: 'Vorheriger Tag',
+        tooltip: l10n.diaryPreviousDay,
         onPressed: () => notifier.select(day.previous),
       ),
       trailing: SquareIconButton(
         icon: Icons.chevron_right,
-        tooltip: 'Nächster Tag',
+        tooltip: l10n.diaryNextDay,
         onPressed: () => notifier.select(day.next),
       ),
     );
@@ -203,12 +206,16 @@ class _DateHeader extends ConsumerWidget {
     if (picked != null) notifier.select(picked);
   }
 
-  static String _relativeName(DayKey day, DateTime date) {
+  static String _relativeName(
+    AppLocalizations l10n,
+    DayKey day,
+    DateTime date,
+  ) {
     final today = DayKey.today();
     return switch (today.daysUntil(day)) {
-      0 => 'HEUTE',
-      -1 => 'GESTERN',
-      1 => 'MORGEN',
+      0 => l10n.commonToday.toUpperCase(),
+      -1 => l10n.commonYesterday.toUpperCase(),
+      1 => l10n.commonTomorrow.toUpperCase(),
       _ => DateFormat('EEEE').format(date).toUpperCase(),
     };
   }
@@ -221,6 +228,7 @@ class _GaugeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
       child: Row(
@@ -230,7 +238,7 @@ class _GaugeRow extends StatelessWidget {
             icon: Icons.restaurant,
             iconColor: AppColors.lime,
             value: summary.consumed.kcal.round().toString(),
-            label: 'GEGESSEN',
+            label: l10n.diaryEaten.toUpperCase(),
           ),
           Flexible(
             child: CalorieGauge(
@@ -245,7 +253,7 @@ class _GaugeRow extends StatelessWidget {
             icon: Icons.local_fire_department,
             iconColor: AppColors.coral,
             value: summary.activityKcalAdjusted.round().toString(),
-            label: 'VERBRANNT',
+            label: l10n.diaryBurned.toUpperCase(),
           ),
         ],
       ),
@@ -302,6 +310,7 @@ class _MacroBlocks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
       child: Column(
@@ -314,7 +323,7 @@ class _MacroBlocks extends StatelessWidget {
               children: [
                 Expanded(
                   child: StatTile(
-                    label: 'KOHLENH.',
+                    label: l10n.macroCarbsShort.toUpperCase(),
                     value: consumed.carbsG.round().toString(),
                     suffix: _targetSuffix(summary.target.carbsG),
                     accent: AppColors.carbs,
@@ -323,7 +332,7 @@ class _MacroBlocks extends StatelessWidget {
                 const SizedBox(width: AppTheme.rowGap),
                 Expanded(
                   child: StatTile(
-                    label: 'EIWEISS',
+                    label: l10n.macroProteinShort.toUpperCase(),
                     value: consumed.proteinG.round().toString(),
                     suffix: _targetSuffix(summary.target.proteinG),
                     accent: AppColors.protein,
@@ -332,7 +341,7 @@ class _MacroBlocks extends StatelessWidget {
                 const SizedBox(width: AppTheme.rowGap),
                 Expanded(
                   child: StatTile(
-                    label: 'FETT',
+                    label: l10n.macroFatShort.toUpperCase(),
                     value: consumed.fatG.round().toString(),
                     suffix: _targetSuffix(summary.target.fatG),
                     accent: AppColors.fat,
@@ -352,7 +361,7 @@ class _MacroBlocks extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'ALLE NÄHRWERTE',
+                      l10n.diaryAllNutrients.toUpperCase(),
                       style: AppText.grotesk(
                         size: 10,
                         weight: 700,
@@ -404,6 +413,7 @@ class _NutrientDetailsSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = summary.consumed;
     final t = summary.target;
+    final l10n = AppLocalizations.of(context);
 
     return SafeArea(
       child: Padding(
@@ -417,7 +427,10 @@ class _NutrientDetailsSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('NÄHRWERTE HEUTE', style: AppText.section(size: 18)),
+            Text(
+              l10n.diaryNutrientsToday.toUpperCase(),
+              style: AppText.section(size: 18),
+            ),
             const SizedBox(height: 4),
             Text(
               DateFormat(
@@ -431,7 +444,7 @@ class _NutrientDetailsSheet extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _NutrientRow(
-              label: 'Energie',
+              label: l10n.nutrientEnergy,
               value: '${c.kcal.round()}',
               unit: 'kcal',
               target: t.kcal.round().toString(),
@@ -439,26 +452,26 @@ class _NutrientDetailsSheet extends StatelessWidget {
             ),
             const Divider(height: 18, color: AppColors.stroke),
             _NutrientRow(
-              label: 'Kohlenhydrate',
+              label: l10n.nutrientCarbs,
               value: _g(c.carbsG),
               unit: 'g',
               target: t.carbsG?.round().toString(),
               accent: AppColors.carbs,
             ),
-            _NutrientRow(label: 'davon Zucker', value: _gN(c.sugarG), sub: true),
+            _NutrientRow(label: l10n.nutrientSugar, value: _gN(c.sugarG), sub: true),
             const SizedBox(height: 6),
             // Ballaststoffe are their own nutrient, not a "davon" of carbohydrate,
             // so they read as a top-level row with a dot rather than an indented
             // sub-line.
             _NutrientRow(
-              label: 'Ballaststoffe',
+              label: l10n.nutrientFiber,
               value: _gN(c.fiberG),
               unit: 'g',
               accent: AppColors.fiber,
             ),
             const SizedBox(height: 6),
             _NutrientRow(
-              label: 'Eiweiß',
+              label: l10n.nutrientProtein,
               value: _g(c.proteinG),
               unit: 'g',
               target: t.proteinG?.round().toString(),
@@ -466,20 +479,20 @@ class _NutrientDetailsSheet extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             _NutrientRow(
-              label: 'Fett',
+              label: l10n.nutrientFat,
               value: _g(c.fatG),
               unit: 'g',
               target: t.fatG?.round().toString(),
               accent: AppColors.fat,
             ),
             _NutrientRow(
-              label: 'davon gesättigt',
+              label: l10n.nutrientSaturated,
               value: _gN(c.satFatG),
               sub: true,
             ),
             const SizedBox(height: 6),
             _NutrientRow(
-              label: 'Salz',
+              label: l10n.nutrientSalt,
               value: _gN(c.saltG),
               unit: 'g',
               accent: AppColors.water,
@@ -617,7 +630,7 @@ class _ActivityList extends ConsumerWidget {
                 ),
                 const SizedBox(width: 13),
                 Text(
-                  'Keine Aktivität erfasst',
+                  AppLocalizations.of(context).diaryNoActivity,
                   style: AppText.rowSubtitle(color: AppColors.textFaint),
                 ),
               ],
@@ -649,6 +662,7 @@ class _ActivityRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final credited = entry.kcalBurnedRaw * entry.safetyFactor;
+    final l10n = AppLocalizations.of(context);
 
     return Dismissible(
       key: ValueKey(entry.id),
@@ -678,7 +692,7 @@ class _ActivityRow extends ConsumerWidget {
                 children: [
                   Text(entry.label, style: AppText.rowTitle()),
                   const SizedBox(height: 2),
-                  Text(_subtitle(entry), style: AppText.rowSubtitle()),
+                  Text(_subtitle(l10n, entry), style: AppText.rowSubtitle()),
                 ],
               ),
             ),
@@ -694,13 +708,15 @@ class _ActivityRow extends ConsumerWidget {
 
   /// Shows the raw entry next to the factor when they differ, so the credited
   /// figure in the trailing column is never unexplained.
-  static String _subtitle(ActivityEntry entry) {
+  static String _subtitle(AppLocalizations l10n, ActivityEntry entry) {
     final parts = <String>[
-      if (entry.durationMin != null) '${entry.durationMin} min',
+      if (entry.durationMin != null) l10n.diaryMinutesShort(entry.durationMin!),
       if (entry.safetyFactor != 1.0)
-        '${entry.kcalBurnedRaw.round()} kcal × '
-            '${entry.safetyFactor.toStringAsFixed(2).replaceAll('.', ',')}',
+        l10n.diaryActivityBurnFactor(
+          entry.kcalBurnedRaw.round(),
+          entry.safetyFactor.toStringAsFixed(2).replaceAll('.', ','),
+        ),
     ];
-    return parts.isEmpty ? 'Manuell erfasst' : parts.join(' · ');
+    return parts.isEmpty ? l10n.diaryActivityManual : parts.join(' · ');
   }
 }
