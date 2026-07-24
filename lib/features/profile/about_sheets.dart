@@ -208,6 +208,13 @@ void showAbout(BuildContext context, PackageInfo? info) {
                   radius: AppRadii.chip,
                   onTap: () => openExternal(context, kFeedbackUrl),
                 ),
+                BoldChip(
+                  label: 'GPL-3.0',
+                  icon: Icons.balance,
+                  selected: false,
+                  radius: AppRadii.chip,
+                  onTap: () => openExternal(context, kLicenseUrl),
+                ),
               ],
             ),
           ],

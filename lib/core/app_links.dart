@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 /// github.com/windowsaft/easytrack; feedback is filed as GitHub issues.
 const kSourceUrl = 'https://github.com/windowsaft/easytrack';
 const kFeedbackUrl = 'https://github.com/windowsaft/easytrack/issues';
+const kLicenseUrl =
+    'https://raw.githubusercontent.com/windowsaft/easytrack/master/LICENSE';
 
 /// Opens [url] in the external browser. Surfaces a SnackBar on failure so a
 /// missing browser or an unresolvable link isn't a silent no-op.
