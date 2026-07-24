@@ -1,4 +1,4 @@
-package de.easytrack.easytrack
+package dnn.easytrack
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "de.easytrack.easytrack"
+    namespace = "dnn.easytrack"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,8 +15,13 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "de.easytrack.easytrack"
+        // Reverse-DNS-ish id from the project domain d-nn.is, with the hyphen
+        // dropped (package segments can't contain '-'). This is the user-visible
+        // app id that package_info_plus reports in the About sheet. It leads with
+        // `is.` where `namespace` is `dnn.easytrack`: `is` is a Kotlin keyword so
+        // it can't be the package `.MainActivity` resolves against, but as a
+        // plain applicationId string it's fine.
+        applicationId = "is.dnn.easytrack"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
