@@ -1,6 +1,9 @@
+import 'dart:ui';
+
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,6 +34,8 @@ import '../../data/repositories/settings_repository.dart';
 import '../../domain/day_summary.dart';
 import '../../domain/history.dart';
 import '../../features/onboarding/onboarding_service.dart';
+import '../../l10n/app_localizations.dart';
+import '../i18n/locale_service.dart';
 import '../nutrition/food_ref.dart';
 import '../time/day_key.dart';
 
@@ -150,6 +155,56 @@ final onboardingServiceProvider = FutureProvider<OnboardingService>((ref) async 
   final prefs = await ref.watch(sharedPreferencesProvider.future);
   return OnboardingService(prefs);
 });
+
+/// The app's active UI language, driving [MaterialApp.locale].
+///
+/// Always resolves to a concrete supported locale (never null), so MaterialApp
+/// and `intl`'s date formatting agree and there is no first-frame flash between
+/// the device language and the stored one. Until the user picks a language in
+/// Settings or onboarding, this follows the device language when supported and
+/// falls back to English otherwise. Every read also pins [Intl.defaultLocale]
+/// so `DateFormat` (used without an explicit locale) formats in the same
+/// language the UI is showing.
+class LocaleController extends Notifier<Locale> {
+  @override
+  Locale build() {
+    final prefs = ref.watch(sharedPreferencesProvider).value;
+    final stored = prefs == null ? null : LocaleService(prefs).getLocale();
+    final resolved = stored ?? _deviceDefault();
+    Intl.defaultLocale = resolved.languageCode;
+    return resolved;
+  }
+
+  /// Whether the user has explicitly chosen a language (vs. following the
+  /// device). Lets the picker highlight the "System" option correctly.
+  bool get hasExplicitChoice {
+    final prefs = ref.read(sharedPreferencesProvider).value;
+    return prefs != null && LocaleService(prefs).getLocale() != null;
+  }
+
+  /// Sets an explicit language, or passes null to clear it and follow the
+  /// device again. Persists the choice and rebuilds the app onto it.
+  Future<void> setLocale(Locale? locale) async {
+    final prefs = await ref.read(sharedPreferencesProvider.future);
+    await LocaleService(prefs).setLocale(locale);
+    final resolved = locale ?? _deviceDefault();
+    Intl.defaultLocale = resolved.languageCode;
+    state = resolved;
+  }
+
+  /// The device language when the app ships a translation for it, else English.
+  static Locale _deviceDefault() {
+    final supported = AppLocalizations.supportedLocales
+        .map((locale) => locale.languageCode)
+        .toSet();
+    final device = PlatformDispatcher.instance.locale.languageCode;
+    return supported.contains(device) ? Locale(device) : const Locale('en');
+  }
+}
+
+final localeControllerProvider = NotifierProvider<LocaleController, Locale>(
+  LocaleController.new,
+);
 
 /// Whether the first-run onboarding should be shown, decided once at launch.
 ///

@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'app_boot.dart';
@@ -43,10 +44,14 @@ void main() {
         return true;
       };
 
-      // Loads the German month and weekday names. Without this every DateFormat
-      // constructed with an explicit 'de' locale throws at first use, which is a
-      // crash on the diary's date header rather than a wrong-looking label.
-      await initializeDateFormatting('de');
+      // Loads month and weekday names for every locale, since the active
+      // language is chosen at runtime (LocaleController). Without this a
+      // DateFormat throws at first use — a crash on the diary's date header
+      // rather than a wrong-looking label. Seed intl's default to the device
+      // language so the first frames format correctly before LocaleController
+      // resolves the stored choice.
+      await initializeDateFormatting();
+      Intl.defaultLocale = PlatformDispatcher.instance.locale.languageCode;
 
       // Apply a restore staged in a previous session before any connection opens
       // the database. Harmless when nothing is staged; guarded so a failure here

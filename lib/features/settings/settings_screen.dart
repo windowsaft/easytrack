@@ -9,10 +9,12 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/di/providers.dart';
 import '../../core/diagnostics/app_log.dart';
+import '../../core/i18n/language_picker.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/pack/off_region.dart';
 import '../../data/pack/pack_service.dart';
+import '../../l10n/app_localizations.dart';
 import '../backup/backup_flow.dart';
 
 /// Screen 6b — settings, reached from the profile.
@@ -30,6 +32,10 @@ class SettingsScreen extends ConsumerWidget {
     final settings = ref.read(settingsRepositoryProvider);
     final profile = ref.watch(userProfileProvider).value;
     final packState = ref.watch(packStateProvider).value;
+    final l10n = AppLocalizations.of(context);
+    final locale = ref.watch(localeControllerProvider);
+    final languageIsExplicit =
+        ref.read(localeControllerProvider.notifier).hasExplicitChoice;
 
     return Scaffold(
       body: SafeArea(
@@ -69,6 +75,14 @@ class SettingsScreen extends ConsumerWidget {
                   const _GroupHeader('EINHEITEN & ANZEIGE'),
                   _Group(
                     children: [
+                      BoldListRow(
+                        icon: Icons.translate,
+                        label: l10n.settingsLanguage,
+                        value: languageIsExplicit
+                            ? languageNativeName(locale.languageCode)
+                            : l10n.languageSystemDefault,
+                        onTap: () => showLanguagePicker(context, ref),
+                      ),
                       const BoldListRow(
                         icon: Icons.straighten,
                         label: 'Einheiten',

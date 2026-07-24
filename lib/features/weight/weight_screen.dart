@@ -354,7 +354,6 @@ class _TrendChart extends StatelessWidget {
                 child: Text(
                   DateFormat(
                     'd.M.',
-                    'de',
                   ).format(origin.addDays(value.round()).toDateTime()),
                   style: AppText.grotesk(size: 10, color: AppColors.textFaint),
                 ),
@@ -564,7 +563,7 @@ String _entryDate(DayKey day) {
   const weekdays = ['MO', 'DI', 'MI', 'DO', 'FR', 'SA', 'SO'];
   final date = day.toDateTime();
   return '${weekdays[date.weekday - 1]} · ${date.day}. '
-      '${DateFormat('MMMM', 'de').format(date)}';
+      '${DateFormat('MMMM').format(date)}';
 }
 
 /// Asks for a weight and the day it was measured. Returns null if dismissed.

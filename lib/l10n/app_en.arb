@@ -10,6 +10,14 @@
   },
   "settingsLanguage": "Language",
   "@settingsLanguage": {
-    "description": "Label of the language-picker row in Settings."
+    "description": "Label of the language-picker row in Settings, and the title of the language chooser."
+  },
+  "languageSystemDefault": "System default",
+  "@languageSystemDefault": {
+    "description": "Option in the language chooser that follows the phone's language instead of a fixed one."
+  },
+  "languageSystemDefaultHint": "Follow the phone's language",
+  "@languageSystemDefaultHint": {
+    "description": "Sub-label under the 'System default' language option."
   }
 }

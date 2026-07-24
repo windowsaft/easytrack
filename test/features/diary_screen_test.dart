@@ -34,11 +34,12 @@ import 'package:easytrack/features/goals/goals_screen.dart';
 import 'package:easytrack/features/profile/profile_edit_screen.dart';
 import 'package:easytrack/features/profile/profile_screen.dart';
 import 'package:easytrack/features/settings/settings_screen.dart';
+import 'package:easytrack/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   late UserDatabase user;
@@ -48,6 +49,10 @@ void main() {
   setUpAll(() => initializeDateFormatting('de'));
 
   setUp(() {
+    // The settings screen now reads a persisted locale; an empty mock store
+    // lets the SharedPreferences-backed providers resolve without the platform
+    // channel, so the screen renders in its default (device) language.
+    SharedPreferences.setMockInitialValues({});
     user = UserDatabase.forTesting();
     settings = SettingsRepository(user);
     diary = DiaryRepository(user, settings);
@@ -58,12 +63,8 @@ void main() {
     child: MaterialApp(
       theme: AppTheme.dark(),
       locale: const Locale('de'),
-      supportedLocales: const [Locale('de')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: Scaffold(body: screen),
     ),
   );

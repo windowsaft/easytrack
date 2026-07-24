@@ -154,7 +154,7 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
   }
 
   static String _dayLabel(DateTime date) =>
-      DateFormat('EEEE · d. MMMM', 'de').format(date).toUpperCase();
+      DateFormat('EEEE · d. MMMM').format(date).toUpperCase();
 }
 
 /// The two ways into the meal: search (primary) and barcode scan.

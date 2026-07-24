@@ -174,7 +174,7 @@ class _DateHeader extends ConsumerWidget {
 
     return BoldHeader(
       titleSize: 30,
-      overline: DateFormat('E · d. MMM', 'de').format(date).toUpperCase(),
+      overline: DateFormat('E · d. MMM').format(date).toUpperCase(),
       title: _relativeName(day, date),
       onTitleTap: () => _pickDay(context, notifier, day),
       leading: SquareIconButton(
@@ -209,7 +209,7 @@ class _DateHeader extends ConsumerWidget {
       0 => 'HEUTE',
       -1 => 'GESTERN',
       1 => 'MORGEN',
-      _ => DateFormat('EEEE', 'de').format(date).toUpperCase(),
+      _ => DateFormat('EEEE').format(date).toUpperCase(),
     };
   }
 }
@@ -422,7 +422,6 @@ class _NutrientDetailsSheet extends StatelessWidget {
             Text(
               DateFormat(
                 'EEEE, d. MMMM',
-                'de',
               ).format(summary.day.toDateTime()),
               style: AppText.grotesk(
                 size: 12,

@@ -2,5 +2,7 @@
   "@@locale": "de",
   "appTitle": "EasyTrack",
   "settingsTitle": "Einstellungen",
-  "settingsLanguage": "Sprache"
+  "settingsLanguage": "Sprache",
+  "languageSystemDefault": "Systemsprache",
+  "languageSystemDefaultHint": "Der Sprache des Geräts folgen"
 }

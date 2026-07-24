@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/i18n/language_picker.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/body_data_fields.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../domain/tdee.dart';
+import '../../l10n/app_localizations.dart';
 import '../backup/backup_flow.dart';
 import '../shell/home_shell.dart';
 
@@ -160,8 +162,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             BoldHeader(
               title: _titles[_step]!,
               titleSize: 26,
+              // On the welcome step the back slot instead offers a language
+              // switcher, so a first-run user whose device language we guessed
+              // wrong can correct it before anything else — writing to the same
+              // LocaleController the Settings picker uses.
               leading: _step == _Step.welcome
-                  ? null
+                  ? SquareIconButton(
+                      icon: Icons.translate,
+                      tooltip: AppLocalizations.of(context).settingsLanguage,
+                      onPressed: () => showLanguagePicker(context, ref),
+                    )
                   : SquareIconButton(
                       icon: Icons.arrow_back,
                       tooltip: 'Zurück',
