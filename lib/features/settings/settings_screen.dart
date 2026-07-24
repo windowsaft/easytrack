@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/di/providers.dart';
 import '../../core/diagnostics/app_log.dart';
+import '../../core/i18n/enum_labels.dart';
 import '../../core/i18n/language_picker.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
@@ -105,9 +106,9 @@ class SettingsScreen extends ConsumerWidget {
                         label: l10n.settingsRegion,
                         subtitle:
                             (packState?.selectedRegion ?? OffRegion.fallback)
-                                .hint,
+                                .hint(l10n),
                         value: (packState?.selectedRegion ?? OffRegion.fallback)
-                            .label,
+                            .label(l10n),
                         onTap: () => _editRegion(context, ref),
                       ),
                       BoldListRow(
@@ -212,8 +213,8 @@ class SettingsScreen extends ConsumerWidget {
               for (final region in OffRegion.values) ...[
                 BoldListRow(
                   icon: Icons.public,
-                  label: region.label,
-                  subtitle: region.hint,
+                  label: region.label(l10n),
+                  subtitle: region.hint(l10n),
                   chevron: false,
                   highlight: region == current,
                   onTap: () => Navigator.of(context).pop(region),

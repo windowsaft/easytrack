@@ -4,15 +4,13 @@
 /// the manifest keys them by these names, so switching region is a pack swap,
 /// not a re-filter on device.
 enum OffRegion {
-  de('de', 'Deutschland', 'Nur deutsche Produkte'),
-  dach('dach', 'DACH', 'Deutschland, Österreich, Schweiz'),
-  world('world', 'Weltweit', 'Größte Auswahl, größter Download');
+  de('de'),
+  dach('dach'),
+  world('world');
 
-  const OffRegion(this.wire, this.label, this.hint);
+  const OffRegion(this.wire);
 
   final String wire;
-  final String label;
-  final String hint;
 
   static const fallback = OffRegion.dach;
 

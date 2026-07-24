@@ -1280,5 +1280,24 @@
   "backupReplaceWarning": "All current data will be replaced. The app then restarts. This step cannot be undone.",
   "@backupReplaceWarning": { "description": "Warning before a restore overwrites everything." },
   "backupReplaceRestart": "Replace & restart",
-  "@backupReplaceRestart": { "description": "Button that confirms the restore. Shown upper-cased." }
+  "@backupReplaceRestart": { "description": "Button that confirms the restore. Shown upper-cased." },
+
+  "linkOpenFailed": "Couldn't open {url}",
+  "@linkOpenFailed": {
+    "description": "Snackbar when an external link fails to open.",
+    "placeholders": { "url": { "type": "String" } }
+  },
+
+  "regionDe": "Germany",
+  "@regionDe": { "description": "Product-data region: Germany only." },
+  "regionDeHint": "German products only",
+  "@regionDeHint": { "description": "Sub-label for the Germany region." },
+  "regionDach": "DACH",
+  "@regionDach": { "description": "Product-data region: DACH (DE/AT/CH). Usually kept as-is." },
+  "regionDachHint": "Germany, Austria, Switzerland",
+  "@regionDachHint": { "description": "Sub-label for the DACH region." },
+  "regionWorld": "Worldwide",
+  "@regionWorld": { "description": "Product-data region: the whole world." },
+  "regionWorldHint": "Largest selection, largest download",
+  "@regionWorldHint": { "description": "Sub-label for the worldwide region." }
 }

@@ -119,7 +119,7 @@ class PackService {
     final release = manifest.releaseFor(region);
     if (release == null) {
       throw PackInstallException(
-        'Für die Region ${region.label} ist kein Paket verfügbar.',
+        'Für die Region ${region.wire} ist kein Paket verfügbar.',
       );
     }
 

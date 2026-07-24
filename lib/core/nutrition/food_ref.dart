@@ -30,15 +30,6 @@ enum FoodSourceType {
     orElse: () => throw ArgumentError('unknown food source: $value'),
   );
 
-  /// Label shown on the source chip in search results and food details.
-  String get displayLabel => switch (this) {
-    FoodSourceType.custom => 'Eigenes Lebensmittel',
-    FoodSourceType.bls => 'BLS 4.0',
-    FoodSourceType.offLocal || FoodSourceType.offOnline => 'Open Food Facts',
-    FoodSourceType.usda => 'USDA',
-    FoodSourceType.recipe => 'Rezept',
-  };
-
   bool get isUserOwned =>
       this == FoodSourceType.custom || this == FoodSourceType.recipe;
 }
@@ -68,16 +59,18 @@ class FoodRef {
 }
 
 /// The four meals a day is divided into.
+///
+/// The user-facing name is localized via `MealTypeLabel.label` (core/i18n);
+/// [wireName] is the stable persistence key.
 enum MealType {
-  breakfast('breakfast', 'Frühstück'),
-  lunch('lunch', 'Mittagessen'),
-  dinner('dinner', 'Abendessen'),
-  snacks('snacks', 'Snacks');
+  breakfast('breakfast'),
+  lunch('lunch'),
+  dinner('dinner'),
+  snacks('snacks');
 
-  const MealType(this.wireName, this.displayLabel);
+  const MealType(this.wireName);
 
   final String wireName;
-  final String displayLabel;
 
   static MealType fromWire(String value) => values.firstWhere(
     (e) => e.wireName == value,

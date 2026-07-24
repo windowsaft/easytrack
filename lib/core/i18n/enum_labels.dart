@@ -1,3 +1,4 @@
+import '../../data/pack/off_region.dart';
 import '../../domain/tdee.dart';
 import '../../l10n/app_localizations.dart';
 import '../nutrition/food_ref.dart';
@@ -60,5 +61,20 @@ extension WeightGoalLabel on WeightGoal {
     WeightGoal.lose => l10n.goalLose,
     WeightGoal.maintain => l10n.goalMaintain,
     WeightGoal.gain => l10n.goalGain,
+  };
+}
+
+/// Localized name and sub-label for the downloadable-pack region.
+extension OffRegionLabel on OffRegion {
+  String label(AppLocalizations l10n) => switch (this) {
+    OffRegion.de => l10n.regionDe,
+    OffRegion.dach => l10n.regionDach,
+    OffRegion.world => l10n.regionWorld,
+  };
+
+  String hint(AppLocalizations l10n) => switch (this) {
+    OffRegion.de => l10n.regionDeHint,
+    OffRegion.dach => l10n.regionDachHint,
+    OffRegion.world => l10n.regionWorldHint,
   };
 }

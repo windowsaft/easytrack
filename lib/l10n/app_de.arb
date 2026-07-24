@@ -360,5 +360,14 @@
   "backupEntryCount": "{count, plural, one{{count} Eintrag} other{{count} Einträge}}",
   "backupAppVersion": "App-Version {version}",
   "backupReplaceWarning": "Alle aktuellen Daten werden ersetzt. Die App startet danach neu. Dieser Schritt kann nicht rückgängig gemacht werden.",
-  "backupReplaceRestart": "Ersetzen & neu starten"
+  "backupReplaceRestart": "Ersetzen & neu starten",
+
+  "linkOpenFailed": "Konnte {url} nicht öffnen",
+
+  "regionDe": "Deutschland",
+  "regionDeHint": "Nur deutsche Produkte",
+  "regionDach": "DACH",
+  "regionDachHint": "Deutschland, Österreich, Schweiz",
+  "regionWorld": "Weltweit",
+  "regionWorldHint": "Größte Auswahl, größter Download"
 }
