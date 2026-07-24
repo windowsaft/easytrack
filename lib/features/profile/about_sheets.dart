@@ -59,6 +59,69 @@ void showDataSources(BuildContext context) {
   );
 }
 
+/// The privacy sheet: states plainly how data flows, including the one place
+/// the app talks to the network (the Open Food Facts online fallback). Mirrors
+/// the "Privacy, precisely" section on the marketing site, word for word.
+void showPrivacy(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (context) => SafeArea(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            AppTheme.screenPadding,
+            22,
+            AppTheme.screenPadding,
+            MediaQuery.paddingOf(context).bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('DATENSCHUTZ', style: AppText.section(size: 18)),
+              const SizedBox(height: 6),
+              Text(
+                'Kein Kleingedrucktes. So funktioniert es genau:',
+                style: AppText.grotesk(
+                  size: 13,
+                  weight: 500,
+                  color: AppColors.textMute,
+                ),
+              ),
+              const SizedBox(height: 18),
+              _PrivacyPoint(
+                title: 'Deine Daten bleiben hier',
+                body:
+                    'Tagebuch, Gewicht und Ziele liegen nur auf diesem Gerät '
+                    '— niemals mit einem Server synchronisiert. Du kannst '
+                    'alles jederzeit als ZIP exportieren, das nur dir gehört.',
+              ),
+              _PrivacyPoint(
+                title: 'Lebensmittelsuche, erklärt',
+                body:
+                    'Rund 300.000 Lebensmittel sind für die Offline-Suche '
+                    'dabei (BLS 4.0 + Open Food Facts). Nur ein unbekannter '
+                    'Barcode oder eine ausdrückliche „Online suchen“-Anfrage '
+                    'geht an Open Food Facts — öffentliche Produktdaten, lokal '
+                    'zwischengespeichert. Dein Tagebuch wird dabei nie '
+                    'übertragen.',
+              ),
+              _PrivacyPoint(
+                title: 'Nichts vom Üblichen',
+                body:
+                    'Kein Konto. Keine Analyse. Keine Drittanbieter-Tracker. '
+                    'Keine Werbung. Es gibt nichts abzuwählen, weil nichts '
+                    'davon vorhanden ist.',
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 /// The About sheet: app identity plus version / build / package details.
 void showAbout(BuildContext context, PackageInfo? info) {
   showModalBottomSheet<void>(
@@ -126,6 +189,43 @@ void showAbout(BuildContext context, PackageInfo? info) {
       ),
     ),
   );
+}
+
+class _PrivacyPoint extends StatelessWidget {
+  const _PrivacyPoint({required this.title, required this.body});
+
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: AppText.grotesk(
+              size: 14,
+              weight: 700,
+              color: AppColors.lime,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            body,
+            style: AppText.grotesk(
+              size: 13,
+              weight: 500,
+              color: AppColors.textBright,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _AboutRow extends StatelessWidget {

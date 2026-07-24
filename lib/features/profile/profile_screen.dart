@@ -147,6 +147,13 @@ class ProfileScreen extends ConsumerWidget {
           child: Column(
             children: [
               BoldListRow(
+                icon: Icons.lock_outline,
+                label: 'Datenschutz',
+                subtitle: 'Was bleibt lokal, was geht online',
+                onTap: () => showPrivacy(context),
+              ),
+              const SizedBox(height: AppTheme.rowGap),
+              BoldListRow(
                 icon: Icons.info_outline,
                 label: 'Datenquellen',
                 subtitle: 'BLS 4.0 · Open Food Facts',
