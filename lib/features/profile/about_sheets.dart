@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../core/app_links.dart';
 import '../../core/ui/app_theme.dart';
+import '../../core/ui/widgets/bold_controls.dart';
 
 /// "Version 1.0.0 · Build 1", or a placeholder while [PackageInfo] loads.
 String versionLine(PackageInfo? info) => info == null
@@ -184,6 +186,30 @@ void showAbout(BuildContext context, PackageInfo? info) {
               _AboutRow('Version', info.version),
               _AboutRow('Build', info.buildNumber),
             ],
+            const SizedBox(height: 18),
+            // Source-available project: the code lives on GitHub, feedback is
+            // filed as issues there. Chips rather than list rows keep the About
+            // sheet compact.
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                BoldChip(
+                  label: 'Quellcode',
+                  icon: Icons.code,
+                  selected: false,
+                  radius: AppRadii.chip,
+                  onTap: () => openExternal(context, kSourceUrl),
+                ),
+                BoldChip(
+                  label: 'Feedback',
+                  icon: Icons.chat_bubble_outline,
+                  selected: false,
+                  radius: AppRadii.chip,
+                  onTap: () => openExternal(context, kFeedbackUrl),
+                ),
+              ],
+            ),
           ],
         ),
       ),

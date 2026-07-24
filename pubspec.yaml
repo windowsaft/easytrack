@@ -71,6 +71,9 @@ dependencies:
   share_plus: ^12.0.2
   shared_preferences: ^2.5.5
   sqlite3: ^3.5.0
+  # Opens the source-code and feedback links (Profil → MITWIRKEN) in the
+  # system browser. Android 11+ also needs a <queries> entry in the manifest.
+  url_launcher: ^6.3.1
   uuid: ^4.6.0
 
 dev_dependencies:
