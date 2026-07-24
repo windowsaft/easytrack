@@ -101,9 +101,6 @@ class FoodItem {
   /// Whether this food is measured by mass (g) or volume (ml). Drinks are ml.
   final MeasureUnit measure;
 
-  /// Source label for the attribution chip. Licences require this to be shown.
-  String get sourceLabel => ref.source.displayLabel;
-
   /// Whether this food logs and displays in millilitres.
   bool get isLiquid => measure.isLiquid;
 

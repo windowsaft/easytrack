@@ -467,5 +467,261 @@
     "placeholders": {
       "budget": { "type": "String", "example": "2000 kcal" }
     }
+  },
+
+  "commonSelected": "Selected",
+  "@commonSelected": {
+    "description": "Accessibility label / state for a selected item."
+  },
+
+  "sourceCustom": "Own food",
+  "@sourceCustom": {
+    "description": "Data-source label for a food the user created."
+  },
+  "sourceBls": "BLS 4.0",
+  "@sourceBls": {
+    "description": "Data-source label for the German Bundeslebensmittelschlüssel reference data. A product name; usually left as-is."
+  },
+  "sourceOff": "Open Food Facts",
+  "@sourceOff": {
+    "description": "Data-source label for Open Food Facts. A brand name; leave untranslated."
+  },
+  "sourceUsda": "USDA",
+  "@sourceUsda": {
+    "description": "Data-source label for USDA FoodData Central. Leave untranslated."
+  },
+  "sourceRecipe": "Recipe",
+  "@sourceRecipe": {
+    "description": "Data-source label for a user recipe logged as one item."
+  },
+
+  "searchHint": "Search food",
+  "@searchHint": {
+    "description": "Placeholder in the food-search field."
+  },
+  "searchBack": "Back",
+  "@searchBack": {
+    "description": "Tooltip on the search screen's back button."
+  },
+  "searchScanBarcode": "Scan barcode",
+  "@searchScanBarcode": {
+    "description": "Tooltip on the search screen's barcode-scan button."
+  },
+  "searchTabAll": "All",
+  "@searchTabAll": {
+    "description": "Search tab: all foods."
+  },
+  "searchTabRecent": "Recent",
+  "@searchTabRecent": {
+    "description": "Search tab: recently logged foods."
+  },
+  "searchTabFavorites": "Favourites",
+  "@searchTabFavorites": {
+    "description": "Search tab: favourite foods."
+  },
+  "searchTabMine": "Mine",
+  "@searchTabMine": {
+    "description": "Search tab: the user's own custom foods."
+  },
+  "searchQuickEntry": "Quick entry",
+  "@searchQuickEntry": {
+    "description": "Action/title for a one-off calorie entry that is not saved as a food. Also the default name of such an entry. The action button is shown upper-cased."
+  },
+  "searchCreate": "Create",
+  "@searchCreate": {
+    "description": "Action that creates a reusable custom food."
+  },
+  "searchEmptyHint": "Type to search over 7,000 foods.\nWorks offline too.",
+  "@searchEmptyHint": {
+    "description": "Shown in the All tab before the user has typed anything."
+  },
+  "searchFailed": "Search failed:\n{error}",
+  "@searchFailed": {
+    "description": "Shown when a search errors.",
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "searchNoResults": "Nothing found for \"{query}\".",
+  "@searchNoResults": {
+    "description": "Shown when a search returns no foods.",
+    "placeholders": {
+      "query": { "type": "String" }
+    }
+  },
+  "searchHits": "Hits",
+  "@searchHits": {
+    "description": "Section header over the search results. Shown upper-cased."
+  },
+  "searchHitsCount": "{count, plural, one{{count} hit} other{{count} hits}}",
+  "@searchHitsCount": {
+    "description": "Result count next to the results header. Shown upper-cased.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "searchFavoritesEmpty": "No favourites yet.\nTap the star on a food.",
+  "@searchFavoritesEmpty": {
+    "description": "Empty state of the Favourites tab."
+  },
+  "searchMineEmpty": "No custom foods yet.\nCreate one via “Create”.",
+  "@searchMineEmpty": {
+    "description": "Empty state of the Mine tab. “Create” refers to the Create action."
+  },
+  "searchRecentEmpty": "Nothing logged yet.\nWhat you log appears here.",
+  "@searchRecentEmpty": {
+    "description": "Empty state of the Recent tab."
+  },
+  "searchAddedFood": "{name} added",
+  "@searchAddedFood": {
+    "description": "Snackbar after a food is logged.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "searchCreatedFood": "{name} created",
+  "@searchCreatedFood": {
+    "description": "Snackbar after a custom food is created.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "searchFound": "Found: {name}",
+  "@searchFound": {
+    "description": "Snackbar after a browse-only barcode scan resolves.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "searchSelectedCount": "{count} selected",
+  "@searchSelectedCount": {
+    "description": "Label in the selection tray showing how many foods are staged. Shown upper-cased.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "searchAddToMeal": "To {meal}",
+  "@searchAddToMeal": {
+    "description": "Commit button in the selection tray. Shown upper-cased.",
+    "placeholders": {
+      "meal": { "type": "String", "example": "Breakfast" }
+    }
+  },
+  "searchAddFavorite": "Add to favourites",
+  "@searchAddFavorite": {
+    "description": "Tooltip on the star when a food is not yet a favourite."
+  },
+  "searchRemoveFavorite": "Remove favourite",
+  "@searchRemoveFavorite": {
+    "description": "Tooltip on the star when a food is already a favourite."
+  },
+
+  "quickAddSubtitle": "Calories and, optionally, the nutrients. For something you don't want to save as a food.",
+  "@quickAddSubtitle": {
+    "description": "Subtitle of the quick-entry sheet."
+  },
+  "fieldNameOptional": "Name (optional)",
+  "@fieldNameOptional": {
+    "description": "Field label for an optional food name."
+  },
+  "fieldName": "Name",
+  "@fieldName": {
+    "description": "Field label for a required food name."
+  },
+  "fieldCalories": "Calories",
+  "@fieldCalories": {
+    "description": "Field label for an energy value in kcal."
+  },
+  "fieldBrandOptional": "Brand (optional)",
+  "@fieldBrandOptional": {
+    "description": "Field label for an optional manufacturer/brand."
+  },
+  "createFoodTitle": "Create food",
+  "@createFoodTitle": {
+    "description": "Title of the create-custom-food sheet. Shown upper-cased."
+  },
+  "createFoodSubtitle": "Nutrients per 100 {unit}. Appears under “Mine” afterwards.",
+  "@createFoodSubtitle": {
+    "description": "Subtitle of the create-food sheet. {unit} is g or ml.",
+    "placeholders": {
+      "unit": { "type": "String", "example": "g" }
+    }
+  },
+  "createFoodSubtitleBarcode": "Unknown barcode {barcode}. Create the product yourself — the next scan will recognise it.",
+  "@createFoodSubtitleBarcode": {
+    "description": "Subtitle of the create-food sheet when reached from an unrecognised scan.",
+    "placeholders": {
+      "barcode": { "type": "String" }
+    }
+  },
+  "fieldUnit": "Unit",
+  "@fieldUnit": {
+    "description": "Group label for the solid/drink measure choice. Shown upper-cased."
+  },
+  "measureSolid": "Solid (g)",
+  "@measureSolid": {
+    "description": "Choice: the food is measured in grams."
+  },
+  "measureDrink": "Drink (ml)",
+  "@measureDrink": {
+    "description": "Choice: the food is a drink, measured in millilitres."
+  },
+  "createFoodMoreNutrients": "More nutrients (optional)",
+  "@createFoodMoreNutrients": {
+    "description": "Group label over the optional micro-nutrient fields. Shown upper-cased."
+  },
+  "fieldSugar": "Sugar",
+  "@fieldSugar": {
+    "description": "Field label for the sugar value."
+  },
+  "fieldSatFat": "Sat. fat",
+  "@fieldSatFat": {
+    "description": "Field label for the saturated-fat value."
+  },
+  "createFoodPortion": "Serving (optional)",
+  "@createFoodPortion": {
+    "description": "Group label over the optional named-serving fields. Shown upper-cased."
+  },
+  "fieldServingExampleDrink": "e.g. Glass",
+  "@fieldServingExampleDrink": {
+    "description": "Field hint for a drink's serving name."
+  },
+  "fieldServingExampleSolid": "e.g. Cookie",
+  "@fieldServingExampleSolid": {
+    "description": "Field hint for a solid food's serving name."
+  },
+  "fieldAmount": "Amount",
+  "@fieldAmount": {
+    "description": "Field label for a drink serving's volume."
+  },
+  "fieldWeight": "Weight",
+  "@fieldWeight": {
+    "description": "Field label for a solid serving's weight."
+  },
+  "servingDefaultUnit": "Serving",
+  "@servingDefaultUnit": {
+    "description": "Default noun for a named serving when the user leaves the unit blank."
+  },
+
+  "portionCount": "Count",
+  "@portionCount": {
+    "description": "Field label for how many servings to log."
+  },
+  "unitGrams": "Grams",
+  "@unitGrams": {
+    "description": "Serving choice / field label for a raw gram amount."
+  },
+  "unitMilliliters": "Millilitres",
+  "@unitMilliliters": {
+    "description": "Serving choice / field label for a raw millilitre amount."
+  },
+
+  "scanTorch": "Flash",
+  "@scanTorch": {
+    "description": "Tooltip on the scanner's torch toggle."
+  },
+  "scanHint": "Hold the barcode in the frame",
+  "@scanHint": {
+    "description": "Instruction shown under the scanner's aiming window."
   }
 }

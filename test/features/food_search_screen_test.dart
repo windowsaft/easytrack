@@ -8,6 +8,7 @@ import 'package:easytrack/core/ui/widgets/bold_controls.dart';
 import 'package:easytrack/data/db/reference_database.dart';
 import 'package:easytrack/data/db/user_database.dart';
 import 'package:easytrack/features/search/food_search_screen.dart';
+import 'package:easytrack/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,7 +39,12 @@ void main() {
         userDatabaseProvider.overrideWithValue(user),
         morphemesProvider.overrideWith((ref) async => morphemes),
       ],
-      child: const MaterialApp(home: FoodSearchScreen()),
+      child: MaterialApp(
+        locale: const Locale('de'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: const FoodSearchScreen(),
+      ),
     );
   }
 

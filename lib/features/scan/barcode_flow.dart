@@ -5,6 +5,7 @@ import '../../core/di/providers.dart';
 import '../../core/nutrition/food_ref.dart';
 import '../../data/food/barcode_resolver.dart';
 import '../../data/food/food_item.dart';
+import '../../l10n/app_localizations.dart';
 import '../diary/widgets/portion_sheet.dart';
 import '../search/food_forms.dart';
 import 'barcode_scanner_screen.dart';
@@ -46,9 +47,13 @@ Future<FoodItem?> resolveScannedBarcode(
             barcode: draft.barcode,
           );
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('${food.name} angelegt')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).searchCreatedFood(food.name),
+            ),
+          ),
+        );
       }
       return food;
   }
@@ -72,6 +77,7 @@ Future<void> scanBarcodeIntoMeal(
   if (portion == null || !context.mounted) return;
 
   final messenger = ScaffoldMessenger.of(context);
+  final l10n = AppLocalizations.of(context);
   await ref
       .read(diaryRepositoryProvider)
       .addEntry(
@@ -82,5 +88,7 @@ Future<void> scanBarcodeIntoMeal(
         servingLabel: portion.label,
         servingCount: portion.count,
       );
-  messenger.showSnackBar(SnackBar(content: Text('${food.name} hinzugefügt')));
+  messenger.showSnackBar(
+    SnackBar(content: Text(l10n.searchAddedFood(food.name))),
+  );
 }

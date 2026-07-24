@@ -15,3 +15,15 @@ extension MealTypeLabel on MealType {
     MealType.snacks => l10n.mealSnacks,
   };
 }
+
+/// The data-source label shown on the attribution chip in search results and
+/// the portion sheet. Data licences require this to be shown.
+extension FoodSourceTypeLabel on FoodSourceType {
+  String label(AppLocalizations l10n) => switch (this) {
+    FoodSourceType.custom => l10n.sourceCustom,
+    FoodSourceType.bls => l10n.sourceBls,
+    FoodSourceType.offLocal || FoodSourceType.offOnline => l10n.sourceOff,
+    FoodSourceType.usda => l10n.sourceUsda,
+    FoodSourceType.recipe => l10n.sourceRecipe,
+  };
+}

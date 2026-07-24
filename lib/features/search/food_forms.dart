@@ -8,6 +8,7 @@ import '../../core/nutrition/nutrients.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/food/food_item.dart';
+import '../../l10n/app_localizations.dart';
 
 /// A quick calorie entry: a name and a kcal figure, logged directly.
 ///
@@ -99,7 +100,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
     final kcal = double.tryParse(_kcal.text.replaceAll(',', '.'));
     if (kcal == null || kcal <= 0) return;
     final name = _name.text.trim().isEmpty
-        ? 'Schnell-Eintrag'
+        ? AppLocalizations.of(context).searchQuickEntry
         : _name.text.trim();
 
     Navigator.of(context).pop(
@@ -121,17 +122,20 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return _SheetFrame(
-      title: 'SCHNELL-EINTRAG',
-      subtitle:
-          'Kalorien und optional die Nährwerte. Für etwas, das du nicht als '
-          'Lebensmittel speichern willst.',
+      title: l10n.searchQuickEntry.toUpperCase(),
+      subtitle: l10n.quickAddSubtitle,
       children: [
-        _Field(controller: _name, label: 'Name (optional)', autofocus: false),
+        _Field(
+          controller: _name,
+          label: l10n.fieldNameOptional,
+          autofocus: false,
+        ),
         const SizedBox(height: 12),
         _Field(
           controller: _kcal,
-          label: 'Kalorien',
+          label: l10n.fieldCalories,
           suffix: 'kcal',
           number: true,
           autofocus: true,
@@ -142,7 +146,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
             Expanded(
               child: _Field(
                 controller: _carbs,
-                label: 'Kohlenh.',
+                label: l10n.macroCarbsShort,
                 suffix: 'g',
                 number: true,
               ),
@@ -151,7 +155,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
             Expanded(
               child: _Field(
                 controller: _protein,
-                label: 'Eiweiß',
+                label: l10n.macroProteinShort,
                 suffix: 'g',
                 number: true,
               ),
@@ -160,7 +164,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
             Expanded(
               child: _Field(
                 controller: _fat,
-                label: 'Fett',
+                label: l10n.macroFatShort,
                 suffix: 'g',
                 number: true,
               ),
@@ -169,7 +173,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
         ),
         const SizedBox(height: 18),
         PrimaryButton(
-          label: 'EINTRAGEN',
+          label: l10n.shellAddTitle.toUpperCase(),
           icon: Icons.check_circle,
           onPressed: _submit,
         ),
@@ -266,7 +270,8 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
         // "Portion" so "50 g" alone still logs as "1× Portion (50 g)".
         servingG: (servingG != null && servingG > 0) ? servingG : null,
         servingUnit: (servingG != null && servingG > 0)
-            ? (_optText(_servingUnit) ?? 'Portion')
+            ? (_optText(_servingUnit) ??
+                  AppLocalizations.of(context).servingDefaultUnit)
             : null,
         barcode: widget.initialBarcode,
       ),
@@ -275,26 +280,26 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final barcode = widget.initialBarcode;
     final per = _measure.suffix;
     return _SheetFrame(
-      title: 'LEBENSMITTEL ANLEGEN',
+      title: l10n.createFoodTitle.toUpperCase(),
       subtitle: barcode == null
-          ? 'Nährwerte pro 100 $per. Erscheint danach unter „Meine".'
-          : 'Unbekannter Barcode $barcode. Lege das Produkt selbst an — beim '
-                'nächsten Scan wird es erkannt.',
+          ? l10n.createFoodSubtitle(per)
+          : l10n.createFoodSubtitleBarcode(barcode),
       children: [
-        _Field(controller: _name, label: 'Name', autofocus: true),
+        _Field(controller: _name, label: l10n.fieldName, autofocus: true),
         const SizedBox(height: 12),
-        _Field(controller: _brand, label: 'Marke (optional)'),
+        _Field(controller: _brand, label: l10n.fieldBrandOptional),
         const SizedBox(height: 14),
-        _GroupLabel('Einheit'),
+        _GroupLabel(l10n.fieldUnit),
         const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
               child: BoldChip(
-                label: 'Fest (g)',
+                label: l10n.measureSolid,
                 selected: !_measure.isLiquid,
                 onTap: () => setState(() => _measure = MeasureUnit.grams),
               ),
@@ -302,7 +307,7 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
             const SizedBox(width: 8),
             Expanded(
               child: BoldChip(
-                label: 'Getränk (ml)',
+                label: l10n.measureDrink,
                 selected: _measure.isLiquid,
                 onTap: () =>
                     setState(() => _measure = MeasureUnit.milliliters),
@@ -313,7 +318,7 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
         const SizedBox(height: 12),
         _Field(
           controller: _kcal,
-          label: 'Kalorien',
+          label: l10n.fieldCalories,
           suffix: 'kcal',
           number: true,
         ),
@@ -323,7 +328,7 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
             Expanded(
               child: _Field(
                 controller: _carbs,
-                label: 'Kohlenh.',
+                label: l10n.macroCarbsShort,
                 suffix: 'g',
                 number: true,
               ),
@@ -332,7 +337,7 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
             Expanded(
               child: _Field(
                 controller: _protein,
-                label: 'Eiweiß',
+                label: l10n.macroProteinShort,
                 suffix: 'g',
                 number: true,
               ),
@@ -341,7 +346,7 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
             Expanded(
               child: _Field(
                 controller: _fat,
-                label: 'Fett',
+                label: l10n.macroFatShort,
                 suffix: 'g',
                 number: true,
               ),
@@ -349,14 +354,14 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
           ],
         ),
         const SizedBox(height: 18),
-        _GroupLabel('Weitere Nährwerte (optional)'),
+        _GroupLabel(l10n.createFoodMoreNutrients),
         const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
               child: _Field(
                 controller: _sugar,
-                label: 'Zucker',
+                label: l10n.fieldSugar,
                 suffix: 'g',
                 number: true,
               ),
@@ -365,7 +370,7 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
             Expanded(
               child: _Field(
                 controller: _fiber,
-                label: 'Ballaststoffe',
+                label: l10n.nutrientFiber,
                 suffix: 'g',
                 number: true,
               ),
@@ -378,7 +383,7 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
             Expanded(
               child: _Field(
                 controller: _satFat,
-                label: 'ges. Fett',
+                label: l10n.fieldSatFat,
                 suffix: 'g',
                 number: true,
               ),
@@ -387,7 +392,7 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
             Expanded(
               child: _Field(
                 controller: _salt,
-                label: 'Salz',
+                label: l10n.nutrientSalt,
                 suffix: 'g',
                 number: true,
               ),
@@ -395,7 +400,7 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
           ],
         ),
         const SizedBox(height: 18),
-        _GroupLabel('Portion (optional)'),
+        _GroupLabel(l10n.createFoodPortion),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -403,7 +408,9 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
               flex: 3,
               child: _Field(
                 controller: _servingUnit,
-                label: _measure.isLiquid ? 'z. B. Glas' : 'z. B. Cookie',
+                label: _measure.isLiquid
+                    ? l10n.fieldServingExampleDrink
+                    : l10n.fieldServingExampleSolid,
               ),
             ),
             const SizedBox(width: 8),
@@ -411,7 +418,7 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
               flex: 2,
               child: _Field(
                 controller: _servingG,
-                label: _measure.isLiquid ? 'Menge' : 'Gewicht',
+                label: _measure.isLiquid ? l10n.fieldAmount : l10n.fieldWeight,
                 suffix: per,
                 number: true,
               ),
@@ -420,7 +427,7 @@ class _CreateFoodSheetState extends State<_CreateFoodSheet> {
         ),
         const SizedBox(height: 22),
         PrimaryButton(
-          label: 'SPEICHERN',
+          label: l10n.commonSave.toUpperCase(),
           icon: Icons.check_circle,
           onPressed: _submit,
         ),

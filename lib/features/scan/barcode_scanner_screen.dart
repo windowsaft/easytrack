@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Screen 4c — the camera barcode scanner.
 ///
@@ -64,6 +65,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -91,13 +93,13 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                     children: [
                       SquareIconButton(
                         icon: Icons.arrow_back,
-                        tooltip: 'Zurück',
+                        tooltip: l10n.searchBack,
                         onPressed: Navigator.of(context).pop,
                       ),
                       const Spacer(),
                       SquareIconButton(
                         icon: _torchOn ? Icons.flash_on : Icons.flash_off,
-                        tooltip: 'Blitz',
+                        tooltip: l10n.scanTorch,
                         onPressed: _toggleTorch,
                       ),
                     ],
@@ -107,7 +109,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 48),
                   child: Text(
-                    'Barcode in den Rahmen halten',
+                    l10n.scanHint,
                     style: AppText.grotesk(
                       size: 14,
                       weight: 600,

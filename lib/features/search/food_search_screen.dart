@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/i18n/enum_labels.dart';
 import '../../core/nutrition/food_ref.dart';
 import '../../core/nutrition/nutrients.dart';
 import '../../core/ui/app_theme.dart';
@@ -9,6 +10,7 @@ import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/db/user_database.dart';
 import '../../data/food/food_item.dart';
 import '../../data/food/search_orchestrator.dart';
+import '../../l10n/app_localizations.dart';
 import '../diary/widgets/portion_sheet.dart';
 import '../scan/barcode_flow.dart';
 import 'food_forms.dart';
@@ -105,6 +107,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     final day = ref.read(selectedDayProvider);
     final repository = ref.read(diaryRepositoryProvider);
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
 
     final portion = await showPortionSheet(context, food, allowFavorite: true);
     if (portion == null) return;
@@ -118,7 +121,9 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
       servingCount: portion.count,
     );
 
-    messenger.showSnackBar(SnackBar(content: Text('${food.name} hinzugefügt')));
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.searchAddedFood(food.name))),
+    );
   }
 
   Future<void> _relog(DiaryEntry entry) async {
@@ -126,6 +131,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     if (meal == null) return;
 
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     await ref
         .read(diaryRepositoryProvider)
         .relogEntry(
@@ -135,7 +141,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
         );
 
     messenger.showSnackBar(
-      SnackBar(content: Text('${entry.nameSnapshot} hinzugefügt')),
+      SnackBar(content: Text(l10n.searchAddedFood(entry.nameSnapshot))),
     );
   }
 
@@ -190,9 +196,11 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     if (barcode == null || !mounted) return;
     final food = await resolveScannedBarcode(context, ref, barcode);
     if (food != null && mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gefunden: ${food.name}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).searchFound(food.name)),
+        ),
+      );
     }
   }
 
@@ -203,6 +211,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     if (food == null || meal == null || !mounted) return;
 
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     await ref
         .read(diaryRepositoryProvider)
         .addEntry(
@@ -215,7 +224,9 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
               : food.defaultServing.label,
           servingCount: food.defaultServing.isRaw ? null : 1,
         );
-    messenger.showSnackBar(SnackBar(content: Text('${food.name} hinzugefügt')));
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.searchAddedFood(food.name))),
+    );
   }
 
   /// Creates a reusable custom food, then offers to log it.
@@ -236,7 +247,11 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
 
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(SnackBar(content: Text('${food.name} angelegt')));
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context).searchCreatedFood(food.name)),
+      ),
+    );
     // Land on the tab where the new food now lives.
     setState(() => _tab = _Tab.mine);
     if (widget.meal != null) await _pickPortion(food);
@@ -280,6 +295,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   }
 
   Widget _body(bool logging, bool picking) {
+    final l10n = AppLocalizations.of(context);
     // In pick mode every food row simply returns; otherwise a tap opens the
     // portion picker, and only when a meal is being logged into.
     final onFood = picking ? _returnFood : (logging ? _pickPortion : null);
@@ -302,9 +318,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
         return _FoodItemList(
           foods: foods,
           emptyIcon: Icons.star_border,
-          emptyText:
-              'Noch keine Favoriten.\nTippe bei einem Lebensmittel auf den '
-              'Stern.',
+          emptyText: l10n.searchFavoritesEmpty,
           onPick: onFood,
           // Nothing to favourite while picking an ingredient.
           pinnable: !picking,
@@ -314,8 +328,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
         return _FoodItemList(
           foods: foods,
           emptyIcon: Icons.restaurant_menu,
-          emptyText:
-              'Noch keine eigenen Lebensmittel.\nLege eines über „Anlegen" an.',
+          emptyText: l10n.searchMineEmpty,
           onPick: onFood,
           pinnable: !picking,
         );
@@ -340,13 +353,14 @@ class _SearchHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 12, 18, 4),
       child: Row(
         children: [
           SquareIconButton(
             icon: Icons.arrow_back,
-            tooltip: 'Zurück',
+            tooltip: l10n.searchBack,
             onPressed: Navigator.of(context).pop,
           ),
           const SizedBox(width: 10),
@@ -388,7 +402,7 @@ class _SearchHeader extends StatelessWidget {
                         decoration: InputDecoration(
                           isDense: true,
                           border: InputBorder.none,
-                          hintText: 'Lebensmittel suchen',
+                          hintText: l10n.searchHint,
                           hintStyle: AppText.grotesk(
                             size: 15,
                             weight: 500,
@@ -419,7 +433,7 @@ class _SearchHeader extends StatelessWidget {
           SquareIconButton(
             icon: Icons.qr_code_scanner,
             iconSize: 23,
-            tooltip: 'Barcode scannen',
+            tooltip: l10n.searchScanBarcode,
             onPressed: onScan,
           ),
         ],
@@ -434,15 +448,16 @@ class _Tabs extends StatelessWidget {
   final _Tab current;
   final ValueChanged<_Tab> onSelect;
 
-  static const _labels = {
-    _Tab.all: 'Alle',
-    _Tab.recent: 'Zuletzt',
-    _Tab.favorites: 'Favoriten',
-    _Tab.mine: 'Meine',
+  static String _label(AppLocalizations l10n, _Tab tab) => switch (tab) {
+    _Tab.all => l10n.searchTabAll,
+    _Tab.recent => l10n.searchTabRecent,
+    _Tab.favorites => l10n.searchTabFavorites,
+    _Tab.mine => l10n.searchTabMine,
   };
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return SizedBox(
       height: 48,
       child: ListView(
@@ -452,7 +467,7 @@ class _Tabs extends StatelessWidget {
           for (final tab in _Tab.values) ...[
             if (tab != _Tab.values.first) const SizedBox(width: 8),
             BoldChip(
-              label: _labels[tab]!,
+              label: _label(l10n, tab),
               selected: current == tab,
               onTap: () => onSelect(tab),
             ),
@@ -471,13 +486,14 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 2, 18, 8),
       child: Row(
         children: [
           Expanded(
             child: DashedActionChip(
-              label: 'Schnell-Eintrag',
+              label: l10n.searchQuickEntry,
               icon: Icons.bolt,
               onTap: onQuickAdd,
             ),
@@ -485,7 +501,7 @@ class _QuickActions extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: DashedActionChip(
-              label: 'Anlegen',
+              label: l10n.searchCreate,
               icon: Icons.restaurant_menu,
               onTap: onCreate,
             ),
@@ -513,12 +529,11 @@ class _SearchResults extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     if (query.trim().isEmpty) {
-      return const _Message(
+      return _Message(
         icon: Icons.search,
-        text:
-            'Tippe, um über 7.000 Lebensmittel zu durchsuchen.\n'
-            'Funktioniert auch offline.',
+        text: l10n.searchEmptyHint,
       );
     }
 
@@ -535,7 +550,7 @@ class _SearchResults extends ConsumerWidget {
       ),
       AsyncError(:final error) => _Message(
         icon: Icons.error_outline,
-        text: 'Suche fehlgeschlagen:\n$error',
+        text: l10n.searchFailed(error.toString()),
       ),
       _ => const Center(
         child: CircularProgressIndicator(color: AppColors.lime),
@@ -563,12 +578,13 @@ class _ResultList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final results = state.results;
 
     if (results.isEmpty) {
       return _Message(
         icon: Icons.no_food,
-        text: 'Nichts gefunden für "$query".',
+        text: l10n.searchNoResults(query),
       );
     }
 
@@ -579,10 +595,10 @@ class _ResultList extends StatelessWidget {
       itemBuilder: (context, index) {
         if (index == 0) {
           return SectionHeader(
-            title: 'TREFFER',
+            title: l10n.searchHits.toUpperCase(),
             padding: const EdgeInsets.only(bottom: 6),
             trailing: Text(
-              '${results.length} TREFFER',
+              l10n.searchHitsCount(results.length).toUpperCase(),
               style: AppText.grotesk(
                 size: 11,
                 weight: 600,
@@ -625,6 +641,7 @@ class _ResultRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final serving = item.defaultServing;
     final kcal = item.nutrients.forGrams(serving.defaultGrams).kcal;
+    final l10n = AppLocalizations.of(context);
 
     return Material(
       color: selected ? AppColors.selectedRow : AppColors.surface,
@@ -658,7 +675,7 @@ class _ResultRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${serving.portionLabel} · ${item.sourceLabel}',
+                      '${serving.portionLabel} · ${item.ref.source.label(l10n)}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppText.rowSubtitle(),
@@ -723,10 +740,11 @@ class _AddToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Semantics(
       selected: selected,
       button: true,
-      label: selected ? 'Ausgewählt' : 'Hinzufügen',
+      label: selected ? l10n.commonSelected : l10n.commonAdd,
       child: Material(
         color: selected ? AppColors.lime : Colors.transparent,
         shape: RoundedRectangleBorder(
@@ -765,9 +783,9 @@ class _RecentList extends ConsumerWidget {
     final recent = ref.watch(recentFoodsProvider).value ?? const [];
 
     if (recent.isEmpty) {
-      return const _Message(
+      return _Message(
         icon: Icons.history,
-        text: 'Noch nichts eingetragen.\nWas du loggst, erscheint hier.',
+        text: AppLocalizations.of(context).searchRecentEmpty,
       );
     }
 
@@ -923,7 +941,9 @@ class _PinStar extends ConsumerWidget {
         size: 22,
         color: isFavourite ? AppColors.lime : AppColors.chevron,
       ),
-      tooltip: isFavourite ? 'Favorit entfernen' : 'Zu Favoriten',
+      tooltip: isFavourite
+          ? AppLocalizations.of(context).searchRemoveFavorite
+          : AppLocalizations.of(context).searchAddFavorite,
       onPressed: () => _toggle(ref, isFavourite),
     );
   }
@@ -954,6 +974,7 @@ class _SelectionTray extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.bar,
@@ -989,7 +1010,7 @@ class _SelectionTray extends StatelessWidget {
                 ],
               ),
               Text(
-                '$count AUSGEWÄHLT',
+                l10n.searchSelectedCount(count).toUpperCase(),
                 style: AppText.grotesk(
                   size: 11,
                   weight: 600,
@@ -1002,7 +1023,7 @@ class _SelectionTray extends StatelessWidget {
           const SizedBox(width: 14),
           Expanded(
             child: PrimaryButton(
-              label: 'ZU ${meal.displayLabel.toUpperCase()}',
+              label: l10n.searchAddToMeal(meal.label(l10n)).toUpperCase(),
               icon: Icons.check_circle,
               height: 52,
               onPressed: onCommit,

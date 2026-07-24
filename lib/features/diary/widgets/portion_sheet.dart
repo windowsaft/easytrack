@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/di/providers.dart';
+import '../../../core/i18n/enum_labels.dart';
 import '../../../core/nutrition/food_ref.dart';
 import '../../../core/nutrition/nutrients.dart';
 import '../../../core/ui/app_theme.dart';
 import '../../../core/ui/widgets/bold_controls.dart';
 import '../../../data/food/food_item.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// What the user chose to log.
 class PickedPortion {
@@ -124,6 +126,7 @@ class _PortionSheetState extends ConsumerState<_PortionSheet> {
   Widget build(BuildContext context) {
     final nutrients = widget.food.nutrients.forGrams(_grams);
     final choices = widget.food.servingChoices;
+    final l10n = AppLocalizations.of(context);
 
     return SafeArea(
       child: Padding(
@@ -150,7 +153,7 @@ class _PortionSheetState extends ConsumerState<_PortionSheet> {
             ),
             const SizedBox(height: 2),
             Text(
-              widget.food.sourceLabel,
+              widget.food.ref.source.label(l10n),
               style: AppText.grotesk(
                 size: 12,
                 weight: 500,
@@ -169,7 +172,9 @@ class _PortionSheetState extends ConsumerState<_PortionSheet> {
                   for (final option in choices)
                     BoldChip(
                       label: option.isRaw
-                          ? (option.measure.isLiquid ? 'Milliliter' : 'Gramm')
+                          ? (option.measure.isLiquid
+                                ? l10n.unitMilliliters
+                                : l10n.unitGrams)
                           : option.label,
                       selected: option == _serving,
                       onTap: () => _selectServing(option),
@@ -195,9 +200,9 @@ class _PortionSheetState extends ConsumerState<_PortionSheet> {
                     decoration: InputDecoration(
                       labelText: _isRawMode
                           ? (widget.food.measure.isLiquid
-                                ? 'Milliliter'
-                                : 'Gramm')
-                          : 'Anzahl',
+                                ? l10n.unitMilliliters
+                                : l10n.unitGrams)
+                          : l10n.portionCount,
                       suffixText: _isRawMode ? _suffix : '×',
                       labelStyle: AppText.grotesk(
                         size: 13,
@@ -264,7 +269,7 @@ class _PortionSheetState extends ConsumerState<_PortionSheet> {
             _NutrientPreview(nutrients: nutrients),
             const SizedBox(height: 18),
             PrimaryButton(
-              label: 'Hinzufügen',
+              label: l10n.commonAdd,
               icon: Icons.check_circle,
               onPressed: _grams <= 0
                   ? null
@@ -340,6 +345,7 @@ class _NutrientPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final n = nutrients;
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
@@ -353,17 +359,17 @@ class _NutrientPreview extends StatelessWidget {
             accent: AppColors.lime,
           ),
           _Value(
-            label: 'EIWEISS',
+            label: l10n.macroProteinShort.toUpperCase(),
             value: n.proteinG.toStringAsFixed(0),
             accent: AppColors.protein,
           ),
           _Value(
-            label: 'KOHLENH.',
+            label: l10n.macroCarbsShort.toUpperCase(),
             value: n.carbsG.toStringAsFixed(0),
             accent: AppColors.carbs,
           ),
           _Value(
-            label: 'FETT',
+            label: l10n.macroFatShort.toUpperCase(),
             value: n.fatG.toStringAsFixed(0),
             accent: AppColors.fat,
           ),
@@ -418,7 +424,9 @@ class _FavoriteStar extends ConsumerWidget {
       color: isFavourite
           ? theme.colorScheme.primary
           : theme.colorScheme.onSurfaceVariant,
-      tooltip: isFavourite ? 'Favorit entfernen' : 'Zu Favoriten',
+      tooltip: isFavourite
+          ? AppLocalizations.of(context).searchRemoveFavorite
+          : AppLocalizations.of(context).searchAddFavorite,
       onPressed: () {
         if (food.ref.source == FoodSourceType.custom) {
           ref
