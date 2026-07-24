@@ -681,7 +681,7 @@ class _ActivityRow extends ConsumerWidget {
         child: Row(
           children: [
             Icon(
-              activityIconFor(entry.label),
+              activityIconFor(l10n, entry.label),
               size: 24,
               color: AppColors.coral,
             ),

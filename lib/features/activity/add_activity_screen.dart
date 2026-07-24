@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/di/providers.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
+import '../../l10n/app_localizations.dart';
 import 'activity_types.dart';
 
 /// Screen 5a — log burned calories by typing them.
@@ -44,7 +45,7 @@ class _AddActivityScreenState extends ConsumerState<AddActivityScreen> {
         .read(diaryRepositoryProvider)
         .addActivity(
           day: day,
-          label: _type.label,
+          label: _type.label(AppLocalizations.of(context)),
           kcalBurned: _entered.toDouble(),
           safetyFactor: factor,
         );
@@ -56,6 +57,7 @@ class _AddActivityScreenState extends ConsumerState<AddActivityScreen> {
   Widget build(BuildContext context) {
     final factor = ref.watch(safetyFactorProvider);
     final logged = (_entered * factor).round();
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -63,11 +65,11 @@ class _AddActivityScreenState extends ConsumerState<AddActivityScreen> {
         child: Column(
           children: [
             BoldHeader(
-              overline: 'ERFASSEN',
-              title: 'AKTIVITÄT',
+              overline: l10n.activityOverline.toUpperCase(),
+              title: l10n.commonActivity.toUpperCase(),
               leading: SquareIconButton(
                 icon: Icons.arrow_back,
-                tooltip: 'Zurück',
+                tooltip: l10n.commonBack,
                 onPressed: Navigator.of(context).pop,
               ),
             ),
@@ -86,7 +88,7 @@ class _AddActivityScreenState extends ConsumerState<AddActivityScreen> {
                 itemBuilder: (context, index) {
                   final type = ActivityType.values[index];
                   return BoldChip(
-                    label: type.label,
+                    label: type.label(l10n),
                     icon: type.icon,
                     radius: AppRadii.chip,
                     selected: type == _type,
@@ -125,7 +127,7 @@ class _ManualDisplay extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'VERBRANNT · MANUELL',
+            AppLocalizations.of(context).activityBurnedManual.toUpperCase(),
             style: AppText.grotesk(
               size: 11,
               weight: 700,
@@ -183,6 +185,7 @@ class _SafetyFactorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
       decoration: const BoxDecoration(
@@ -202,8 +205,9 @@ class _SafetyFactorCard extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        'Sicherheitsfaktor '
-                        '×${factor.toStringAsFixed(2).replaceAll('.', ',')}',
+                        l10n.activityFactorLabel(
+                          factor.toStringAsFixed(2).replaceAll('.', ','),
+                        ),
                         style: AppText.grotesk(size: 13, weight: 700),
                       ),
                     ),
@@ -218,7 +222,7 @@ class _SafetyFactorCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        'EINSTELLUNGEN',
+                        l10n.settingsTitle.toUpperCase(),
                         style: AppText.grotesk(
                           size: 9,
                           weight: 700,
@@ -231,8 +235,7 @@ class _SafetyFactorCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Manuelle Einträge werden reduziert, um die verbrannten '
-                  'Kalorien nicht zu überschätzen.',
+                  l10n.activityFactorHint,
                   style: AppText.rowSubtitle(),
                 ),
               ],
@@ -251,7 +254,7 @@ class _SafetyFactorCard extends StatelessWidget {
                 ),
               ),
               Text(
-                'GEBUCHT',
+                l10n.activityBooked.toUpperCase(),
                 style: AppText.grotesk(
                   size: 9,
                   weight: 700,
@@ -347,7 +350,7 @@ class _SaveBar extends StatelessWidget {
         MediaQuery.paddingOf(context).bottom + 20,
       ),
       child: PrimaryButton(
-        label: 'AKTIVITÄT SPEICHERN',
+        label: AppLocalizations.of(context).activitySave.toUpperCase(),
         icon: Icons.check_circle,
         onPressed: onSave,
       ),

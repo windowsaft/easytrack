@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' show DateFormat;
 
 import '../../core/di/providers.dart';
 import '../../core/time/day_key.dart';
@@ -11,6 +12,7 @@ import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/db/user_database.dart';
 import '../../domain/history.dart';
 import '../../domain/weight_trend.dart';
+import '../../l10n/app_localizations.dart';
 import '../weight/weight_screen.dart';
 
 /// Screen 7d — Verlauf: how the last week/month has gone against the target.
@@ -27,12 +29,16 @@ class HistoryScreen extends ConsumerStatefulWidget {
 }
 
 enum _Period {
-  woche('Woche', 7),
-  monat('Monat', 30);
+  woche(7),
+  monat(30);
 
-  const _Period(this.label, this.days);
-  final String label;
+  const _Period(this.days);
   final int days;
+
+  String label(AppLocalizations l10n) => switch (this) {
+    _Period.woche => l10n.historyWeek,
+    _Period.monat => l10n.historyMonth,
+  };
 }
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
@@ -43,6 +49,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final days =
         ref.watch(historyProvider(_period.days)).value ?? const <DayHistory>[];
     final summary = HistorySummary.of(days);
+    final l10n = AppLocalizations.of(context);
 
     return ListView(
       padding: EdgeInsets.only(
@@ -50,7 +57,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         bottom: 24,
       ),
       children: [
-        const BoldHeader(title: 'VERLAUF'),
+        BoldHeader(title: l10n.navHistory.toUpperCase()),
         _PeriodTabs(
           current: _period,
           onSelect: (p) => setState(() => _period = p),
@@ -59,9 +66,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           const _EmptyState()
         else ...[
           SectionHeader(
-            title: 'KALORIEN',
+            title: l10n.fieldCalories.toUpperCase(),
             trailing: Text(
-              'Ø ${summary.avgKcal.round()} kcal',
+              l10n.historyAvgKcal(summary.avgKcal.round()),
               style: AppText.grotesk(
                 size: 11,
                 weight: 600,
@@ -71,16 +78,16 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             ),
           ),
           _KcalCard(days: days),
-          const SectionHeader(title: 'ÜBERBLICK'),
+          SectionHeader(title: l10n.historyOverview.toUpperCase()),
           _TilePair(
             left: StatTile(
-              label: 'ZIEL-TREUE',
+              label: l10n.historyAdherence.toUpperCase(),
               value: '${summary.adherentDays}',
               suffix: '/${summary.periodDays}',
               accent: AppColors.lime,
             ),
             right: StatTile(
-              label: 'Ø ABWEICHUNG',
+              label: l10n.historyAvgDeviation.toUpperCase(),
               value: _signedKcal(summary.avgDeviation),
               suffix: ' kcal',
               accent: AppColors.coral,
@@ -89,22 +96,22 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           const SizedBox(height: AppTheme.rowGap),
           _TilePair(
             left: StatTile(
-              label: 'WASSER Ø',
+              label: l10n.historyWaterAvg.toUpperCase(),
               value: _litres(summary.avgWaterMl),
               suffix: ' L',
               accent: AppColors.water,
             ),
             right: StatTile(
-              label: 'AKTIVITÄT Ø',
+              label: l10n.historyActivityAvg.toUpperCase(),
               value: '${summary.avgActivityKcal.round()}',
               suffix: ' kcal',
               accent: AppColors.coral,
             ),
           ),
-          const SectionHeader(title: 'MAKRO-SPLIT Ø'),
+          SectionHeader(title: l10n.historyMacroSplitAvg.toUpperCase()),
           _MacroSplitCard(summary: summary),
         ],
-        const SectionHeader(title: 'GEWICHT'),
+        SectionHeader(title: l10n.fieldWeight.toUpperCase()),
         _WeightTrendCard(
           onManage: () => Navigator.of(
             context,
@@ -147,7 +154,7 @@ class _PeriodTabs extends StatelessWidget {
             if (period != _Period.values.first) const SizedBox(width: 8),
             Expanded(
               child: BoldChip(
-                label: period.label,
+                label: period.label(AppLocalizations.of(context)),
                 selected: current == period,
                 onTap: () => onSelect(period),
               ),
@@ -187,8 +194,6 @@ class _KcalBarsPainter extends CustomPainter {
   _KcalBarsPainter(this.days);
 
   final List<DayHistory> days;
-
-  static const _weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
   /// Reserved strip at the bottom for the day labels.
   static const _labelStrip = 18.0;
@@ -249,7 +254,9 @@ class _KcalBarsPainter extends CustomPainter {
     for (var i = 0; i < n; i++) {
       if (i % every != 0) continue;
       final date = days[i].day.toDateTime();
-      final text = n <= 10 ? _weekdays[date.weekday - 1] : '${date.day}';
+      // Locale-aware weekday abbreviation via Intl.defaultLocale (pinned by the
+      // active language); day-of-month numbers for longer spans.
+      final text = n <= 10 ? DateFormat('EE').format(date) : '${date.day}';
       tp
         ..text = TextSpan(
           text: text,
@@ -307,12 +314,17 @@ class _MacroSplitCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              _MacroLabel('Kohlenh.', AppColors.carbs, split.carbs),
-              _MacroLabel('Eiweiß', AppColors.protein, split.protein),
-              _MacroLabel('Fett', AppColors.fat, split.fat),
-            ],
+          Builder(
+            builder: (context) {
+              final l10n = AppLocalizations.of(context);
+              return Row(
+                children: [
+                  _MacroLabel(l10n.macroCarbsShort, AppColors.carbs, split.carbs),
+                  _MacroLabel(l10n.macroProteinShort, AppColors.protein, split.protein),
+                  _MacroLabel(l10n.macroFatShort, AppColors.fat, split.fat),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -409,8 +421,8 @@ class _WeightTrendCard extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: Text(
                 series.isEmpty
-                    ? 'Noch kein Gewicht erfasst.'
-                    : 'Trend ab der zweiten Messung.',
+                    ? AppLocalizations.of(context).historyNoWeight
+                    : AppLocalizations.of(context).historyTrendFromSecond,
                 style: AppText.grotesk(size: 13, color: AppColors.textMute),
               ),
             )
@@ -425,7 +437,7 @@ class _WeightTrendCard extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'Gewicht verwalten',
+                      AppLocalizations.of(context).historyManageWeight,
                       style: AppText.grotesk(size: 14, weight: 600),
                     ),
                   ),
@@ -511,13 +523,12 @@ class _EmptyState extends StatelessWidget {
           const Icon(Icons.insights, size: 48, color: AppColors.chevron),
           const SizedBox(height: 14),
           Text(
-            'Noch keine Auswertung',
+            AppLocalizations.of(context).historyEmptyTitle,
             style: AppText.grotesk(size: 15, weight: 700),
           ),
           const SizedBox(height: 4),
           Text(
-            'Sobald du ein paar Tage einträgst, erscheint hier dein Verlauf '
-            'gegen dein Ziel.',
+            AppLocalizations.of(context).historyEmptyBody,
             textAlign: TextAlign.center,
             style: AppText.grotesk(
               size: 13,

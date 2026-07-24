@@ -7,6 +7,7 @@ import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/food/food_item.dart';
 import '../../domain/recipe.dart';
+import '../../l10n/app_localizations.dart';
 import '../diary/widgets/portion_sheet.dart';
 import '../search/food_search_screen.dart';
 
@@ -93,15 +94,14 @@ class _RecipeEditScreenState extends ConsumerState<RecipeEditScreen> {
 
   /// Live feedback under the portion field: how many portions the current yield
   /// makes at the entered size, and the kcal in one of them.
-  String get _portionHint {
+  String _portionHint(AppLocalizations l10n) {
     final scaling = _scaling;
     final count = scaling.portionCount;
     if (count == null || scaling.isEmpty) {
-      return 'Teile das Gericht in gleich große Portionen. Beim Eintragen '
-          'kannst du dann "1 Portion" wählen.';
+      return l10n.recipeEditPortionHintEmpty;
     }
     final kcal = scaling.forPortion(scaling.portionSizeG!).kcal.round();
-    return 'Ergibt ≈ $count Portionen · $kcal kcal pro Portion.';
+    return l10n.recipeEditPortionHint(count, kcal);
   }
 
   /// Picks a food, then its weight, and stages it as an ingredient.
@@ -177,28 +177,28 @@ class _RecipeEditScreenState extends ConsumerState<RecipeEditScreen> {
 
   Future<void> _confirmDelete() async {
     final navigator = Navigator.of(context);
+    final l10n = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface,
         title: Text(
-          'Rezept löschen?',
+          l10n.recipeDeleteTitle,
           style: AppText.grotesk(size: 17, weight: 700),
         ),
         content: Text(
-          'Das Rezept wird entfernt. Bereits eingetragene Portionen bleiben '
-          'erhalten.',
+          l10n.recipeDeleteBody,
           style: AppText.grotesk(size: 14, color: AppColors.textMute),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Abbrechen'),
+            child: Text(l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
-              'Löschen',
+              l10n.commonDelete,
               style: AppText.grotesk(
                 size: 14,
                 weight: 600,
@@ -222,23 +222,25 @@ class _RecipeEditScreenState extends ConsumerState<RecipeEditScreen> {
       );
     }
 
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
             BoldHeader(
-              title: widget.isNew ? 'NEUES REZEPT' : 'REZEPT',
+              title: (widget.isNew ? l10n.recipeNewTitle : l10n.recipeTitle)
+                  .toUpperCase(),
               leading: SquareIconButton(
                 icon: Icons.arrow_back,
-                tooltip: 'Zurück',
+                tooltip: l10n.commonBack,
                 onPressed: Navigator.of(context).pop,
               ),
               trailing: widget.isNew
                   ? null
                   : SquareIconButton(
                       icon: Icons.delete_outline,
-                      tooltip: 'Rezept löschen',
+                      tooltip: l10n.recipeDelete,
                       onPressed: _confirmDelete,
                     ),
             ),
@@ -251,10 +253,10 @@ class _RecipeEditScreenState extends ConsumerState<RecipeEditScreen> {
                   24,
                 ),
                 children: [
-                  _label('NAME'),
+                  _label(l10n.fieldName.toUpperCase()),
                   _TextField(
                     controller: _name,
-                    hint: 'z. B. Chili con Carne',
+                    hint: l10n.recipeNameHint,
                     autofocus: widget.isNew,
                     onChanged: (_) => setState(() {}),
                   ),
@@ -266,21 +268,19 @@ class _RecipeEditScreenState extends ConsumerState<RecipeEditScreen> {
                     onAdd: _addIngredient,
                   ),
                   const SizedBox(height: 20),
-                  _label('GEKOCHTES GEWICHT (OPTIONAL)'),
+                  _label(l10n.recipeCookedWeight.toUpperCase()),
                   _TextField(
                     controller: _cookedWeight,
                     hint: _components.isEmpty
                         ? '—'
-                        : 'roh ${_scaling.batchWeightG.round()} g',
+                        : l10n.recipeRawWeight(_scaling.batchWeightG.round()),
                     suffix: 'g',
                     number: true,
                     onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Wiegt das fertige Gericht weniger als die Summe der Zutaten '
-                    '(z. B. weil Wasser verkocht ist), hier eintragen. Portionen '
-                    'werden dann darauf bezogen.',
+                    l10n.recipeCookedWeightHint,
                     style: AppText.grotesk(
                       size: 12,
                       color: AppColors.textMute,
@@ -288,19 +288,21 @@ class _RecipeEditScreenState extends ConsumerState<RecipeEditScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _label('PORTIONSGRÖSSE (OPTIONAL)'),
+                  _label(l10n.recipePortionSize.toUpperCase()),
                   _TextField(
                     controller: _portionSize,
                     hint: _components.isEmpty
                         ? '—'
-                        : 'z. B. ${(_scaling.yieldWeightG / 2).round()} g',
+                        : l10n.recipePortionSizeHint(
+                            (_scaling.yieldWeightG / 2).round(),
+                          ),
                     suffix: 'g',
                     number: true,
                     onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    _portionHint,
+                    _portionHint(l10n),
                     style: AppText.grotesk(
                       size: 12,
                       color: AppColors.textMute,
@@ -342,6 +344,7 @@ class _IngredientsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -349,7 +352,12 @@ class _IngredientsSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Expanded(child: Text('ZUTATEN', style: AppText.section(size: 14))),
+            Expanded(
+              child: Text(
+                l10n.recipeIngredients.toUpperCase(),
+                style: AppText.section(size: 14),
+              ),
+            ),
             Text(
               '${components.length}',
               style: AppText.grotesk(
@@ -367,7 +375,7 @@ class _IngredientsSection extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 22),
               child: Center(
                 child: Text(
-                  'Noch keine Zutaten',
+                  l10n.recipeEditNoIngredients,
                   style: AppText.rowSubtitle(color: AppColors.textFaint),
                 ),
               ),
@@ -384,7 +392,7 @@ class _IngredientsSection extends StatelessWidget {
           ],
         const SizedBox(height: AppTheme.rowGap),
         DashedActionChip(
-          label: 'Zutat hinzufügen',
+          label: l10n.recipeAddIngredient,
           icon: Icons.add,
           onTap: onAdd,
         ),
@@ -441,7 +449,7 @@ class _IngredientRow extends StatelessWidget {
                   size: 20,
                   color: AppColors.chevron,
                 ),
-                tooltip: 'Entfernen',
+                tooltip: AppLocalizations.of(context).commonRemove,
                 onPressed: onRemove,
               ),
             ],
@@ -466,6 +474,7 @@ class _SummaryBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final per100 = scaling.per100g.kcal.round();
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       decoration: const BoxDecoration(
@@ -492,7 +501,7 @@ class _SummaryBar extends StatelessWidget {
                     style: AppText.anton(size: 26, height: 1),
                   ),
                   Text(
-                    ' kcal gesamt',
+                    ' ${l10n.recipeKcalTotal}',
                     style: AppText.grotesk(
                       size: 12,
                       weight: 600,
@@ -503,7 +512,7 @@ class _SummaryBar extends StatelessWidget {
               ),
               Text(
                 scaling.isEmpty
-                    ? 'Zutaten hinzufügen'
+                    ? l10n.recipeSummaryEmpty
                     : '${scaling.yieldWeightG.round()} g · $per100 kcal / 100 g',
                 style: AppText.grotesk(
                   size: 11,
@@ -517,7 +526,7 @@ class _SummaryBar extends StatelessWidget {
           const SizedBox(width: 14),
           Expanded(
             child: PrimaryButton(
-              label: 'SPEICHERN',
+              label: l10n.commonSave.toUpperCase(),
               icon: Icons.check_circle,
               height: 52,
               onPressed: onSave,

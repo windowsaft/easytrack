@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 /// The activity presets offered as chips on the add-activity screen.
 ///
 /// Deliberately a short fixed list rather than a database table: it exists to
@@ -7,25 +9,33 @@ import 'package:flutter/material.dart';
 /// hand. A user-editable catalogue would be a feature with no payoff until
 /// activities are estimated rather than entered.
 enum ActivityType {
-  bike('Radfahren', Icons.directions_bike),
-  run('Laufen', Icons.directions_run),
-  walk('Gehen', Icons.directions_walk),
-  gym('Kraftsport', Icons.fitness_center);
+  bike(Icons.directions_bike),
+  run(Icons.directions_run),
+  walk(Icons.directions_walk),
+  gym(Icons.fitness_center);
 
-  const ActivityType(this.label, this.icon);
+  const ActivityType(this.icon);
 
-  final String label;
   final IconData icon;
+
+  String label(AppLocalizations l10n) => switch (this) {
+    ActivityType.bike => l10n.activityBike,
+    ActivityType.run => l10n.activityRun,
+    ActivityType.walk => l10n.activityWalk,
+    ActivityType.gym => l10n.activityGym,
+  };
 }
 
-/// Resolves a stored entry's free-text label back to an icon.
+/// Resolves a stored entry's label back to an icon.
 ///
-/// Labels are stored as text, not as an enum reference, so that renaming or
-/// removing a preset cannot orphan historical rows. The lookup falls back to a
-/// generic icon rather than failing.
-IconData activityIconFor(String label) {
+/// Labels are stored as the localized preset text at the moment of entry, not
+/// as an enum reference, so that renaming or removing a preset cannot orphan
+/// historical rows. Matching is against the *current* language's preset names,
+/// so an entry logged in another language falls back to the generic icon rather
+/// than failing.
+IconData activityIconFor(AppLocalizations l10n, String label) {
   for (final type in ActivityType.values) {
-    if (type.label.toLowerCase() == label.toLowerCase()) return type.icon;
+    if (type.label(l10n).toLowerCase() == label.toLowerCase()) return type.icon;
   }
   return Icons.local_fire_department;
 }

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/i18n/enum_labels.dart';
 import '../../core/nutrition/food_ref.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/repositories/recipe_repository.dart';
+import '../../l10n/app_localizations.dart';
 import '../diary/widgets/portion_sheet.dart';
 import 'recipe_edit_screen.dart';
 
@@ -17,6 +19,7 @@ class RecipesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final recipes = ref.watch(recipesProvider).value ?? const <RecipeDetail>[];
+    final l10n = AppLocalizations.of(context);
 
     return ListView(
       // Top-only inset: the shell owns the bottom nav bar.
@@ -27,7 +30,7 @@ class RecipesScreen extends ConsumerWidget {
       children: [
         // No header add button: on this tab the centre nav button (the FAB)
         // creates a recipe. The empty state still offers an explicit action.
-        const BoldHeader(title: 'REZEPTE'),
+        BoldHeader(title: l10n.navRecipes.toUpperCase()),
         const SizedBox(height: 8),
         if (recipes.isEmpty)
           Padding(
@@ -39,7 +42,7 @@ class RecipesScreen extends ConsumerWidget {
                 const _EmptyState(),
                 const SizedBox(height: 14),
                 DashedActionChip(
-                  label: 'Erstes Rezept anlegen',
+                  label: l10n.recipesCreateFirst,
                   icon: Icons.add,
                   onTap: () => _openEdit(context),
                 ),
@@ -81,9 +84,10 @@ class RecipesScreen extends ConsumerWidget {
     RecipeDetail detail,
   ) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     if (detail.scaling.isEmpty) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Dieses Rezept hat noch keine Zutaten.')),
+        SnackBar(content: Text(l10n.recipesNoIngredients)),
       );
       return;
     }
@@ -106,11 +110,12 @@ class RecipesScreen extends ConsumerWidget {
           servingCount: portion.count,
         );
     messenger.showSnackBar(
-      SnackBar(content: Text('${detail.recipe.name} eingetragen')),
+      SnackBar(content: Text(l10n.recipesLogged(detail.recipe.name))),
     );
   }
 
   Future<MealType?> _pickMeal(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return showModalBottomSheet<MealType>(
       context: context,
       builder: (context) => SafeArea(
@@ -125,7 +130,7 @@ class RecipesScreen extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('IN WELCHE MAHLZEIT?', style: AppText.section(size: 18)),
+              Text(l10n.recipesPickMeal.toUpperCase(), style: AppText.section(size: 18)),
               const SizedBox(height: 14),
               for (final meal in MealType.values) ...[
                 Material(
@@ -144,7 +149,7 @@ class RecipesScreen extends ConsumerWidget {
                           const SizedBox(width: 13),
                           Expanded(
                             child: Text(
-                              meal.displayLabel,
+                              meal.label(l10n),
                               style: AppText.grotesk(size: 15, weight: 600),
                             ),
                           ),
@@ -183,6 +188,7 @@ class _RecipeRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final count = detail.ingredients.length;
     final per100 = detail.scaling.per100g.kcal.round();
+    final l10n = AppLocalizations.of(context);
 
     return Material(
       color: AppColors.surface,
@@ -206,8 +212,7 @@ class _RecipeRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '$count ${count == 1 ? 'Zutat' : 'Zutaten'} · '
-                      '$per100 kcal / 100 g',
+                      l10n.recipesIngredientsSummary(count, per100),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppText.rowSubtitle(),
@@ -235,7 +240,7 @@ class _LogButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Portion eintragen',
+      label: AppLocalizations.of(context).recipesLogPortion,
       child: Material(
         color: AppColors.lime,
         borderRadius: BorderRadius.circular(AppRadii.tile),
@@ -266,14 +271,12 @@ class _EmptyState extends StatelessWidget {
             const Icon(Icons.menu_book, size: 44, color: AppColors.chevron),
             const SizedBox(height: 12),
             Text(
-              'Noch keine Rezepte',
+              AppLocalizations.of(context).recipesEmptyTitle,
               style: AppText.grotesk(size: 15, weight: 700),
             ),
             const SizedBox(height: 4),
             Text(
-              'Baue ein Gericht aus gewogenen Zutaten. Die Portionsrechnung '
-              'skaliert Kalorien und Nährwerte auf den Teller, den du wirklich '
-              'isst.',
+              AppLocalizations.of(context).recipesEmptyBody,
               textAlign: TextAlign.center,
               style: AppText.grotesk(
                 size: 13,

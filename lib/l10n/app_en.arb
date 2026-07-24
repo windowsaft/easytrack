@@ -840,5 +840,237 @@
   "rangeY1": "1 Y",
   "@rangeY1": {
     "description": "Weight-chart range: last year. 'Y' abbreviates year."
+  },
+
+  "commonDelete": "Delete",
+  "@commonDelete": {
+    "description": "Generic 'delete' action, e.g. in a confirmation dialog."
+  },
+
+  "activityBike": "Cycling",
+  "@activityBike": {
+    "description": "Activity preset: cycling."
+  },
+  "activityRun": "Running",
+  "@activityRun": {
+    "description": "Activity preset: running."
+  },
+  "activityWalk": "Walking",
+  "@activityWalk": {
+    "description": "Activity preset: walking."
+  },
+  "activityGym": "Strength training",
+  "@activityGym": {
+    "description": "Activity preset: gym / strength training."
+  },
+  "activityOverline": "Record",
+  "@activityOverline": {
+    "description": "Overline over the add-activity title. Shown upper-cased."
+  },
+  "activityBurnedManual": "Burned · manual",
+  "@activityBurnedManual": {
+    "description": "Label over the manually entered burned-calories figure. Shown upper-cased."
+  },
+  "activityFactorLabel": "Safety factor ×{factor}",
+  "@activityFactorLabel": {
+    "description": "Shows the active safety factor on the add-activity card.",
+    "placeholders": {
+      "factor": { "type": "String", "example": "0.85" }
+    }
+  },
+  "activityFactorHint": "Manual entries are reduced so as not to overestimate the calories burned.",
+  "@activityFactorHint": {
+    "description": "Explains why the entered calories are scaled down."
+  },
+  "activityBooked": "Booked",
+  "@activityBooked": {
+    "description": "Label over the credited (post-factor) calorie figure. Shown upper-cased."
+  },
+  "activitySave": "Save activity",
+  "@activitySave": {
+    "description": "Button that saves the activity. Shown upper-cased."
+  },
+
+  "recipesCreateFirst": "Create your first recipe",
+  "@recipesCreateFirst": {
+    "description": "Action in the empty recipe list."
+  },
+  "recipesNoIngredients": "This recipe has no ingredients yet.",
+  "@recipesNoIngredients": {
+    "description": "Snackbar when logging a recipe that has no ingredients."
+  },
+  "recipesLogged": "{name} logged",
+  "@recipesLogged": {
+    "description": "Snackbar after a recipe portion is logged.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "recipesPickMeal": "Into which meal?",
+  "@recipesPickMeal": {
+    "description": "Title of the meal chooser when logging a recipe. Shown upper-cased."
+  },
+  "recipesIngredientsSummary": "{count, plural, one{{count} ingredient} other{{count} ingredients}} · {kcal} kcal / 100 g",
+  "@recipesIngredientsSummary": {
+    "description": "Recipe row subtitle: ingredient count and energy density.",
+    "placeholders": {
+      "count": { "type": "int" },
+      "kcal": { "type": "int" }
+    }
+  },
+  "recipesLogPortion": "Log a portion",
+  "@recipesLogPortion": {
+    "description": "Accessibility label for the log-portion button on a recipe row."
+  },
+  "recipesEmptyTitle": "No recipes yet",
+  "@recipesEmptyTitle": {
+    "description": "Title of the recipe list's empty state."
+  },
+  "recipesEmptyBody": "Build a dish from weighed ingredients. The portion calculation scales calories and nutrients to the plate you actually eat.",
+  "@recipesEmptyBody": {
+    "description": "Body of the recipe list's empty state."
+  },
+
+  "recipeNewTitle": "New recipe",
+  "@recipeNewTitle": {
+    "description": "Header when creating a recipe. Shown upper-cased."
+  },
+  "recipeTitle": "Recipe",
+  "@recipeTitle": {
+    "description": "Header when editing a recipe. Shown upper-cased."
+  },
+  "recipeDelete": "Delete recipe",
+  "@recipeDelete": {
+    "description": "Tooltip on the delete-recipe button."
+  },
+  "recipeDeleteTitle": "Delete recipe?",
+  "@recipeDeleteTitle": {
+    "description": "Title of the delete-recipe confirmation dialog."
+  },
+  "recipeDeleteBody": "The recipe will be removed. Portions already logged are kept.",
+  "@recipeDeleteBody": {
+    "description": "Body of the delete-recipe confirmation dialog."
+  },
+  "recipeNameHint": "e.g. Chilli con carne",
+  "@recipeNameHint": {
+    "description": "Placeholder in the recipe name field."
+  },
+  "recipeCookedWeight": "Cooked weight (optional)",
+  "@recipeCookedWeight": {
+    "description": "Field label for the cooked weight of the finished dish. Shown upper-cased."
+  },
+  "recipeRawWeight": "raw {grams} g",
+  "@recipeRawWeight": {
+    "description": "Placeholder in the cooked-weight field showing the raw batch weight.",
+    "placeholders": {
+      "grams": { "type": "int" }
+    }
+  },
+  "recipeCookedWeightHint": "If the finished dish weighs less than the sum of its ingredients (e.g. because water boiled off), enter it here. Portions are then based on it.",
+  "@recipeCookedWeightHint": {
+    "description": "Explanation under the cooked-weight field."
+  },
+  "recipePortionSize": "Portion size (optional)",
+  "@recipePortionSize": {
+    "description": "Field label for one portion's weight. Shown upper-cased."
+  },
+  "recipePortionSizeHint": "e.g. {grams} g",
+  "@recipePortionSizeHint": {
+    "description": "Placeholder in the portion-size field suggesting a weight.",
+    "placeholders": {
+      "grams": { "type": "int" }
+    }
+  },
+  "recipeEditPortionHintEmpty": "Divide the dish into equal portions. When logging, you can then pick \"1 portion\".",
+  "@recipeEditPortionHintEmpty": {
+    "description": "Portion-field hint before a portion size is entered."
+  },
+  "recipeEditPortionHint": "{count, plural, one{Yields ≈ {count} portion · {kcal} kcal per portion.} other{Yields ≈ {count} portions · {kcal} kcal per portion.}}",
+  "@recipeEditPortionHint": {
+    "description": "Portion-field hint showing how many portions the yield makes.",
+    "placeholders": {
+      "count": { "type": "int" },
+      "kcal": { "type": "int" }
+    }
+  },
+  "recipeIngredients": "Ingredients",
+  "@recipeIngredients": {
+    "description": "Section label over the ingredient list. Shown upper-cased."
+  },
+  "recipeEditNoIngredients": "No ingredients yet",
+  "@recipeEditNoIngredients": {
+    "description": "Empty state inside the ingredient list."
+  },
+  "recipeAddIngredient": "Add ingredient",
+  "@recipeAddIngredient": {
+    "description": "Action that opens search to add one ingredient."
+  },
+  "recipeSummaryEmpty": "Add ingredients",
+  "@recipeSummaryEmpty": {
+    "description": "Summary-bar subtitle before any ingredient is added."
+  },
+  "recipeKcalTotal": "kcal total",
+  "@recipeKcalTotal": {
+    "description": "Suffix after the recipe's total calories in the summary bar."
+  },
+
+  "historyWeek": "Week",
+  "@historyWeek": {
+    "description": "History period: last week."
+  },
+  "historyMonth": "Month",
+  "@historyMonth": {
+    "description": "History period: last month."
+  },
+  "historyAvgKcal": "Ø {kcal} kcal",
+  "@historyAvgKcal": {
+    "description": "Average daily calories caption in the history header.",
+    "placeholders": {
+      "kcal": { "type": "int" }
+    }
+  },
+  "historyOverview": "Overview",
+  "@historyOverview": {
+    "description": "Section header over the summary tiles. Shown upper-cased."
+  },
+  "historyAdherence": "Goal adherence",
+  "@historyAdherence": {
+    "description": "Stat tile: days within the calorie goal. Shown upper-cased."
+  },
+  "historyAvgDeviation": "Ø deviation",
+  "@historyAvgDeviation": {
+    "description": "Stat tile: average deviation from the goal. Shown upper-cased."
+  },
+  "historyWaterAvg": "Water Ø",
+  "@historyWaterAvg": {
+    "description": "Stat tile: average daily water. Shown upper-cased."
+  },
+  "historyActivityAvg": "Activity Ø",
+  "@historyActivityAvg": {
+    "description": "Stat tile: average daily activity calories. Shown upper-cased."
+  },
+  "historyMacroSplitAvg": "Macro split Ø",
+  "@historyMacroSplitAvg": {
+    "description": "Section header over the average macro split. Shown upper-cased."
+  },
+  "historyNoWeight": "No weight recorded yet.",
+  "@historyNoWeight": {
+    "description": "Weight-trend card when there are no weigh-ins."
+  },
+  "historyTrendFromSecond": "Trend from the second measurement.",
+  "@historyTrendFromSecond": {
+    "description": "Weight-trend card when there is only one weigh-in."
+  },
+  "historyManageWeight": "Manage weight",
+  "@historyManageWeight": {
+    "description": "Row that opens the full weight screen."
+  },
+  "historyEmptyTitle": "No analysis yet",
+  "@historyEmptyTitle": {
+    "description": "Title of the history screen's empty state."
+  },
+  "historyEmptyBody": "Once you log a few days, your progress against your goal appears here.",
+  "@historyEmptyBody": {
+    "description": "Body of the history screen's empty state."
   }
 }
