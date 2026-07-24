@@ -55,5 +55,12 @@ Planned as an additional source. Public domain.
 
 ## License
 
-Personal project. Note that redistributing the food data carries the obligations of the
-licenses above.
+The **source code** is licensed under the [GNU General Public License v3.0](LICENSE):
+you're free to use, study, modify, and redistribute it, but derivative works must stay
+open source under the same license.
+
+The **bundled food data is not covered by the GPL** — it keeps the licenses noted above:
+BLS 4.0 under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) and Open Food
+Facts under the [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/). Redistributing
+the data carries those obligations (attribution, plus share-alike for the Open Food
+Facts-derived pack).
