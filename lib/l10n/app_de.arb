@@ -98,5 +98,22 @@
   "mealDetailSearchFood": "Lebensmittel suchen",
   "mealDetailNutrients": "Nährstoffe",
   "mealDetailEmpty": "Noch nichts eingetragen",
-  "mealDetailTotal": "Mahlzeit gesamt"
+  "mealDetailTotal": "Mahlzeit gesamt",
+
+  "commonCancel": "Abbrechen",
+  "commonSave": "Speichern",
+  "commonSelect": "Auswählen",
+
+  "navDiary": "Tagebuch",
+  "navRecipes": "Rezepte",
+  "navHistory": "Verlauf",
+  "navProfile": "Profil",
+  "shellAddTitle": "Eintragen",
+
+  "factorTitle": "Sicherheitsfaktor",
+  "factorHint": "Manuell erfasste Aktivität wird mit diesem Faktor multipliziert, bevor sie das Tagesbudget erhöht.",
+
+  "gaugeOver": "Zu viel",
+  "gaugeLeft": "Übrig",
+  "gaugeOfGoal": "von {budget} Ziel"
 }

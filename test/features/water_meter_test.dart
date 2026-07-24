@@ -3,6 +3,7 @@
 // row-growth rule has regressed twice, so it is pinned here.
 
 import 'package:easytrack/features/diary/widgets/water_meter.dart';
+import 'package:easytrack/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -24,6 +25,8 @@ void main() {
   }) async {
     await tester.pumpWidget(
       MaterialApp(
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: Scaffold(
           body: WaterMeter(
             currentMl: current,

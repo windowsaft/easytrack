@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../app_theme.dart';
 
 /// The 270° calorie arc at the top of the diary.
@@ -24,6 +25,7 @@ class CalorieGauge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final remaining = budgetKcal - consumedKcal;
     final over = remaining < 0;
     final progress = budgetKcal <= 0
@@ -60,7 +62,7 @@ class CalorieGauge extends StatelessWidget {
                 ),
               ),
               Text(
-                over ? 'ZU VIEL' : 'ÜBRIG',
+                (over ? l10n.gaugeOver : l10n.gaugeLeft).toUpperCase(),
                 style: AppText.grotesk(
                   size: 12,
                   weight: 700,
@@ -70,7 +72,7 @@ class CalorieGauge extends StatelessWidget {
               ),
               const SizedBox(height: 3),
               Text(
-                'VON ${formatKcal(budgetKcal)} ZIEL',
+                l10n.gaugeOfGoal(formatKcal(budgetKcal)).toUpperCase(),
                 style: AppText.grotesk(
                   size: 11,
                   weight: 600,

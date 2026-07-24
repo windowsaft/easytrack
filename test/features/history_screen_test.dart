@@ -12,8 +12,8 @@ import 'package:easytrack/data/food/food_item.dart';
 import 'package:easytrack/data/repositories/diary_repository.dart';
 import 'package:easytrack/data/repositories/settings_repository.dart';
 import 'package:easytrack/features/history/history_screen.dart';
+import 'package:easytrack/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -31,12 +31,8 @@ void main() {
     child: MaterialApp(
       theme: AppTheme.dark(),
       locale: const Locale('de'),
-      supportedLocales: const [Locale('de')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: Scaffold(body: screen),
     ),
   );

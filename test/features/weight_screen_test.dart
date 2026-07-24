@@ -8,9 +8,9 @@ import 'package:easytrack/core/ui/app_theme.dart';
 import 'package:easytrack/data/db/user_database.dart';
 import 'package:easytrack/data/repositories/settings_repository.dart';
 import 'package:easytrack/features/weight/weight_screen.dart';
+import 'package:easytrack/l10n/app_localizations.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -31,12 +31,8 @@ void main() {
     child: MaterialApp(
       theme: AppTheme.dark(),
       locale: const Locale('de'),
-      supportedLocales: const [Locale('de')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: screen,
     ),
   );

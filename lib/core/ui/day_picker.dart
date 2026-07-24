@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../time/day_key.dart';
 import 'app_theme.dart';
 
@@ -48,17 +49,17 @@ Future<DayKey?> showDayPicker(
               children: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(today),
-                  child: const Text('Heute'),
+                  child: Text(AppLocalizations.of(context).commonToday),
                 ),
                 const Spacer(),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Abbrechen'),
+                  child: Text(AppLocalizations.of(context).commonCancel),
                 ),
                 TextButton(
                   onPressed: () =>
                       Navigator.of(context).pop(DayKey.fromDate(selected)),
-                  child: const Text('Auswählen'),
+                  child: Text(AppLocalizations.of(context).commonSelect),
                 ),
               ],
             ),

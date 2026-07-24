@@ -408,5 +408,64 @@
   "mealDetailTotal": "Meal total",
   "@mealDetailTotal": {
     "description": "Label under the meal's total calories in the bottom bar. Shown upper-cased."
+  },
+
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Generic 'cancel' action. Shown upper-cased on dialog buttons."
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Generic 'save' action. Shown upper-cased on dialog buttons."
+  },
+  "commonSelect": "Select",
+  "@commonSelect": {
+    "description": "Generic 'select'/confirm action, e.g. in the date picker."
+  },
+
+  "navDiary": "Diary",
+  "@navDiary": {
+    "description": "Bottom-navigation label for the diary/dashboard tab."
+  },
+  "navRecipes": "Recipes",
+  "@navRecipes": {
+    "description": "Bottom-navigation label for the recipes tab."
+  },
+  "navHistory": "History",
+  "@navHistory": {
+    "description": "Bottom-navigation label for the history/trends tab."
+  },
+  "navProfile": "Profile",
+  "@navProfile": {
+    "description": "Bottom-navigation label for the profile tab."
+  },
+  "shellAddTitle": "Add entry",
+  "@shellAddTitle": {
+    "description": "Title of the centre add-button chooser and its accessibility label. The chooser title is shown upper-cased."
+  },
+
+  "factorTitle": "Safety factor",
+  "@factorTitle": {
+    "description": "Title of the sheet that picks the activity safety factor. Shown upper-cased."
+  },
+  "factorHint": "Manually recorded activity is multiplied by this factor before it increases the daily budget.",
+  "@factorHint": {
+    "description": "Explanation shown under the safety-factor title."
+  },
+
+  "gaugeOver": "Too much",
+  "@gaugeOver": {
+    "description": "Calorie-gauge label when the day is over budget. Shown upper-cased."
+  },
+  "gaugeLeft": "Left",
+  "@gaugeLeft": {
+    "description": "Calorie-gauge label for the remaining budget. Shown upper-cased."
+  },
+  "gaugeOfGoal": "of {budget} goal",
+  "@gaugeOfGoal": {
+    "description": "Calorie-gauge caption under the remaining figure. Shown upper-cased.",
+    "placeholders": {
+      "budget": { "type": "String", "example": "2000 kcal" }
+    }
   }
 }

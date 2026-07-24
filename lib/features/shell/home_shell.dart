@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/i18n/enum_labels.dart';
 import '../../core/nutrition/food_ref.dart';
 import '../../core/time/day_key.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/app_bottom_nav.dart';
+import '../../l10n/app_localizations.dart';
 import '../activity/add_activity_screen.dart';
 import '../diary/diary_screen.dart';
 import '../diary/meal_detail_screen.dart';
@@ -130,6 +132,7 @@ class _AddSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -142,12 +145,12 @@ class _AddSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('EINTRAGEN', style: AppText.section(size: 18)),
+            Text(l10n.shellAddTitle.toUpperCase(), style: AppText.section(size: 18)),
             const SizedBox(height: 14),
             for (final meal in MealType.values) ...[
               _AddOption(
                 icon: mealIcons[meal] ?? Icons.restaurant,
-                label: meal.displayLabel,
+                label: meal.label(l10n),
                 highlight: meal == suggested,
                 onTap: () => Navigator.of(context).pop(_AddMeal(meal)),
               ),
@@ -157,7 +160,7 @@ class _AddSheet extends StatelessWidget {
             _AddOption(
               icon: Icons.local_fire_department,
               iconColor: AppColors.coral,
-              label: 'Aktivität',
+              label: l10n.commonActivity,
               onTap: () => Navigator.of(context).pop(const _AddActivity()),
             ),
           ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../app_theme.dart';
 
 /// The five-slot bottom bar: four destinations around a raised lime add button.
@@ -18,15 +19,15 @@ class AppBottomNav extends StatelessWidget {
   final ValueChanged<int> onSelect;
   final VoidCallback onAdd;
 
-  static const _items = <({IconData icon, String label})>[
-    (icon: Icons.home, label: 'Tagebuch'),
-    (icon: Icons.menu_book, label: 'Rezepte'),
-    (icon: Icons.insights, label: 'Verlauf'),
-    (icon: Icons.person, label: 'Profil'),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final items = <({IconData icon, String label})>[
+      (icon: Icons.home, label: l10n.navDiary),
+      (icon: Icons.menu_book, label: l10n.navRecipes),
+      (icon: Icons.insights, label: l10n.navHistory),
+      (icon: Icons.person, label: l10n.navProfile),
+    ];
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Container(
@@ -42,23 +43,23 @@ class AppBottomNav extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _NavIcon(
-            item: _items[0],
+            item: items[0],
             selected: currentIndex == 0,
             onTap: () => onSelect(0),
           ),
           _NavIcon(
-            item: _items[1],
+            item: items[1],
             selected: currentIndex == 1,
             onTap: () => onSelect(1),
           ),
           _AddButton(onTap: onAdd),
           _NavIcon(
-            item: _items[2],
+            item: items[2],
             selected: currentIndex == 2,
             onTap: () => onSelect(2),
           ),
           _NavIcon(
-            item: _items[3],
+            item: items[3],
             selected: currentIndex == 3,
             onTap: () => onSelect(3),
           ),
@@ -112,7 +113,7 @@ class _AddButton extends StatelessWidget {
       offset: const Offset(0, -18),
       child: Semantics(
         button: true,
-        label: 'Eintragen',
+        label: AppLocalizations.of(context).shellAddTitle,
         child: Material(
           color: AppColors.lime,
           borderRadius: BorderRadius.circular(AppRadii.fab),

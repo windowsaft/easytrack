@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../app_theme.dart';
 import 'bold_controls.dart';
 
@@ -44,7 +45,7 @@ Future<double?> promptNumber(
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(
-            'ABBRECHEN',
+            AppLocalizations.of(context).commonCancel.toUpperCase(),
             style: AppText.grotesk(
               size: 13,
               weight: 700,
@@ -62,7 +63,7 @@ Future<double?> promptNumber(
             ).pop(parsed == null || parsed <= 0 ? null : parsed);
           },
           child: Text(
-            'SPEICHERN',
+            AppLocalizations.of(context).commonSave.toUpperCase(),
             style: AppText.grotesk(
               size: 13,
               weight: 700,
@@ -93,6 +94,7 @@ class _FactorSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppTheme.screenPadding,
@@ -104,11 +106,10 @@ class _FactorSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('SICHERHEITSFAKTOR', style: AppText.section(size: 18)),
+          Text(l10n.factorTitle.toUpperCase(), style: AppText.section(size: 18)),
           const SizedBox(height: 6),
           Text(
-            'Manuell erfasste Aktivität wird mit diesem Faktor multipliziert, '
-            'bevor sie das Tagesbudget erhöht.',
+            l10n.factorHint,
             style: AppText.grotesk(
               size: 13,
               weight: 500,
