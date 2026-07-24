@@ -6,6 +6,7 @@ import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../core/ui/widgets/calorie_gauge.dart';
 import '../../data/repositories/settings_repository.dart';
+import '../../l10n/app_localizations.dart';
 import '../goals/goals_screen.dart';
 import '../settings/settings_screen.dart';
 import '../weight/weight_screen.dart';
@@ -28,6 +29,7 @@ class ProfileScreen extends ConsumerWidget {
     final kcal = target?.kcal ?? SettingsRepository.defaultKcal;
     final waterMl = target?.waterMl ?? SettingsRepository.defaultWaterMl;
     final isAuto = target?.isAuto ?? false;
+    final l10n = AppLocalizations.of(context);
 
     return ListView(
       padding: EdgeInsets.only(
@@ -35,7 +37,10 @@ class ProfileScreen extends ConsumerWidget {
         bottom: 24,
       ),
       children: [
-        const BoldHeader(overline: 'LOKAL · KEIN KONTO', title: 'PROFIL'),
+        BoldHeader(
+          overline: l10n.profileOverline.toUpperCase(),
+          title: l10n.navProfile.toUpperCase(),
+        ),
         const SizedBox(height: 8),
         // DEINE ZIELE — the original three-StatTile overview, kept, now a
         // doorway into the Ziele-Seite where the targets are viewed and edited.
@@ -45,7 +50,7 @@ class ProfileScreen extends ConsumerWidget {
             onTap: () => _open(context, const GoalsScreen()),
             child: Column(
               children: [
-                const SectionHeader(title: 'DEINE ZIELE'),
+                SectionHeader(title: l10n.goalsTitle.toUpperCase()),
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppTheme.screenPadding,
@@ -54,7 +59,7 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: StatTile(
-                          label: 'KALORIEN',
+                          label: l10n.fieldCalories.toUpperCase(),
                           value: formatKcal(kcal),
                           suffix: ' kcal',
                           accent: AppColors.lime,
@@ -63,7 +68,7 @@ class ProfileScreen extends ConsumerWidget {
                       const SizedBox(width: AppTheme.rowGap),
                       Expanded(
                         child: StatTile(
-                          label: 'WASSER',
+                          label: l10n.diaryWater.toUpperCase(),
                           value: _litres(waterMl),
                           suffix: ' L',
                           accent: AppColors.water,
@@ -72,7 +77,7 @@ class ProfileScreen extends ConsumerWidget {
                       const SizedBox(width: AppTheme.rowGap),
                       Expanded(
                         child: StatTile(
-                          label: 'FAKTOR',
+                          label: l10n.profileFactor.toUpperCase(),
                           value: factor.toStringAsFixed(2).replaceAll('.', ','),
                           accent: AppColors.coral,
                         ),
@@ -92,8 +97,8 @@ class ProfileScreen extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           isAuto
-                              ? 'Berechnet · antippen, um Ziele anzupassen'
-                              : 'Manuell · antippen, um Ziele anzupassen',
+                              ? l10n.profileGoalsAuto
+                              : l10n.profileGoalsManual,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppText.grotesk(
@@ -115,7 +120,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
         ),
-        const SectionHeader(title: 'MEHR'),
+        SectionHeader(title: l10n.profileMore.toUpperCase()),
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
@@ -124,22 +129,22 @@ class ProfileScreen extends ConsumerWidget {
             children: [
               BoldListRow(
                 icon: Icons.monitor_weight_outlined,
-                label: 'Gewicht',
-                subtitle: weight == null ? 'Noch nichts erfasst' : null,
+                label: l10n.fieldWeight,
+                subtitle: weight == null ? l10n.profileNoWeight : null,
                 value: weight == null ? null : '${_trim(weight)} kg',
                 onTap: () => _open(context, const WeightScreen()),
               ),
               const SizedBox(height: AppTheme.rowGap),
               BoldListRow(
                 icon: Icons.settings,
-                label: 'Einstellungen',
-                subtitle: 'App, Anzeige, Produktdaten',
+                label: l10n.settingsTitle,
+                subtitle: l10n.profileSettingsSubtitle,
                 onTap: () => _open(context, const SettingsScreen()),
               ),
             ],
           ),
         ),
-        const SectionHeader(title: 'DATEN & RECHTLICHES'),
+        SectionHeader(title: l10n.profileDataLegal.toUpperCase()),
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
@@ -148,21 +153,21 @@ class ProfileScreen extends ConsumerWidget {
             children: [
               BoldListRow(
                 icon: Icons.lock_outline,
-                label: 'Datenschutz',
-                subtitle: 'Was bleibt lokal, was geht online',
+                label: l10n.profilePrivacy,
+                subtitle: l10n.profilePrivacySubtitle,
                 onTap: () => showPrivacy(context),
               ),
               const SizedBox(height: AppTheme.rowGap),
               BoldListRow(
                 icon: Icons.info_outline,
-                label: 'Datenquellen',
+                label: l10n.profileDataSources,
                 subtitle: 'BLS 4.0 · Open Food Facts',
                 onTap: () => showDataSources(context),
               ),
               const SizedBox(height: AppTheme.rowGap),
               BoldListRow(
                 icon: Icons.description_outlined,
-                label: 'Lizenzen',
+                label: l10n.profileLicenses,
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: 'EasyTrack',
@@ -171,15 +176,15 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
         ),
-        const SectionHeader(title: 'ÜBER'),
+        SectionHeader(title: l10n.profileAbout.toUpperCase()),
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.screenPadding,
           ),
           child: BoldListRow(
             icon: Icons.info_outline,
-            label: 'Über EasyTrack',
-            subtitle: versionLine(info),
+            label: l10n.profileAboutApp,
+            subtitle: versionLine(l10n, info),
             onTap: () => showAbout(context, info),
           ),
         ),

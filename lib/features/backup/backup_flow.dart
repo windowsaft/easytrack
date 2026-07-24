@@ -12,6 +12,7 @@ import '../../core/diagnostics/app_log.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/backup/backup_service.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Shared export/import flows, reused by Einstellungen and by onboarding's
 /// "restore" affordance. Both surface progress and errors as snackbars, so they
@@ -23,8 +24,9 @@ import '../../data/backup/backup_service.dart';
 /// path on Android.
 Future<void> exportBackup(BuildContext context, WidgetRef ref) async {
   final messenger = ScaffoldMessenger.of(context);
+  final l10n = AppLocalizations.of(context);
   messenger.showSnackBar(
-    const SnackBar(content: Text('Sicherung wird erstellt …')),
+    SnackBar(content: Text(l10n.backupCreating)),
   );
   try {
     final service = await ref.read(backupServiceProvider.future);
@@ -32,8 +34,8 @@ Future<void> exportBackup(BuildContext context, WidgetRef ref) async {
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(zip.path, mimeType: 'application/zip')],
-        subject: 'EasyTrack Sicherung',
-        text: 'EasyTrack Datensicherung',
+        subject: l10n.backupShareSubject,
+        text: l10n.backupShareText,
       ),
     );
     AppLog.instance.log('Sicherung exportiert', tag: 'backup');
@@ -46,7 +48,7 @@ Future<void> exportBackup(BuildContext context, WidgetRef ref) async {
       stack: stack,
     );
     messenger.showSnackBar(
-      SnackBar(content: Text('Export fehlgeschlagen: ${_message(error)}')),
+      SnackBar(content: Text(l10n.backupExportFailed(_message(error)))),
     );
   }
 }
@@ -56,10 +58,11 @@ Future<void> exportBackup(BuildContext context, WidgetRef ref) async {
 /// is written to the live database until the confirmed restart, so cancelling or
 /// picking an invalid file leaves the current data untouched.
 Future<void> importBackup(BuildContext context, WidgetRef ref) async {
-  const zipGroup = XTypeGroup(
-    label: 'EasyTrack Sicherung (Zip)',
-    extensions: ['zip'],
-    mimeTypes: ['application/zip', 'application/x-zip-compressed'],
+  final l10n = AppLocalizations.of(context);
+  final zipGroup = XTypeGroup(
+    label: l10n.backupZipLabel,
+    extensions: const ['zip'],
+    mimeTypes: const ['application/zip', 'application/x-zip-compressed'],
   );
   final picked = await openFile(acceptedTypeGroups: [zipGroup]);
   final path = picked?.path;
@@ -81,7 +84,7 @@ Future<void> importBackup(BuildContext context, WidgetRef ref) async {
       stack: stack,
     );
     messenger.showSnackBar(
-      SnackBar(content: Text('Import fehlgeschlagen: ${_message(error)}')),
+      SnackBar(content: Text(l10n.backupImportFailed(_message(error)))),
     );
     return;
   }
@@ -109,6 +112,7 @@ Future<void> importBackup(BuildContext context, WidgetRef ref) async {
 /// A themed confirm sheet spelling out that a restore overwrites everything,
 /// with what the picked backup holds so the user can tell it is the right one.
 Future<bool?> _confirmRestore(BuildContext context, BackupInfo info) {
+  final l10n = AppLocalizations.of(context);
   final created = info.createdAt?.toLocal();
   final createdLabel = created == null
       ? null
@@ -129,11 +133,11 @@ Future<bool?> _confirmRestore(BuildContext context, BackupInfo info) {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('SICHERUNG WIEDERHERSTELLEN', style: AppText.section(size: 18)),
+            Text(l10n.backupRestoreTitle.toUpperCase(), style: AppText.section(size: 18)),
             const SizedBox(height: 14),
             _InfoRow(
               icon: Icons.event_note_outlined,
-              label: '${info.entryCount} Einträge',
+              label: l10n.backupEntryCount(info.entryCount),
             ),
             if (createdLabel != null) ...[
               const SizedBox(height: 10),
@@ -143,7 +147,7 @@ Future<bool?> _confirmRestore(BuildContext context, BackupInfo info) {
               const SizedBox(height: 10),
               _InfoRow(
                 icon: Icons.info_outline,
-                label: 'App-Version ${info.appVersion}',
+                label: l10n.backupAppVersion(info.appVersion!),
               ),
             ],
             const SizedBox(height: 18),
@@ -156,8 +160,7 @@ Future<bool?> _confirmRestore(BuildContext context, BackupInfo info) {
                 ),
               ),
               child: Text(
-                'Alle aktuellen Daten werden ersetzt. Die App startet danach '
-                'neu. Dieser Schritt kann nicht rückgängig gemacht werden.',
+                l10n.backupReplaceWarning,
                 style: AppText.grotesk(
                   size: 13,
                   weight: 500,
@@ -168,13 +171,13 @@ Future<bool?> _confirmRestore(BuildContext context, BackupInfo info) {
             ),
             const SizedBox(height: 18),
             PrimaryButton(
-              label: 'ERSETZEN & NEU STARTEN',
+              label: l10n.backupReplaceRestart.toUpperCase(),
               icon: Icons.restore,
               onPressed: () => Navigator.of(context).pop(true),
             ),
             const SizedBox(height: 10),
             OutlineActionButton(
-              label: 'ABBRECHEN',
+              label: l10n.commonCancel.toUpperCase(),
               onPressed: () => Navigator.of(context).pop(false),
             ),
           ],

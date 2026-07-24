@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../domain/tdee.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../i18n/enum_labels.dart';
 import '../app_theme.dart';
 
 /// The underlined numeric field used by the body-data calculator: a decimal
@@ -71,6 +73,7 @@ class ActivityLevelRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Material(
       color: selected ? AppColors.selectedRow : AppColors.surface,
       child: InkWell(
@@ -91,11 +94,11 @@ class ActivityLevelRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      level.label,
+                      level.label(l10n),
                       style: AppText.grotesk(size: 14, weight: 600),
                     ),
                     const SizedBox(height: 2),
-                    Text(level.hint, style: AppText.rowSubtitle()),
+                    Text(level.hint(l10n), style: AppText.rowSubtitle()),
                   ],
                 ),
               ),

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/i18n/enum_labels.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/body_data_fields.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../core/ui/widgets/calorie_gauge.dart';
 import '../../domain/tdee.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Screen 11a — the calculator: body stats in, a recommended calorie target out.
 ///
@@ -121,6 +123,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     ref.listen(latestWeightProvider, (_, _) => _maybePrefill());
 
     final inputs = _inputs;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -128,10 +131,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         child: Column(
           children: [
             BoldHeader(
-              title: 'DEIN KÖRPER',
+              title: l10n.bodyDataTitle.toUpperCase(),
               leading: SquareIconButton(
                 icon: Icons.arrow_back,
-                tooltip: 'Zurück',
+                tooltip: l10n.commonBack,
                 onPressed: Navigator.of(context).pop,
               ),
             ),
@@ -144,13 +147,13 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   24,
                 ),
                 children: [
-                  _label('GESCHLECHT'),
+                  _label(l10n.fieldSex.toUpperCase()),
                   Row(
                     children: [
                       for (final sex in Sex.values) ...[
                         if (sex != Sex.values.first) const SizedBox(width: 8),
                         BoldChip(
-                          label: sex.label,
+                          label: sex.label(l10n),
                           selected: _sex == sex,
                           onTap: () => setState(() => _sex = sex),
                         ),
@@ -163,15 +166,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                       Expanded(
                         child: LabeledNumberField(
                           controller: _age,
-                          label: 'Alter',
-                          suffix: 'Jahre',
+                          label: l10n.fieldAge,
+                          suffix: l10n.unitYears,
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: LabeledNumberField(
                           controller: _height,
-                          label: 'Größe',
+                          label: l10n.fieldHeight,
                           suffix: 'cm',
                         ),
                       ),
@@ -179,14 +182,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                       Expanded(
                         child: LabeledNumberField(
                           controller: _weight,
-                          label: 'Gewicht',
+                          label: l10n.fieldWeight,
                           suffix: 'kg',
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 18),
-                  _label('AKTIVITÄT'),
+                  _label(l10n.commonActivity.toUpperCase()),
                   for (final level in ActivityLevel.values) ...[
                     if (level != ActivityLevel.values.first)
                       const SizedBox(height: AppTheme.rowGap),
@@ -197,7 +200,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                     ),
                   ],
                   const SizedBox(height: 18),
-                  _label('ZIEL'),
+                  _label(l10n.fieldGoal.toUpperCase()),
                   Row(
                     children: [
                       for (final goal in WeightGoal.values) ...[
@@ -205,7 +208,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                           const SizedBox(width: 8),
                         Expanded(
                           child: BoldChip(
-                            label: goal.label,
+                            label: goal.label(l10n),
                             selected: _goal == goal,
                             onTap: () => setState(() => _goal = goal),
                           ),
@@ -218,8 +221,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                     LabeledNumberField(
                       controller: _rate,
                       label: _goal == WeightGoal.lose
-                          ? 'Abnehmen pro Woche'
-                          : 'Zunehmen pro Woche',
+                          ? l10n.goalLosePerWeek
+                          : l10n.goalGainPerWeek,
                       suffix: 'kg',
                     ),
                   ],
@@ -268,6 +271,7 @@ class _PreviewBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final kcal = inputs == null ? null : recommendedCalorieTarget(inputs!);
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       decoration: const BoxDecoration(
@@ -311,7 +315,7 @@ class _PreviewBar extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'EMPFOHLENES ZIEL',
+                  l10n.profileEditRecommended.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppText.grotesk(
@@ -330,7 +334,7 @@ class _PreviewBar extends StatelessWidget {
           // width equal to its content, which its inner Center requires.
           IntrinsicWidth(
             child: PrimaryButton(
-              label: 'ÜBERNEHMEN',
+              label: l10n.profileEditApply.toUpperCase(),
               icon: Icons.check_circle,
               height: 52,
               radius: AppRadii.fab,

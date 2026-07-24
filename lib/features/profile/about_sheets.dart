@@ -4,15 +4,17 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/app_links.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
+import '../../l10n/app_localizations.dart';
 
 /// "Version 1.0.0 · Build 1", or a placeholder while [PackageInfo] loads.
-String versionLine(PackageInfo? info) => info == null
-    ? 'Version wird geladen …'
-    : 'Version ${info.version} · Build ${info.buildNumber}';
+String versionLine(AppLocalizations l10n, PackageInfo? info) => info == null
+    ? l10n.versionLoading
+    : l10n.versionLine(info.version, info.buildNumber);
 
 /// The data-source attribution sheet (BLS CC BY 4.0 + OFF ODbL), which the
 /// licences require the app to display.
 void showDataSources(BuildContext context) {
+  final l10n = AppLocalizations.of(context);
   showModalBottomSheet<void>(
     context: context,
     builder: (context) => Padding(
@@ -26,14 +28,10 @@ void showDataSources(BuildContext context) {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('DATENQUELLEN', style: AppText.section(size: 18)),
+          Text(l10n.profileDataSources.toUpperCase(), style: AppText.section(size: 18)),
           const SizedBox(height: 14),
           Text(
-            'Bundeslebensmittelschlüssel (BLS), Version 4.0 — Deutsche '
-            'Nährstoffdatenbank.\n'
-            'Max Rubner-Institut (2025), Karlsruhe.\n'
-            'DOI: 10.25826/Data20251217-134202-0\n'
-            'Lizenz: CC BY 4.0',
+            l10n.dataSourceBls,
             style: AppText.grotesk(
               size: 13,
               weight: 500,
@@ -43,11 +41,7 @@ void showDataSources(BuildContext context) {
           ),
           const SizedBox(height: 16),
           Text(
-            'Produktdaten (Barcode-Produkte):\n'
-            'Open Food Facts — beigetragen von der Open-Food-Facts-'
-            'Gemeinschaft.\n'
-            'openfoodfacts.org\n'
-            'Lizenz: Open Database License (ODbL) v1.0',
+            l10n.dataSourceOff,
             style: AppText.grotesk(
               size: 13,
               weight: 500,
@@ -65,6 +59,7 @@ void showDataSources(BuildContext context) {
 /// the app talks to the network (the Open Food Facts online fallback). Mirrors
 /// the "Privacy, precisely" section on the marketing site, word for word.
 void showPrivacy(BuildContext context) {
+  final l10n = AppLocalizations.of(context);
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -81,10 +76,10 @@ void showPrivacy(BuildContext context) {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('DATENSCHUTZ', style: AppText.section(size: 18)),
+              Text(l10n.profilePrivacy.toUpperCase(), style: AppText.section(size: 18)),
               const SizedBox(height: 6),
               Text(
-                'Kein Kleingedrucktes. So funktioniert es genau:',
+                l10n.privacyIntro,
                 style: AppText.grotesk(
                   size: 13,
                   weight: 500,
@@ -93,28 +88,16 @@ void showPrivacy(BuildContext context) {
               ),
               const SizedBox(height: 18),
               _PrivacyPoint(
-                title: 'Deine Daten bleiben hier',
-                body:
-                    'Tagebuch, Gewicht und Ziele liegen nur auf diesem Gerät '
-                    '— niemals mit einem Server synchronisiert. Du kannst '
-                    'alles jederzeit als ZIP exportieren, das nur dir gehört.',
+                title: l10n.privacyPoint1Title,
+                body: l10n.privacyPoint1Body,
               ),
               _PrivacyPoint(
-                title: 'Lebensmittelsuche, erklärt',
-                body:
-                    'Rund 300.000 Lebensmittel sind für die Offline-Suche '
-                    'dabei (BLS 4.0 + Open Food Facts). Nur ein unbekannter '
-                    'Barcode oder eine ausdrückliche „Online suchen“-Anfrage '
-                    'geht an Open Food Facts — öffentliche Produktdaten, lokal '
-                    'zwischengespeichert. Dein Tagebuch wird dabei nie '
-                    'übertragen.',
+                title: l10n.privacyPoint2Title,
+                body: l10n.privacyPoint2Body,
               ),
               _PrivacyPoint(
-                title: 'Nichts vom Üblichen',
-                body:
-                    'Kein Konto. Keine Analyse. Keine Drittanbieter-Tracker. '
-                    'Keine Werbung. Es gibt nichts abzuwählen, weil nichts '
-                    'davon vorhanden ist.',
+                title: l10n.privacyPoint3Title,
+                body: l10n.privacyPoint3Body,
               ),
             ],
           ),
@@ -126,6 +109,7 @@ void showPrivacy(BuildContext context) {
 
 /// The About sheet: app identity plus version / build / package details.
 void showAbout(BuildContext context, PackageInfo? info) {
+  final l10n = AppLocalizations.of(context);
   showModalBottomSheet<void>(
     context: context,
     builder: (context) => SafeArea(
@@ -158,7 +142,7 @@ void showAbout(BuildContext context, PackageInfo? info) {
                     Text('EasyTrack', style: AppText.anton(size: 26)),
                     const SizedBox(height: 2),
                     Text(
-                      versionLine(info),
+                      versionLine(l10n, info),
                       style: AppText.grotesk(
                         size: 12,
                         weight: 600,
@@ -171,8 +155,7 @@ void showAbout(BuildContext context, PackageInfo? info) {
             ),
             const SizedBox(height: 16),
             Text(
-              'Lokal-first Kalorien- & Ernährungstracker. Kein Konto, kein '
-              'Abo, funktioniert offline.',
+              l10n.aboutDescription,
               style: AppText.grotesk(
                 size: 13,
                 weight: 500,
@@ -182,7 +165,7 @@ void showAbout(BuildContext context, PackageInfo? info) {
             ),
             if (info != null) ...[
               const SizedBox(height: 14),
-              _AboutRow('Paket', info.packageName),
+              _AboutRow(l10n.aboutPackageLabel, info.packageName),
               _AboutRow('Version', info.version),
               _AboutRow('Build', info.buildNumber),
             ],
@@ -195,7 +178,7 @@ void showAbout(BuildContext context, PackageInfo? info) {
               runSpacing: 10,
               children: [
                 BoldChip(
-                  label: 'Quellcode',
+                  label: l10n.aboutSource,
                   icon: Icons.code,
                   selected: false,
                   radius: AppRadii.chip,

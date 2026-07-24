@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/i18n/enum_labels.dart';
 import '../../core/i18n/language_picker.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/body_data_fields.dart';
@@ -154,13 +155,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
             BoldHeader(
-              title: _titles[_step]!,
+              title: _title(l10n, _step),
               titleSize: 26,
               // On the welcome step the back slot instead offers a language
               // switcher, so a first-run user whose device language we guessed
@@ -169,17 +171,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               leading: _step == _Step.welcome
                   ? SquareIconButton(
                       icon: Icons.translate,
-                      tooltip: AppLocalizations.of(context).settingsLanguage,
+                      tooltip: l10n.settingsLanguage,
                       onPressed: () => showLanguagePicker(context, ref),
                     )
                   : SquareIconButton(
                       icon: Icons.arrow_back,
-                      tooltip: 'Zurück',
+                      tooltip: l10n.commonBack,
                       onPressed: _back,
                     ),
               trailing: SquareIconButton(
                 icon: Icons.close,
-                tooltip: 'Überspringen',
+                tooltip: l10n.commonSkip,
                 onPressed: _skip,
               ),
             ),
@@ -211,7 +213,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
             ),
             _BottomBar(
-              label: _step == _Step.summary ? 'LOSLEGEN' : 'WEITER',
+              label: (_step == _Step.summary
+                      ? l10n.onboardingStart
+                      : l10n.commonNext)
+                  .toUpperCase(),
               icon: _step == _Step.summary ? Icons.check_circle : null,
               onPressed: _canAdvance ? _next : null,
             ),
@@ -221,12 +226,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  static const _titles = {
-    _Step.welcome: 'WILLKOMMEN',
-    _Step.body: 'DEIN KÖRPER',
-    _Step.activity: 'AKTIVITÄT',
-    _Step.goal: 'DEIN ZIEL',
-    _Step.summary: 'DEIN PLAN',
+  static String _title(AppLocalizations l10n, _Step step) => switch (step) {
+    _Step.welcome => l10n.onboardingWelcome.toUpperCase(),
+    _Step.body => l10n.bodyDataTitle.toUpperCase(),
+    _Step.activity => l10n.commonActivity.toUpperCase(),
+    _Step.goal => l10n.onboardingGoalTitle.toUpperCase(),
+    _Step.summary => l10n.onboardingPlanTitle.toUpperCase(),
   };
 
   static DateTime _birthDateFor(int age) {
@@ -286,36 +291,36 @@ class _WelcomeStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return ListView(
       padding: _stepPadding,
       children: [
         const SizedBox(height: 8),
         Text(
-          'Dein Kalorien- und Ernährungstagebuch — komplett auf deinem Gerät.',
+          l10n.onboardingTagline,
           style: AppText.grotesk(size: 16, weight: 600, height: 1.4),
         ),
         const SizedBox(height: 28),
-        const _FeatureRow(
+        _FeatureRow(
           icon: Icons.wifi_off,
-          title: 'Offline',
-          body: 'Deutsche Lebensmittel-Datenbank ohne Internet.',
+          title: l10n.onboardingFeatureOfflineTitle,
+          body: l10n.onboardingFeatureOfflineBody,
         ),
         const SizedBox(height: 16),
-        const _FeatureRow(
+        _FeatureRow(
           icon: Icons.person_off_outlined,
-          title: 'Kein Konto',
-          body: 'Keine Anmeldung, kein Abo, keine Cloud.',
+          title: l10n.onboardingFeatureNoAccountTitle,
+          body: l10n.onboardingFeatureNoAccountBody,
         ),
         const SizedBox(height: 16),
-        const _FeatureRow(
+        _FeatureRow(
           icon: Icons.lock_outline,
-          title: 'Deine Daten',
-          body: 'Alles bleibt lokal auf deinem Handy.',
+          title: l10n.onboardingFeaturePrivateTitle,
+          body: l10n.onboardingFeaturePrivateBody,
         ),
         const SizedBox(height: 28),
         Text(
-          'Als Nächstes richten wir dein Kalorienziel ein. Das dauert eine '
-          'Minute und lässt sich jederzeit ändern.',
+          l10n.onboardingNextInfo,
           style: AppText.grotesk(
             size: 13,
             weight: 500,
@@ -332,12 +337,12 @@ class _WelcomeStep extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Schon EasyTrack genutzt?',
+                  l10n.onboardingUsedBefore,
                   style: AppText.grotesk(size: 13, weight: 700),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Stelle deine Daten aus einer Sicherung wieder her.',
+                  l10n.onboardingRestoreHint,
                   style: AppText.grotesk(
                     size: 12,
                     weight: 500,
@@ -347,7 +352,7 @@ class _WelcomeStep extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 OutlineActionButton(
-                  label: 'SICHERUNG WIEDERHERSTELLEN',
+                  label: l10n.backupRestoreTitle.toUpperCase(),
                   icon: Icons.settings_backup_restore,
                   onPressed: onRestore,
                 ),
@@ -418,16 +423,17 @@ class _BodyStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return ListView(
       padding: _stepPadding,
       children: [
-        _StepLabel('GESCHLECHT'),
+        _StepLabel(l10n.fieldSex.toUpperCase()),
         Row(
           children: [
             for (final option in Sex.values) ...[
               if (option != Sex.values.first) const SizedBox(width: 8),
               BoldChip(
-                label: option.label,
+                label: option.label(l10n),
                 selected: sex == option,
                 onTap: () => onSex(option),
               ),
@@ -440,15 +446,15 @@ class _BodyStep extends StatelessWidget {
             Expanded(
               child: LabeledNumberField(
                 controller: age,
-                label: 'Alter',
-                suffix: 'Jahre',
+                label: l10n.fieldAge,
+                suffix: l10n.unitYears,
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: LabeledNumberField(
                 controller: height,
-                label: 'Größe',
+                label: l10n.fieldHeight,
                 suffix: 'cm',
               ),
             ),
@@ -456,7 +462,7 @@ class _BodyStep extends StatelessWidget {
             Expanded(
               child: LabeledNumberField(
                 controller: weight,
-                label: 'Gewicht',
+                label: l10n.fieldWeight,
                 suffix: 'kg',
               ),
             ),
@@ -464,7 +470,7 @@ class _BodyStep extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          'Aus diesen Werten berechnen wir deinen Grundumsatz (Mifflin-St Jeor).',
+          l10n.onboardingBmrNote,
           style: AppText.grotesk(
             size: 12,
             weight: 500,
@@ -485,10 +491,11 @@ class _ActivityStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return ListView(
       padding: _stepPadding,
       children: [
-        _StepLabel('WIE AKTIV BIST DU?'),
+        _StepLabel(l10n.onboardingActivityQuestion.toUpperCase()),
         for (final level in ActivityLevel.values) ...[
           if (level != ActivityLevel.values.first)
             const SizedBox(height: AppTheme.rowGap),
@@ -500,8 +507,7 @@ class _ActivityStep extends StatelessWidget {
         ],
         const SizedBox(height: 14),
         Text(
-          'Trainingseinheiten trägst du später einzeln ein — wähle hier also '
-          'eher niedriger, damit Bewegung nicht doppelt zählt.',
+          l10n.onboardingActivityNote,
           style: AppText.grotesk(
             size: 12,
             weight: 500,
@@ -527,17 +533,18 @@ class _GoalStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return ListView(
       padding: _stepPadding,
       children: [
-        _StepLabel('WAS MÖCHTEST DU?'),
+        _StepLabel(l10n.onboardingGoalQuestion.toUpperCase()),
         Row(
           children: [
             for (final option in WeightGoal.values) ...[
               if (option != WeightGoal.values.first) const SizedBox(width: 8),
               Expanded(
                 child: BoldChip(
-                  label: option.label,
+                  label: option.label(l10n),
                   selected: goal == option,
                   onTap: () => onGoal(option),
                 ),
@@ -550,13 +557,13 @@ class _GoalStep extends StatelessWidget {
           LabeledNumberField(
             controller: rate,
             label: goal == WeightGoal.lose
-                ? 'Abnehmen pro Woche'
-                : 'Zunehmen pro Woche',
+                ? l10n.goalLosePerWeek
+                : l10n.goalGainPerWeek,
             suffix: 'kg',
           ),
           const SizedBox(height: 10),
           Text(
-            '0,5 kg pro Woche ist ein gesundes Tempo.',
+            l10n.onboardingRateNote,
             style: AppText.grotesk(
               size: 12,
               weight: 500,
@@ -576,14 +583,14 @@ class _SummaryStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final data = inputs;
     if (data == null) {
       return ListView(
         padding: _stepPadding,
         children: [
           Text(
-            'Es fehlen noch Angaben. Geh einen Schritt zurück und ergänze deine '
-            'Körperdaten.',
+            l10n.onboardingSummaryMissing,
             style: AppText.grotesk(size: 14, weight: 600, height: 1.4),
           ),
         ],
@@ -597,7 +604,7 @@ class _SummaryStep extends StatelessWidget {
       padding: _stepPadding,
       children: [
         Text(
-          'DEIN TAGESZIEL',
+          l10n.onboardingDailyGoal.toUpperCase(),
           style: AppText.overline(),
         ),
         const SizedBox(height: 6),
@@ -625,7 +632,7 @@ class _SummaryStep extends StatelessWidget {
           children: [
             Expanded(
               child: StatTile(
-                label: 'EIWEISS',
+                label: l10n.macroProteinShort.toUpperCase(),
                 value: macros.proteinG.round().toString(),
                 suffix: ' g',
                 accent: AppColors.protein,
@@ -634,7 +641,7 @@ class _SummaryStep extends StatelessWidget {
             const SizedBox(width: AppTheme.rowGap),
             Expanded(
               child: StatTile(
-                label: 'KOHLENH.',
+                label: l10n.macroCarbsShort.toUpperCase(),
                 value: macros.carbsG.round().toString(),
                 suffix: ' g',
                 accent: AppColors.carbs,
@@ -643,7 +650,7 @@ class _SummaryStep extends StatelessWidget {
             const SizedBox(width: AppTheme.rowGap),
             Expanded(
               child: StatTile(
-                label: 'FETT',
+                label: l10n.macroFatShort.toUpperCase(),
                 value: macros.fatG.round().toString(),
                 suffix: ' g',
                 accent: AppColors.fat,
@@ -653,8 +660,7 @@ class _SummaryStep extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         Text(
-          'Vorgeschlagen aus deinen Angaben. Du kannst Ziel und Makros jederzeit '
-          'unter Profil → Ziele anpassen.',
+          l10n.onboardingSummaryNote,
           style: AppText.grotesk(
             size: 13,
             weight: 500,

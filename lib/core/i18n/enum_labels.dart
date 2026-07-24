@@ -1,3 +1,4 @@
+import '../../domain/tdee.dart';
 import '../../l10n/app_localizations.dart';
 import '../nutrition/food_ref.dart';
 
@@ -25,5 +26,39 @@ extension FoodSourceTypeLabel on FoodSourceType {
     FoodSourceType.offLocal || FoodSourceType.offOnline => l10n.sourceOff,
     FoodSourceType.usda => l10n.sourceUsda,
     FoodSourceType.recipe => l10n.sourceRecipe,
+  };
+}
+
+/// Localized labels for the calorie-calculator enums (Mifflin-St Jeor inputs).
+extension SexLabel on Sex {
+  String label(AppLocalizations l10n) => switch (this) {
+    Sex.male => l10n.sexMale,
+    Sex.female => l10n.sexFemale,
+  };
+}
+
+extension ActivityLevelLabel on ActivityLevel {
+  String label(AppLocalizations l10n) => switch (this) {
+    ActivityLevel.sedentary => l10n.activityLevelSedentary,
+    ActivityLevel.light => l10n.activityLevelLight,
+    ActivityLevel.moderate => l10n.activityLevelModerate,
+    ActivityLevel.active => l10n.activityLevelActive,
+    ActivityLevel.veryActive => l10n.activityLevelVeryActive,
+  };
+
+  String hint(AppLocalizations l10n) => switch (this) {
+    ActivityLevel.sedentary => l10n.activityLevelSedentaryHint,
+    ActivityLevel.light => l10n.activityLevelLightHint,
+    ActivityLevel.moderate => l10n.activityLevelModerateHint,
+    ActivityLevel.active => l10n.activityLevelActiveHint,
+    ActivityLevel.veryActive => l10n.activityLevelVeryActiveHint,
+  };
+}
+
+extension WeightGoalLabel on WeightGoal {
+  String label(AppLocalizations l10n) => switch (this) {
+    WeightGoal.lose => l10n.goalLose,
+    WeightGoal.maintain => l10n.goalMaintain,
+    WeightGoal.gain => l10n.goalGain,
   };
 }

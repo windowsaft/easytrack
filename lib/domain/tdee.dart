@@ -6,13 +6,12 @@ import 'nutrients_targets.dart';
 /// field — a user who would rather not answer sets a manual calorie target
 /// instead, which is why the profile allows that path.
 enum Sex {
-  male('male', 'Männlich'),
-  female('female', 'Weiblich');
+  male('male'),
+  female('female');
 
-  const Sex(this.wire, this.label);
+  const Sex(this.wire);
 
   final String wire;
-  final String label;
 
   static Sex? fromWire(String? value) => switch (value) {
     'male' => Sex.male,
@@ -28,18 +27,16 @@ enum Sex {
 /// should pick a *lower* band here than their gut says — otherwise the same
 /// activity is counted twice. The labels hint at that.
 enum ActivityLevel {
-  sedentary('sedentary', 'Kaum Bewegung', 1.2, 'Bürojob, wenig Sport'),
-  light('light', 'Leicht aktiv', 1.375, '1–3× Sport pro Woche'),
-  moderate('moderate', 'Mäßig aktiv', 1.55, '3–5× Sport pro Woche'),
-  active('active', 'Sehr aktiv', 1.725, '6–7× Sport pro Woche'),
-  veryActive('very_active', 'Extrem aktiv', 1.9, 'Körperlicher Job + Sport');
+  sedentary('sedentary', 1.2),
+  light('light', 1.375),
+  moderate('moderate', 1.55),
+  active('active', 1.725),
+  veryActive('very_active', 1.9);
 
-  const ActivityLevel(this.wire, this.label, this.factor, this.hint);
+  const ActivityLevel(this.wire, this.factor);
 
   final String wire;
-  final String label;
   final double factor;
-  final String hint;
 
   static ActivityLevel fromWire(String? value) => values.firstWhere(
     (e) => e.wire == value,
@@ -49,14 +46,13 @@ enum ActivityLevel {
 
 /// The direction of the calorie adjustment relative to maintenance.
 enum WeightGoal {
-  lose('lose', 'Abnehmen', -1),
-  maintain('maintain', 'Halten', 0),
-  gain('gain', 'Zunehmen', 1);
+  lose('lose', -1),
+  maintain('maintain', 0),
+  gain('gain', 1);
 
-  const WeightGoal(this.wire, this.label, this.sign);
+  const WeightGoal(this.wire, this.sign);
 
   final String wire;
-  final String label;
 
   /// −1, 0 or +1: multiplies the rate-derived daily calorie change.
   final int sign;
