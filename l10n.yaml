@@ -1,0 +1,9 @@
+# Configures Flutter's gen_l10n tool. Strings live as ARB (JSON) files under
+# lib/l10n; English (app_en.arb) is the source/template every other language is
+# translated from. Non-coders (and a future self-hosted Weblate instance) edit
+# the ARB files directly — no Dart changes needed to add or correct a language.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false

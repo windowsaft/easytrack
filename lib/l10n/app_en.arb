@@ -1,0 +1,15 @@
+{
+  "@@locale": "en",
+  "appTitle": "EasyTrack",
+  "@appTitle": {
+    "description": "The application name, shown as the window/task title. Usually left untranslated."
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Header of the Settings screen."
+  },
+  "settingsLanguage": "Language",
+  "@settingsLanguage": {
+    "description": "Label of the language-picker row in Settings."
+  }
+}
