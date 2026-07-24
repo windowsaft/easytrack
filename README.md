@@ -32,6 +32,14 @@ flutter test
 flutter run
 ```
 
+## Translations
+
+EasyTrack ships in English and German, and is built to be translated by anyone —
+no coding required. All UI text lives as plain JSON under
+[`lib/l10n/`](lib/l10n), one file per language. To add or correct a language, see
+**[docs/translating.md](docs/translating.md)**. A self-hosted Weblate instance
+(web-based, no Git) is planned to make this even easier.
+
 ## Data sources & attribution
 
 ### Bundeslebensmittelschlüssel (BLS) 4.0
