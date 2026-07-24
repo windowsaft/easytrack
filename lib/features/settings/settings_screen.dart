@@ -43,10 +43,10 @@ class SettingsScreen extends ConsumerWidget {
         child: Column(
           children: [
             BoldHeader(
-              title: 'EINSTELLUNGEN',
+              title: l10n.settingsTitle.toUpperCase(),
               leading: SquareIconButton(
                 icon: Icons.arrow_back,
-                tooltip: 'Zurück',
+                tooltip: l10n.commonBack,
                 onPressed: Navigator.of(context).pop,
               ),
             ),
@@ -56,13 +56,13 @@ class SettingsScreen extends ConsumerWidget {
                 children: [
                   // App preferences only — no goals. Calorie/macro/water/factor
                   // targets live on the Ziele-Seite, reached from Profil.
-                  const _GroupHeader('AKTIVITÄT'),
+                  _GroupHeader(l10n.settingsGroupActivity.toUpperCase()),
                   _Group(
                     children: [
                       BoldListRow(
                         icon: Icons.add_circle_outline,
-                        label: 'Aktivität erhöht Budget',
-                        subtitle: 'Verbrannte Kalorien zum Tagesziel addieren',
+                        label: l10n.settingsActivityAddsBudget,
+                        subtitle: l10n.settingsActivityAddsBudgetHint,
                         chevron: false,
                         trailing: BoldToggle(
                           value: profile?.activityAddsToBudget ?? true,
@@ -72,7 +72,7 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const _GroupHeader('EINHEITEN & ANZEIGE'),
+                  _GroupHeader(l10n.settingsGroupUnitsDisplay.toUpperCase()),
                   _Group(
                     children: [
                       BoldListRow(
@@ -83,26 +83,26 @@ class SettingsScreen extends ConsumerWidget {
                             : l10n.languageSystemDefault,
                         onTap: () => showLanguagePicker(context, ref),
                       ),
-                      const BoldListRow(
+                      BoldListRow(
                         icon: Icons.straighten,
-                        label: 'Einheiten',
-                        value: 'Metrisch',
+                        label: l10n.settingsUnits,
+                        value: l10n.settingsUnitsMetric,
                         chevron: false,
                       ),
-                      const BoldListRow(
+                      BoldListRow(
                         icon: Icons.dark_mode,
-                        label: 'Design',
-                        value: 'Dunkel',
+                        label: l10n.settingsTheme,
+                        value: l10n.settingsThemeDark,
                         chevron: false,
                       ),
                     ],
                   ),
-                  const _GroupHeader('PRODUKTDATEN'),
+                  _GroupHeader(l10n.settingsGroupProductData.toUpperCase()),
                   _Group(
                     children: [
                       BoldListRow(
                         icon: Icons.public,
-                        label: 'Region',
+                        label: l10n.settingsRegion,
                         subtitle:
                             (packState?.selectedRegion ?? OffRegion.fallback)
                                 .hint,
@@ -112,48 +112,48 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                       BoldListRow(
                         icon: Icons.inventory_2_outlined,
-                        label: 'Produktdatenbank',
-                        subtitle: _packSubtitle(packState),
+                        label: l10n.settingsProductDatabase,
+                        subtitle: _packSubtitle(l10n, packState),
                         onTap: () => _managePack(context, ref),
                       ),
                       BoldListRow(
                         icon: Icons.folder_zip_outlined,
-                        label: 'Paket aus Datei laden',
-                        subtitle: 'Produktdaten aus lokalem Zip importieren',
+                        label: l10n.settingsLoadPackFromFile,
+                        subtitle: l10n.settingsLoadPackFromFileHint,
                         onTap: () => _importPack(context, ref),
                       ),
                     ],
                   ),
-                  const _GroupHeader('DATENSICHERUNG'),
+                  _GroupHeader(l10n.settingsGroupBackup.toUpperCase()),
                   _Group(
                     children: [
                       BoldListRow(
                         icon: Icons.ios_share,
-                        label: 'Daten sichern',
-                        subtitle: 'Alle Einträge als Zip teilen oder speichern',
+                        label: l10n.settingsBackupExport,
+                        subtitle: l10n.settingsBackupExportHint,
                         onTap: () => exportBackup(context, ref),
                       ),
                       BoldListRow(
                         icon: Icons.settings_backup_restore,
-                        label: 'Daten wiederherstellen',
-                        subtitle: 'Sicherung aus Zip importieren',
+                        label: l10n.settingsBackupRestore,
+                        subtitle: l10n.settingsBackupRestoreHint,
                         onTap: () => importBackup(context, ref),
                       ),
                     ],
                   ),
-                  const _GroupHeader('DIAGNOSE'),
+                  _GroupHeader(l10n.settingsGroupDiagnostics.toUpperCase()),
                   _Group(
                     children: [
                       BoldListRow(
                         icon: Icons.article_outlined,
-                        label: 'Protokoll exportieren',
-                        subtitle: 'App-Protokoll als Datei teilen',
+                        label: l10n.settingsLogExport,
+                        subtitle: l10n.settingsLogExportHint,
                         onTap: () => _exportLog(context, ref),
                       ),
                       BoldListRow(
                         icon: Icons.delete_outline,
-                        label: 'Protokoll löschen',
-                        subtitle: 'Bisherige Protokoll-Einträge verwerfen',
+                        label: l10n.settingsLogClear,
+                        subtitle: l10n.settingsLogClearHint,
                         chevron: false,
                         onTap: () => _clearLog(context),
                       ),
@@ -168,26 +168,27 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  static String _packSubtitle(PackInstallState? state) {
+  static String _packSubtitle(AppLocalizations l10n, PackInstallState? state) {
     if (state == null) {
-      return 'Wird geprüft …';
+      return l10n.settingsPackChecking;
     }
     if (!state.isInstalled) {
-      return 'Open Food Facts — noch nicht geladen';
+      return l10n.settingsPackNotLoaded;
     }
     if (state.regionChanged) {
-      return 'Region geändert — neu laden zum Aktualisieren';
+      return l10n.settingsPackRegionChanged;
     }
     final version = state.installedVersion;
     return version == null
-        ? 'Open Food Facts — geladen'
-        : 'Open Food Facts · Stand $version';
+        ? l10n.settingsPackLoaded
+        : l10n.settingsPackLoadedVersion(version);
   }
 
   Future<void> _editRegion(BuildContext context, WidgetRef ref) async {
     final service = await ref.read(packServiceProvider.future);
     if (!context.mounted) return;
     final current = service.selectedRegion;
+    final l10n = AppLocalizations.of(context);
 
     final chosen = await showModalBottomSheet<OffRegion>(
       context: context,
@@ -203,7 +204,10 @@ class SettingsScreen extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('REGION', style: AppText.section(size: 18)),
+              Text(
+                l10n.settingsRegion.toUpperCase(),
+                style: AppText.section(size: 18),
+              ),
               const SizedBox(height: 14),
               for (final region in OffRegion.values) ...[
                 BoldListRow(
@@ -231,10 +235,11 @@ class SettingsScreen extends ConsumerWidget {
 
   Future<void> _managePack(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     final service = await ref.read(packServiceProvider.future);
 
     messenger.showSnackBar(
-      const SnackBar(content: Text('Lade Produktdaten …')),
+      SnackBar(content: Text(l10n.settingsPackLoading)),
     );
     try {
       final release = await service.install();
@@ -242,11 +247,13 @@ class SettingsScreen extends ConsumerWidget {
       ref.invalidate(offPackProvider);
       ref.invalidate(packStateProvider);
       messenger.showSnackBar(
-        SnackBar(content: Text('${release.rowCount} Produkte geladen')),
+        SnackBar(
+          content: Text(l10n.settingsPackLoadedCount(release.rowCount)),
+        ),
       );
     } on Object catch (error) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Produktdaten fehlgeschlagen: $error')),
+        SnackBar(content: Text(l10n.settingsPackFailed(error.toString()))),
       );
     }
   }
@@ -256,21 +263,22 @@ class SettingsScreen extends ConsumerWidget {
   /// device already. Works the same on Android and iOS.
   Future<void> _importPack(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
 
     // openFile hands back an XFile with a real path we can stream from — the
     // .sqlite is pulled out of the zip on disk, so an ~85 MB pack is never
     // loaded into memory.
-    const zipGroup = XTypeGroup(
-      label: 'Produktpaket (Zip)',
-      extensions: ['zip'],
-      mimeTypes: ['application/zip', 'application/x-zip-compressed'],
+    final zipGroup = XTypeGroup(
+      label: l10n.settingsPackZipLabel,
+      extensions: const ['zip'],
+      mimeTypes: const ['application/zip', 'application/x-zip-compressed'],
     );
     final picked = await openFile(acceptedTypeGroups: [zipGroup]);
     final path = picked?.path;
     if (path == null) return; // Cancelled.
 
     messenger.showSnackBar(
-      const SnackBar(content: Text('Importiere Produktdaten …')),
+      SnackBar(content: Text(l10n.settingsPackImporting)),
     );
     try {
       final service = await ref.read(packServiceProvider.future);
@@ -284,7 +292,9 @@ class SettingsScreen extends ConsumerWidget {
         tag: 'pack',
       );
       messenger.showSnackBar(
-        SnackBar(content: Text('${installed.rowCount} Produkte importiert')),
+        SnackBar(
+          content: Text(l10n.settingsPackImportedCount(installed.rowCount)),
+        ),
       );
     } on Object catch (error) {
       AppLog.instance.log(
@@ -294,7 +304,7 @@ class SettingsScreen extends ConsumerWidget {
         error: error,
       );
       messenger.showSnackBar(
-        SnackBar(content: Text('Import fehlgeschlagen: $error')),
+        SnackBar(content: Text(l10n.settingsPackImportFailed(error.toString()))),
       );
     }
   }
@@ -303,6 +313,7 @@ class SettingsScreen extends ConsumerWidget {
   /// sheet, so it can be mailed to yourself or dropped into a file manager.
   Future<void> _exportLog(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     try {
       final info = ref.read(packageInfoProvider).value;
       final tempDir = await getTemporaryDirectory();
@@ -311,19 +322,23 @@ class SettingsScreen extends ConsumerWidget {
         header: _logHeader(info),
       );
       await SharePlus.instance.share(
-        ShareParams(files: [XFile(file.path)], subject: 'EasyTrack Protokoll'),
+        ShareParams(
+          files: [XFile(file.path)],
+          subject: l10n.settingsLogShareSubject,
+        ),
       );
     } on Object catch (error) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Protokoll-Export fehlgeschlagen: $error')),
+        SnackBar(content: Text(l10n.settingsLogExportFailed(error.toString()))),
       );
     }
   }
 
   Future<void> _clearLog(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     await AppLog.instance.clear();
-    messenger.showSnackBar(const SnackBar(content: Text('Protokoll gelöscht')));
+    messenger.showSnackBar(SnackBar(content: Text(l10n.settingsLogCleared)));
   }
 
   /// A small header prepended to an exported protocol, so a shared log carries

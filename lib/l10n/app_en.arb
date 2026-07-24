@@ -19,5 +19,181 @@
   "languageSystemDefaultHint": "Follow the phone's language",
   "@languageSystemDefaultHint": {
     "description": "Sub-label under the 'System default' language option."
+  },
+
+  "commonBack": "Back",
+  "@commonBack": {
+    "description": "Generic 'back' action, used as a button tooltip."
+  },
+
+  "settingsGroupActivity": "Activity",
+  "@settingsGroupActivity": {
+    "description": "Settings section header. Shown upper-cased."
+  },
+  "settingsActivityAddsBudget": "Activity increases budget",
+  "@settingsActivityAddsBudget": {
+    "description": "Toggle row: whether burned calories are added to the daily budget."
+  },
+  "settingsActivityAddsBudgetHint": "Add burned calories to the daily goal",
+  "@settingsActivityAddsBudgetHint": {
+    "description": "Sub-label explaining the 'Activity increases budget' toggle."
+  },
+  "settingsGroupUnitsDisplay": "Units & display",
+  "@settingsGroupUnitsDisplay": {
+    "description": "Settings section header. Shown upper-cased."
+  },
+  "settingsUnits": "Units",
+  "@settingsUnits": {
+    "description": "Row label for the measurement-units setting."
+  },
+  "settingsUnitsMetric": "Metric",
+  "@settingsUnitsMetric": {
+    "description": "Value of the units setting (metric system)."
+  },
+  "settingsTheme": "Theme",
+  "@settingsTheme": {
+    "description": "Row label for the visual-theme setting."
+  },
+  "settingsThemeDark": "Dark",
+  "@settingsThemeDark": {
+    "description": "Value of the theme setting (dark mode)."
+  },
+  "settingsGroupProductData": "Product data",
+  "@settingsGroupProductData": {
+    "description": "Settings section header for the food product database. Shown upper-cased."
+  },
+  "settingsRegion": "Region",
+  "@settingsRegion": {
+    "description": "Row label (and picker title) for the product-data region."
+  },
+  "settingsProductDatabase": "Product database",
+  "@settingsProductDatabase": {
+    "description": "Row label for managing the downloadable Open Food Facts pack."
+  },
+  "settingsLoadPackFromFile": "Load package from file",
+  "@settingsLoadPackFromFile": {
+    "description": "Row label for importing a product pack from a local zip."
+  },
+  "settingsLoadPackFromFileHint": "Import product data from a local zip",
+  "@settingsLoadPackFromFileHint": {
+    "description": "Sub-label for the 'Load package from file' row."
+  },
+  "settingsGroupBackup": "Backup",
+  "@settingsGroupBackup": {
+    "description": "Settings section header for data backup/restore. Shown upper-cased."
+  },
+  "settingsBackupExport": "Back up data",
+  "@settingsBackupExport": {
+    "description": "Row label for exporting all data as a zip."
+  },
+  "settingsBackupExportHint": "Share or save all entries as a zip",
+  "@settingsBackupExportHint": {
+    "description": "Sub-label for the 'Back up data' row."
+  },
+  "settingsBackupRestore": "Restore data",
+  "@settingsBackupRestore": {
+    "description": "Row label for restoring data from a backup zip."
+  },
+  "settingsBackupRestoreHint": "Import a backup from a zip",
+  "@settingsBackupRestoreHint": {
+    "description": "Sub-label for the 'Restore data' row."
+  },
+  "settingsGroupDiagnostics": "Diagnostics",
+  "@settingsGroupDiagnostics": {
+    "description": "Settings section header for the diagnostic log. Shown upper-cased."
+  },
+  "settingsLogExport": "Export log",
+  "@settingsLogExport": {
+    "description": "Row label for sharing the in-app diagnostic log as a file."
+  },
+  "settingsLogExportHint": "Share the app log as a file",
+  "@settingsLogExportHint": {
+    "description": "Sub-label for the 'Export log' row."
+  },
+  "settingsLogClear": "Clear log",
+  "@settingsLogClear": {
+    "description": "Row label for discarding the diagnostic log."
+  },
+  "settingsLogClearHint": "Discard the current log entries",
+  "@settingsLogClearHint": {
+    "description": "Sub-label for the 'Clear log' row."
+  },
+  "settingsPackChecking": "Checking …",
+  "@settingsPackChecking": {
+    "description": "Product-database status while the install state is still loading."
+  },
+  "settingsPackNotLoaded": "Open Food Facts — not downloaded yet",
+  "@settingsPackNotLoaded": {
+    "description": "Product-database status when no pack is installed."
+  },
+  "settingsPackRegionChanged": "Region changed — reload to update",
+  "@settingsPackRegionChanged": {
+    "description": "Product-database status when the region differs from the installed pack."
+  },
+  "settingsPackLoaded": "Open Food Facts — downloaded",
+  "@settingsPackLoaded": {
+    "description": "Product-database status when a pack is installed but its version is unknown."
+  },
+  "settingsPackLoadedVersion": "Open Food Facts · as of {version}",
+  "@settingsPackLoadedVersion": {
+    "description": "Product-database status showing the installed pack's version/date.",
+    "placeholders": {
+      "version": { "type": "String", "example": "2026-05" }
+    }
+  },
+  "settingsPackLoading": "Downloading product data …",
+  "@settingsPackLoading": {
+    "description": "Snackbar shown while the product pack downloads."
+  },
+  "settingsPackLoadedCount": "{count, plural, one{{count} product loaded} other{{count} products loaded}}",
+  "@settingsPackLoadedCount": {
+    "description": "Snackbar after a successful product-pack download.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "settingsPackFailed": "Product data failed: {error}",
+  "@settingsPackFailed": {
+    "description": "Snackbar when a product-pack download fails.",
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "settingsPackZipLabel": "Product package (zip)",
+  "@settingsPackZipLabel": {
+    "description": "File-picker filter label for a product-pack zip."
+  },
+  "settingsPackImporting": "Importing product data …",
+  "@settingsPackImporting": {
+    "description": "Snackbar shown while a product pack imports from a local zip."
+  },
+  "settingsPackImportedCount": "{count, plural, one{{count} product imported} other{{count} products imported}}",
+  "@settingsPackImportedCount": {
+    "description": "Snackbar after a successful product-pack import.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "settingsPackImportFailed": "Import failed: {error}",
+  "@settingsPackImportFailed": {
+    "description": "Snackbar when a product-pack import fails.",
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "settingsLogShareSubject": "EasyTrack log",
+  "@settingsLogShareSubject": {
+    "description": "Subject line when sharing the exported diagnostic log."
+  },
+  "settingsLogExportFailed": "Log export failed: {error}",
+  "@settingsLogExportFailed": {
+    "description": "Snackbar when exporting the diagnostic log fails.",
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "settingsLogCleared": "Log cleared",
+  "@settingsLogCleared": {
+    "description": "Snackbar confirming the diagnostic log was cleared."
   }
 }
