@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/di/providers.dart';
 import '../../core/i18n/enum_labels.dart';
+import '../../core/i18n/number_format.dart';
 import '../../core/nutrition/food_ref.dart';
 import '../../core/nutrition/nutrients.dart';
 import '../../core/ui/app_theme.dart';
@@ -157,7 +158,8 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
   }
 
   static String _dayLabel(DateTime date) =>
-      DateFormat('EEEE · d. MMMM').format(date).toUpperCase();
+      '${DateFormat.EEEE().format(date)} · ${DateFormat.MMMMd().format(date)}'
+          .toUpperCase();
 }
 
 /// The two ways into the meal: search (primary) and barcode scan.
@@ -323,9 +325,7 @@ class _EntryRow extends StatelessWidget {
     return '${_trim(entry.servingCount!)} × ${entry.servingLabel} · $amount';
   }
 
-  static String _trim(double value) => value == value.roundToDouble()
-      ? value.round().toString()
-      : value.toStringAsFixed(1).replaceAll('.', ',');
+  static String _trim(double value) => formatDecimal(value, maxDecimals: 1);
 }
 
 class _EmptyMeal extends StatelessWidget {

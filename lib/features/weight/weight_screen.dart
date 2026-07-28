@@ -365,9 +365,9 @@ class _TrendChart extends StatelessWidget {
               getTitlesWidget: (value, _) => Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
-                  DateFormat(
-                    'd.M.',
-                  ).format(origin.addDays(value.round()).toDateTime()),
+                  DateFormat.Md().format(
+                    origin.addDays(value.round()).toDateTime(),
+                  ),
                   style: AppText.grotesk(size: 10, color: AppColors.textFaint),
                 ),
               ),
@@ -566,13 +566,14 @@ String formatDelta(double kg) {
   return '$sign${formatKg(kg.abs())}';
 }
 
-/// A compact entry date: "FR · 17. Juli" — an abbreviated weekday and the day +
-/// month, without the year. Locale-aware via [Intl.defaultLocale], which the
-/// active language pins, so the weekday and month names follow the UI language.
+/// A compact entry date: "FR · 17. Juli" / "FRI · July 17" — an abbreviated
+/// weekday and the day + month, without the year. Locale-aware via
+/// [Intl.defaultLocale], which the active language pins, so both the names and
+/// the day/month order follow the UI language.
 String _entryDate(DayKey day) {
   final date = day.toDateTime();
   return '${DateFormat('EE').format(date).toUpperCase()} · '
-      '${DateFormat('d. MMMM').format(date)}';
+      '${DateFormat.MMMMd().format(date)}';
 }
 
 /// Asks for a weight and the day it was measured. Returns null if dismissed.

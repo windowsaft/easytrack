@@ -116,7 +116,8 @@ Future<bool?> _confirmRestore(BuildContext context, BackupInfo info) {
   final created = info.createdAt?.toLocal();
   final createdLabel = created == null
       ? null
-      : DateFormat('d. MMMM y, HH:mm').format(created);
+      : '${DateFormat.yMMMMd().format(created)}, '
+            '${DateFormat.Hm().format(created)}';
 
   return showModalBottomSheet<bool>(
     context: context,
