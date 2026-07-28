@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/i18n/number_format.dart';
 import '../../core/time/day_key.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/day_picker.dart';
@@ -556,10 +557,8 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// 72 -> "72", 72.4 -> "72,4". German decimal comma, one place.
-String formatKg(double kg) =>
-    (kg == kg.roundToDouble() ? kg.round().toString() : kg.toStringAsFixed(1))
-        .replaceAll('.', ',');
+/// 72 -> "72", 72.4 -> "72,4". Locale decimal separator, one place.
+String formatKg(double kg) => formatDecimal(kg, maxDecimals: 1);
 
 /// Signed change with a true minus sign: +1,2 / −0,5.
 String formatDelta(double kg) {

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../i18n/number_format.dart';
 import '../app_theme.dart';
 
 /// The 270° calorie arc at the top of the diary.
@@ -88,16 +89,8 @@ class CalorieGauge extends StatelessWidget {
   }
 }
 
-/// German thousands separator: 2100 -> "2.100".
-String formatKcal(double value) {
-  final digits = value.round().abs().toString();
-  final buffer = StringBuffer(value < 0 ? '-' : '');
-  for (var i = 0; i < digits.length; i++) {
-    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write('.');
-    buffer.write(digits[i]);
-  }
-  return buffer.toString();
-}
+/// Locale-aware thousands separator: 2100 -> "2,100" (en) / "2.100" (de).
+String formatKcal(double value) => formatInt(value);
 
 class _GaugePainter extends CustomPainter {
   const _GaugePainter({required this.progress, required this.fill});

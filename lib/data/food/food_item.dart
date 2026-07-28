@@ -1,3 +1,4 @@
+import '../../core/i18n/number_format.dart';
 import '../../core/nutrition/food_ref.dart';
 import '../../core/nutrition/measure_unit.dart';
 import '../../core/nutrition/nutrients.dart';
@@ -49,9 +50,7 @@ class ServingOption {
   /// unit otherwise. Used by search rows and quick logging that skip the sheet.
   double get defaultGrams => isRaw ? 100 : grams;
 
-  static String _fmt(double v) => v == v.roundToDouble()
-      ? v.round().toString()
-      : v.toStringAsFixed(1).replaceAll('.', ',');
+  static String _fmt(double v) => formatDecimal(v, maxDecimals: 1);
 
   // Value equality, because the portion sheet rebuilds its choices on every
   // frame — the raw fallback is a fresh instance each call — and decides which

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/i18n/number_format.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../core/ui/widgets/calorie_gauge.dart';
@@ -78,7 +79,7 @@ class ProfileScreen extends ConsumerWidget {
                       Expanded(
                         child: StatTile(
                           label: l10n.profileFactor.toUpperCase(),
-                          value: factor.toStringAsFixed(2).replaceAll('.', ','),
+                          value: formatFixed(factor, 2),
                           accent: AppColors.coral,
                         ),
                       ),
@@ -197,13 +198,7 @@ class ProfileScreen extends ConsumerWidget {
         context,
       ).push<void>(MaterialPageRoute(builder: (_) => screen));
 
-  static String _litres(int ml) {
-    final l = ml / 1000;
-    return (l == l.roundToDouble() ? l.round().toString() : l.toString())
-        .replaceAll('.', ',');
-  }
+  static String _litres(int ml) => formatDecimal(ml / 1000, maxDecimals: 3);
 
-  static String _trim(double value) => value == value.roundToDouble()
-      ? value.round().toString()
-      : value.toStringAsFixed(1).replaceAll('.', ',');
+  static String _trim(double value) => formatDecimal(value, maxDecimals: 1);
 }

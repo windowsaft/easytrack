@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/i18n/number_format.dart';
 import '../../../core/ui/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -114,14 +115,9 @@ class WaterMeter extends StatelessWidget {
     );
   }
 
-  /// 1250 -> "1,25", 2000 -> "2". German decimal comma.
-  static String _formatLitres(int ml) {
-    final litres = ml / 1000;
-    final text = litres == litres.roundToDouble()
-        ? litres.round().toString()
-        : litres.toStringAsFixed(2).replaceFirst(RegExp(r'0$'), '');
-    return text.replaceAll('.', ',');
-  }
+  /// 1250 -> "1,25", 2000 -> "2". Locale decimal separator, trailing zeros cut.
+  static String _formatLitres(int ml) =>
+      formatDecimal(ml / 1000, maxDecimals: 2);
 }
 
 class _Bar extends StatelessWidget {

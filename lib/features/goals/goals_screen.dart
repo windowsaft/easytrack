@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/i18n/number_format.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../core/ui/widgets/calorie_gauge.dart';
@@ -119,7 +120,7 @@ class GoalsScreen extends ConsumerWidget {
                     subtitle: l10n.goalsFactorSubtitle,
                     iconColor: AppColors.coral,
                     trailing: Text(
-                      factor.toStringAsFixed(2).replaceAll('.', ','),
+                      formatFixed(factor, 2),
                       style: AppText.anton(size: 18, color: AppColors.coral),
                     ),
                     onTap: () async {

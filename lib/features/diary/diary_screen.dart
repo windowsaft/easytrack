@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/i18n/number_format.dart';
 import '../../core/nutrition/food_ref.dart';
 import '../../core/nutrition/nutrients.dart';
 import '../../core/time/day_key.dart';
@@ -503,11 +504,10 @@ class _NutrientDetailsSheet extends StatelessWidget {
     );
   }
 
-  /// A known gram value, rounded, German decimal comma for sub-gram amounts.
+  /// A known gram value: whole numbers from 10 up, otherwise up to one decimal
+  /// with the locale separator for sub-gram amounts.
   static String _g(double v) =>
-      v >= 10 || v == v.roundToDouble()
-      ? v.round().toString()
-      : v.toStringAsFixed(1).replaceAll('.', ',');
+      v >= 10 ? formatInt(v) : formatDecimal(v, maxDecimals: 1);
 
   /// A nullable gram value: "—" when the food never declared it.
   static String _gN(double? v) => v == null ? '—' : _g(v);
@@ -714,7 +714,7 @@ class _ActivityRow extends ConsumerWidget {
       if (entry.safetyFactor != 1.0)
         l10n.diaryActivityBurnFactor(
           entry.kcalBurnedRaw.round(),
-          entry.safetyFactor.toStringAsFixed(2).replaceAll('.', ','),
+          formatFixed(entry.safetyFactor, 2),
         ),
     ];
     return parts.isEmpty ? l10n.diaryActivityManual : parts.join(' · ');

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/i18n/number_format.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../l10n/app_localizations.dart';
@@ -206,7 +207,7 @@ class _SafetyFactorCard extends StatelessWidget {
                     Flexible(
                       child: Text(
                         l10n.activityFactorLabel(
-                          factor.toStringAsFixed(2).replaceAll('.', ','),
+                          formatFixed(factor, 2),
                         ),
                         style: AppText.grotesk(size: 13, weight: 700),
                       ),

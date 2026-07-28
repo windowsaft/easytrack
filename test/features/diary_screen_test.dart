@@ -39,6 +39,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -46,13 +47,18 @@ void main() {
   late DiaryRepository diary;
   late SettingsRepository settings;
 
-  setUpAll(() => initializeDateFormatting('de'));
+  setUpAll(() {
+    initializeDateFormatting('de');
+    // Mirror runtime: LocaleController pins this so NumberFormat/DateFormat
+    // follow the app language. Without it they fall back to the system locale.
+    Intl.defaultLocale = 'de';
+  });
 
   setUp(() {
-    // The settings screen now reads a persisted locale; an empty mock store
-    // lets the SharedPreferences-backed providers resolve without the platform
-    // channel, so the screen renders in its default (device) language.
-    SharedPreferences.setMockInitialValues({});
+    // Persist German so the LocaleController resolves to 'de' and pins
+    // Intl.defaultLocale — screens that read it (Goals/Profil) would otherwise
+    // re-pin to the test device locale (English) and format numbers with a dot.
+    SharedPreferences.setMockInitialValues({'app_locale_v1': 'de'});
     user = UserDatabase.forTesting();
     settings = SettingsRepository(user);
     diary = DiaryRepository(user, settings);

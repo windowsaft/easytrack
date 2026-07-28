@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat;
 
 import '../../core/di/providers.dart';
+import '../../core/i18n/number_format.dart';
 import '../../core/time/day_key.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
@@ -127,10 +128,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     return '$sign${n.abs()}';
   }
 
-  static String _litres(double ml) {
-    final l = ml / 1000;
-    return l.toStringAsFixed(1).replaceAll('.', ',');
-  }
+  static String _litres(double ml) => formatFixed(ml / 1000, 1);
 }
 
 class _PeriodTabs extends StatelessWidget {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../i18n/number_format.dart';
 import '../app_theme.dart';
 import 'bold_controls.dart';
 
@@ -124,7 +125,7 @@ class _FactorSheet extends StatelessWidget {
             children: [
               for (final option in _options)
                 BoldChip(
-                  label: option.toStringAsFixed(2).replaceAll('.', ','),
+                  label: formatFixed(option, 2),
                   selected: (option - initial).abs() < 0.001,
                   onTap: () => Navigator.of(context).pop(option),
                 ),

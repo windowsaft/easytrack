@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/di/providers.dart';
 import '../../../core/i18n/enum_labels.dart';
+import '../../../core/i18n/number_format.dart';
 import '../../../core/nutrition/food_ref.dart';
 import '../../../core/nutrition/nutrients.dart';
 import '../../../core/ui/app_theme.dart';
@@ -287,9 +288,8 @@ class _PortionSheetState extends ConsumerState<_PortionSheet> {
     );
   }
 
-  static String _formatCount(double value) => value == value.roundToDouble()
-      ? value.round().toString()
-      : value.toStringAsFixed(1).replaceAll('.', ',');
+  static String _formatCount(double value) =>
+      formatDecimal(value, maxDecimals: 1);
 }
 
 /// A selectable quick-count chip (1×, 2×, 3×).

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/di/providers.dart';
+import '../../core/i18n/number_format.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/food/food_item.dart';
@@ -459,9 +460,7 @@ class _IngredientRow extends StatelessWidget {
     );
   }
 
-  static String _trim(double value) => value == value.roundToDouble()
-      ? value.round().toString()
-      : value.toStringAsFixed(1).replaceAll('.', ',');
+  static String _trim(double value) => formatDecimal(value, maxDecimals: 1);
 }
 
 /// The sticky footer: batch total, per-100 g preview, and save.

@@ -14,12 +14,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 
 void main() {
   late UserDatabase user;
   late SettingsRepository settings;
 
-  setUpAll(() => initializeDateFormatting('de'));
+  setUpAll(() {
+    initializeDateFormatting('de');
+    // Mirror runtime: LocaleController pins this so NumberFormat/DateFormat
+    // follow the app language. Without it they fall back to the system locale.
+    Intl.defaultLocale = 'de';
+  });
 
   setUp(() {
     user = UserDatabase.forTesting();
