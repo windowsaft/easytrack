@@ -377,12 +377,18 @@ class DashedActionChip extends StatelessWidget {
               children: [
                 Icon(icon, size: 19, color: AppColors.lime),
                 const SizedBox(width: 7),
-                Text(
-                  label,
-                  style: AppText.grotesk(
-                    size: 13,
-                    weight: 600,
-                    color: AppColors.lime,
+                // Flexible so three chips sharing a row degrade to an ellipsis on
+                // a narrow screen instead of overflowing.
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.grotesk(
+                      size: 13,
+                      weight: 600,
+                      color: AppColors.lime,
+                    ),
                   ),
                 ),
               ],

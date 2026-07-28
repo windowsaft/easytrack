@@ -531,6 +531,10 @@
   "@searchCreate": {
     "description": "Action that creates a reusable custom food."
   },
+  "searchRepeat": "Repeat",
+  "@searchRepeat": {
+    "description": "Short action chip (next to Quick entry/Create) that fills an empty meal with its most recent earlier day. A compact form of mealDetailRepeat, kept short to fit a three-chip row."
+  },
   "searchEmptyHint": "Type to search over 7,000 foods.\nWorks offline too.",
   "@searchEmptyHint": {
     "description": "Shown in the All tab before the user has typed anything."

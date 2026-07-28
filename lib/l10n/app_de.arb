@@ -134,6 +134,7 @@
   "searchTabMine": "Meine",
   "searchQuickEntry": "Schnell-Eintrag",
   "searchCreate": "Anlegen",
+  "searchRepeat": "Wiederholen",
   "searchEmptyHint": "Tippe, um über 7.000 Lebensmittel zu durchsuchen.\nFunktioniert auch offline.",
   "searchFailed": "Suche fehlgeschlagen:\n{error}",
   "searchNoResults": "Nichts gefunden für \"{query}\".",

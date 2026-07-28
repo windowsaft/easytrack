@@ -66,6 +66,16 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     (sum, food) => sum + food.nutrients.forGrams(food.defaultGrams).kcal,
   );
 
+  /// Whether the meal being logged into has no entries yet. Reads the loaded
+  /// day summary (warm from the diary), so a filled meal never offers repeat.
+  bool get _mealIsEmpty {
+    final meal = widget.meal;
+    if (meal == null) return false;
+    final day = ref.watch(selectedDayProvider);
+    final summary = ref.watch(daySummaryProvider(day)).value;
+    return summary != null && summary.entriesFor(meal).isEmpty;
+  }
+
   void _toggle(FoodItem food) {
     setState(() {
       if (_selected.remove(food.ref) == null) _selected[food.ref] = food;
@@ -204,6 +214,36 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
     }
   }
 
+  /// Copies the most recent earlier day's version of this meal onto the day
+  /// being logged into. Surfaced here because adding from the diary jumps
+  /// straight to search, past the meal screen where repeat otherwise lives — so
+  /// "repeat my usual breakfast" would be unreachable for an empty meal.
+  Future<void> _repeat() async {
+    final meal = widget.meal;
+    if (meal == null) return;
+
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
+    final count = await ref
+        .read(diaryRepositoryProvider)
+        .repeatMeal(to: ref.read(selectedDayProvider), meal: meal);
+    if (!mounted) return;
+
+    if (count == 0) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.mealDetailNoEarlier(meal.label(l10n)))),
+      );
+      return;
+    }
+
+    // The meal is filled now, so leave search and show the result underneath.
+    navigator.pop();
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.mealDetailEntriesCopied(count))),
+    );
+  }
+
   /// Quick calorie entry: logged straight into the meal, not saved as a food.
   Future<void> _quickAdd() async {
     final meal = widget.meal;
@@ -279,7 +319,12 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
             ),
             _Tabs(current: _tab, onSelect: (t) => setState(() => _tab = t)),
             if (logging)
-              _QuickActions(onQuickAdd: _quickAdd, onCreate: _createFood),
+              _QuickActions(
+                onQuickAdd: _quickAdd,
+                onCreate: _createFood,
+                // Repeat is a starting point for an empty meal only.
+                onRepeat: _mealIsEmpty ? _repeat : null,
+              ),
             Expanded(child: _body(logging, picking)),
             if (_selected.isNotEmpty && logging)
               _SelectionTray(
@@ -479,10 +524,18 @@ class _Tabs extends StatelessWidget {
 }
 
 class _QuickActions extends StatelessWidget {
-  const _QuickActions({required this.onQuickAdd, required this.onCreate});
+  const _QuickActions({
+    required this.onQuickAdd,
+    required this.onCreate,
+    this.onRepeat,
+  });
 
   final VoidCallback onQuickAdd;
   final VoidCallback onCreate;
+
+  /// Fills an empty meal from its last earlier day. Null once the meal has food,
+  /// where rebuilding it wholesale no longer makes sense.
+  final VoidCallback? onRepeat;
 
   @override
   Widget build(BuildContext context) {
@@ -506,6 +559,16 @@ class _QuickActions extends StatelessWidget {
               onTap: onCreate,
             ),
           ),
+          if (onRepeat != null) ...[
+            const SizedBox(width: 8),
+            Expanded(
+              child: DashedActionChip(
+                label: l10n.searchRepeat,
+                icon: Icons.replay,
+                onTap: onRepeat!,
+              ),
+            ),
+          ],
         ],
       ),
     );
