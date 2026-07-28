@@ -199,6 +199,47 @@ void main() {
       final entry = (await db.select(db.diaryEntries).get()).single;
       expect(entry.fiberG, closeTo(4.75, 0.01));
     });
+
+    test('editEntry rescales the snapshot and rewrites the serving', () async {
+      final id = await repository.addEntry(
+        day: today,
+        meal: MealType.breakfast,
+        food: oats,
+        amountG: 30,
+        servingLabel: 'Portion (30 g)',
+        servingCount: 1,
+      );
+
+      await repository.editEntry(
+        entryId: id,
+        amountG: 60,
+        servingLabel: 'Portion (30 g)',
+        servingCount: 2,
+      );
+
+      final entry = (await db.select(db.diaryEntries).get()).single;
+      expect(entry.amountG, closeTo(60, 0.01));
+      expect(entry.kcal, closeTo(208.8, 0.01));
+      expect(entry.servingCount, 2);
+    });
+
+    test('editEntry to a raw amount clears the serving', () async {
+      final id = await repository.addEntry(
+        day: today,
+        meal: MealType.breakfast,
+        food: oats,
+        amountG: 30,
+        servingLabel: 'Portion (30 g)',
+        servingCount: 1,
+      );
+
+      await repository.editEntry(entryId: id, amountG: 45);
+
+      final entry = (await db.select(db.diaryEntries).get()).single;
+      expect(entry.amountG, closeTo(45, 0.01));
+      expect(entry.servingLabel, isNull);
+      expect(entry.servingCount, isNull);
+    });
   });
 
   group('deleting', () {

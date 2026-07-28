@@ -6,15 +6,18 @@ import '../../core/di/providers.dart';
 import '../../core/i18n/enum_labels.dart';
 import '../../core/i18n/number_format.dart';
 import '../../core/nutrition/food_ref.dart';
+import '../../core/nutrition/measure_unit.dart';
 import '../../core/nutrition/nutrients.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../core/ui/widgets/macro_donut.dart';
 import '../../data/db/user_database.dart';
+import '../../data/food/food_item.dart';
 import '../../l10n/app_localizations.dart';
 import '../scan/barcode_flow.dart';
 import '../search/food_search_screen.dart';
 import 'widgets/meal_row.dart';
+import 'widgets/portion_sheet.dart';
 
 /// Screen 4a — one meal: what is in it, how to add more, and its macro split.
 class MealDetailScreen extends ConsumerStatefulWidget {
@@ -47,6 +50,52 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
     if (!mounted) return;
     await Navigator.of(context).push<void>(
       MaterialPageRoute(builder: (_) => FoodSearchScreen(meal: widget.meal)),
+    );
+  }
+
+  /// Reopens a logged entry to change how much of it was eaten. The portion
+  /// sheet works on a [FoodItem], so the entry's stored snapshot is turned back
+  /// into a per-100 g food; editing then rescales from that same snapshot rather
+  /// than re-reading the source, keeping an old log stable.
+  Future<void> _edit(DiaryEntry entry) async {
+    final repository = ref.read(diaryRepositoryProvider);
+    final portion = await showPortionSheet(
+      context,
+      _foodFromEntry(entry),
+      initialGrams: entry.amountG,
+    );
+    if (portion == null) return;
+
+    await repository.editEntry(
+      entryId: entry.id,
+      amountG: portion.grams,
+      servingLabel: portion.label,
+      servingCount: portion.count,
+    );
+  }
+
+  /// Rebuilds a per-100 g [FoodItem] from an entry's stored snapshot, so its
+  /// weight can be re-picked at any amount.
+  static FoodItem _foodFromEntry(DiaryEntry entry) {
+    final per100g = entry.amountG <= 0
+        ? Nutrients.zero
+        : Nutrients(
+            kcal: entry.kcal,
+            proteinG: entry.proteinG,
+            carbsG: entry.carbsG,
+            fatG: entry.fatG,
+            sugarG: entry.sugarG,
+            fiberG: entry.fiberG,
+            satFatG: entry.satFatG,
+            saltG: entry.saltG,
+          ).scaled(100 / entry.amountG);
+
+    return FoodItem(
+      ref: FoodRef(FoodSourceType.fromWire(entry.sourceType), entry.sourceId),
+      name: entry.nameSnapshot,
+      brand: entry.brandSnapshot,
+      nutrients: per100g,
+      measure: MeasureUnit.fromWire(entry.unit),
     );
   }
 
@@ -137,6 +186,7 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
                             _EntryRow(
                               entry: entry,
                               meal: widget.meal,
+                              onEdit: () => _edit(entry),
                               onRemove: () => ref
                                   .read(diaryRepositoryProvider)
                                   .deleteEntry(entry.id),
@@ -267,52 +317,65 @@ class _EntryRow extends StatelessWidget {
   const _EntryRow({
     required this.entry,
     required this.meal,
+    required this.onEdit,
     required this.onRemove,
   });
 
   final DiaryEntry entry;
   final MealType meal;
+  final VoidCallback onEdit;
   final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    // Tapping the row reopens the portion sheet to change the weight; the close
+    // button keeps its own tap target for removal.
+    return Material(
       color: AppColors.surface,
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          TileIcon(
-            icon: entry.unit == 'ml'
-                ? Icons.local_drink
-                : (mealIcons[meal] ?? Icons.restaurant),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  entry.nameSnapshot,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.rowTitle(),
+      child: InkWell(
+        onTap: onEdit,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              TileIcon(
+                icon: entry.unit == 'ml'
+                    ? Icons.local_drink
+                    : (mealIcons[meal] ?? Icons.restaurant),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.nameSnapshot,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.rowTitle(),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(_portionLabel(entry), style: AppText.rowSubtitle()),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(_portionLabel(entry), style: AppText.rowSubtitle()),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                entry.kcal.round().toString(),
+                style: AppText.rowValue(size: 19),
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.close,
+                  size: 20,
+                  color: AppColors.chevron,
+                ),
+                tooltip: AppLocalizations.of(context).commonRemove,
+                onPressed: onRemove,
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Text(
-            entry.kcal.round().toString(),
-            style: AppText.rowValue(size: 19),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 20, color: AppColors.chevron),
-            tooltip: AppLocalizations.of(context).commonRemove,
-            onPressed: onRemove,
-          ),
-        ],
+        ),
       ),
     );
   }

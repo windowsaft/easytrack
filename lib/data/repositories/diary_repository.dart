@@ -153,7 +153,36 @@ class DiaryRepository {
   ///
   /// Rescales from the entry's own snapshot rather than re-reading the food, so
   /// editing an old entry cannot silently pull in changed source data.
-  Future<void> updateAmount(String entryId, double newAmountG) async {
+  Future<void> updateAmount(String entryId, double newAmountG) =>
+      _rescaleEntry(entryId, newAmountG, const DiaryEntriesCompanion());
+
+  /// Re-portions a logged entry: a new amount plus the serving it was picked as.
+  ///
+  /// Like [updateAmount] it rescales the stored nutrient snapshot rather than
+  /// re-reading the food, but it also rewrites the serving label/count so a row
+  /// edited down to a bare gram amount stops claiming its old "2 × Portion".
+  Future<void> editEntry({
+    required String entryId,
+    required double amountG,
+    String? servingLabel,
+    double? servingCount,
+  }) => _rescaleEntry(
+    entryId,
+    amountG,
+    DiaryEntriesCompanion(
+      servingLabel: Value(servingLabel),
+      servingCount: Value(servingCount),
+    ),
+  );
+
+  /// Writes [newAmountG] and the rescaled snapshot, merging any [extra] columns
+  /// (e.g. the serving fields) into the same update so the day's stream emits
+  /// once, not twice.
+  Future<void> _rescaleEntry(
+    String entryId,
+    double newAmountG,
+    DiaryEntriesCompanion extra,
+  ) async {
     final entry = await (_db.select(
       _db.diaryEntries,
     )..where((t) => t.id.equals(entryId))).getSingle();
@@ -164,7 +193,7 @@ class DiaryRepository {
     await (_db.update(
       _db.diaryEntries,
     )..where((t) => t.id.equals(entryId))).write(
-      DiaryEntriesCompanion(
+      extra.copyWith(
         amountG: Value(newAmountG),
         kcal: Value(entry.kcal * factor),
         proteinG: Value(entry.proteinG * factor),
