@@ -20,8 +20,10 @@
 // the manifest is written from the finished file, never from the pre-write plan.
 
 import { createHash } from 'node:crypto';
+import { createReadStream } from 'node:fs';
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
+import { createInterface } from 'node:readline';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import Database from 'better-sqlite3';
@@ -125,10 +127,13 @@ CREATE TABLE pack_meta (
 }
 
 /**
- * Writes a pack file from already-loaded product rows and returns its stats.
+ * Writes a pack file from a source of product rows and returns its stats. The
+ * source may be a plain array (seed / tests) or an async iterable (the NDJSON
+ * build); rows are consumed in bounded batches so a world-sized region never
+ * has to be held in memory at once.
  *
  * @param {object} args
- * @param {Array<Record<string, unknown>>} args.products
+ * @param {Iterable<Record<string, unknown>> | AsyncIterable<Record<string, unknown>>} args.products
  * @param {string} args.region
  * @param {string} args.version
  * @param {string} args.outPath
@@ -159,7 +164,7 @@ export async function buildPack({ products, region, version, outPath, morphemes 
   let skipped = 0;
   const opt = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
-  const insertMany = db.transaction((rows) => {
+  const insertBatch = db.transaction((rows) => {
     for (const p of rows) {
       if (!isValidProduct(p)) {
         skipped++;
@@ -195,7 +200,20 @@ export async function buildPack({ products, region, version, outPath, morphemes 
       else skipped++; // duplicate barcode ignored
     }
   });
-  insertMany(products);
+
+  // Insert in bounded batches drawn from the (possibly streaming) source, so
+  // peak memory is one batch — not the whole region. `for await` handles both
+  // an async generator (the NDJSON build) and a plain array (the seed/tests).
+  const BATCH_SIZE = 5000;
+  let batch = [];
+  for await (const p of products) {
+    batch.push(p);
+    if (batch.length >= BATCH_SIZE) {
+      insertBatch(batch);
+      batch = [];
+    }
+  }
+  if (batch.length > 0) insertBatch(batch);
 
   db.exec("INSERT INTO off_fts(off_fts) VALUES('rebuild')");
   db.exec("INSERT INTO off_fts(off_fts) VALUES('optimize')");
@@ -246,15 +264,40 @@ async function updateManifest({ manifestPath, region, release }) {
   return manifest;
 }
 
-async function build({ seedPath, region, version, baseUrl, outPath, manifestPath }) {
+/**
+ * Yields product rows from either a JSON seed (dev: an array or
+ * `{ products: [...] }`) or a newline-delimited `.ndjson` stream (production,
+ * as DuckDB emits it). NDJSON is streamed a line at a time so a world-sized
+ * extract — the whole database, no country filter — is never held in memory
+ * nor forced into one V8 string (which caps out around 1 GB and would abort a
+ * plain JSON.parse).
+ *
+ * @param {string} seedPath
+ * @returns {AsyncGenerator<Record<string, unknown>>}
+ */
+async function* streamProducts(seedPath) {
+  if (seedPath.endsWith('.ndjson')) {
+    const lines = createInterface({
+      input: createReadStream(seedPath, 'utf8'),
+      crlfDelay: Infinity,
+    });
+    for await (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed) yield JSON.parse(trimmed);
+    }
+    return;
+  }
   const seed = JSON.parse(await readFile(seedPath, 'utf8'));
   const products = Array.isArray(seed) ? seed : seed.products;
   if (!Array.isArray(products)) {
     throw new Error(`seed ${seedPath} has no products array`);
   }
+  yield* products;
+}
 
+async function build({ seedPath, region, version, baseUrl, outPath, manifestPath }) {
   const { rowCount, skipped } = await buildPack({
-    products,
+    products: streamProducts(seedPath),
     region,
     version,
     outPath,

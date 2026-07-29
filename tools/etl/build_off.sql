@@ -1,7 +1,9 @@
 -- Production Open Food Facts extraction — the release pipeline.
 --
---   duckdb -c ".read tools/etl/build_off.sql"
+--   printf "SET VARIABLE region='dach';\n.read tools/etl/build_off.sql\n" | duckdb
 --
+-- The `region` variable (de | dach | world) MUST be set first; without it the
+-- filter matches nothing.
 -- Runs on the build machine / CI, never on the phone. Filters the Open Food
 -- Facts dump down to a region and emits a JSON array of products, which
 -- build_off.mjs then normalizes (German search text + compound morphemes) and
@@ -74,11 +76,19 @@ COPY (
   WHERE
     barcode IS NOT NULL
     AND length(trim(name)) >= 2
-    -- DACH. For `de` keep only germany; for `world` drop this clause.
+    -- Region filter, chosen by the `region` variable the caller SETs before
+    -- reading this file (getvariable). 'world' keeps every country, 'de' only
+    -- Germany, 'dach' the German-speaking three.
     AND (
-      list_contains(countries_tags, 'en:germany')
-      OR list_contains(countries_tags, 'en:austria')
-      OR list_contains(countries_tags, 'en:switzerland')
+      getvariable('region') = 'world'
+      OR (getvariable('region') = 'de'
+          AND list_contains(countries_tags, 'en:germany'))
+      OR (getvariable('region') = 'dach'
+          AND (
+            list_contains(countries_tags, 'en:germany')
+            OR list_contains(countries_tags, 'en:austria')
+            OR list_contains(countries_tags, 'en:switzerland')
+          ))
     )
     -- The four core macros must be present (mirrors isValidProduct in the mjs).
     AND kcal IS NOT NULL
@@ -93,9 +103,11 @@ COPY (
   QUALIFY row_number() OVER (
     PARTITION BY barcode ORDER BY completeness_score DESC NULLS LAST
   ) = 1
-) TO 'tools/etl/dist/off_dach_products.json' (FORMAT JSON, ARRAY true);
+-- NDJSON (no ARRAY) so the consumer can stream it; a single JSON array would
+-- force the whole world-sized extract into one string on read.
+) TO 'tools/etl/dist/off_products.ndjson' (FORMAT JSON);
 
--- Then, on the build machine:
+-- Then, on the build machine (once per region, same manifest):
 --   node tools/etl/build_off.mjs --region dach \
---     --seed tools/etl/dist/off_dach_products.json \
+--     --seed tools/etl/dist/off_products.ndjson \
 --     --base-url https://github.com/<owner>/<repo>/releases/download/off-latest
