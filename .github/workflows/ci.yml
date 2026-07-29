@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+# Cancel superseded runs on the same ref (e.g. rapid pushes to a PR).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flutter:
+    name: Analyze & test (Flutter)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Pinned to the exact local toolchain so CI reproduces the dev build.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.1
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      # analyze + test pass even when a native / Kotlin-Gradle-Plugin clash
+      # breaks the APK (the file_picker class of bug). A debug APK build is the
+      # cheapest gate that actually exercises the Android build.
+      - run: flutter build apk --debug
+
+  etl:
+    name: Food-data ETL tests (Node)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: tools/etl/package-lock.json
+
+      # Node's test runner resolves `node --test .` relative to the cwd, so the
+      # suite MUST run from tools/etl — from the repo root it finds zero tests
+      # and reports a false success.
+      - run: npm ci
+        working-directory: tools/etl
+      - run: npm test
+        working-directory: tools/etl

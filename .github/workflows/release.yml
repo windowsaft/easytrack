@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  # Manual runs build & upload artifacts for testing, but only a tag publishes
+  # a GitHub Release.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g. 1.0.0), without a leading v'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & publish signed release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "name=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.1
+          channel: stable
+          cache: true
+
+      # Restore the signing keystore + credentials from repo secrets. The
+      # keystore file and key.properties are both gitignored and only ever
+      # exist on the ephemeral runner.
+      - name: Restore signing keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE_B64" | base64 -d > android/app/upload-keystore.jks
+
+      - name: Write key.properties
+        env:
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cat > android/key.properties <<EOF
+          storeFile=upload-keystore.jks
+          storePassword=${STORE_PASSWORD}
+          keyAlias=${KEY_ALIAS}
+          keyPassword=${KEY_PASSWORD}
+          EOF
+
+      - run: flutter pub get
+
+      # build-number becomes the Android versionCode and must increase on every
+      # release; github.run_number is monotonic across the repo's lifetime.
+      - name: Build signed APK
+        run: >-
+          flutter build apk --release
+          --build-name=${{ steps.version.outputs.name }}
+          --build-number=${{ github.run_number }}
+
+      - name: Build signed AAB (for a future Play Store upload)
+        run: >-
+          flutter build appbundle --release
+          --build-name=${{ steps.version.outputs.name }}
+          --build-number=${{ github.run_number }}
+
+      - name: Stage named artifacts
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk "easytrack-${{ steps.version.outputs.name }}.apk"
+          cp build/app/outputs/bundle/release/app-release.aab "easytrack-${{ steps.version.outputs.name }}.aab"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: easytrack-${{ steps.version.outputs.name }}
+          path: |
+            easytrack-${{ steps.version.outputs.name }}.apk
+            easytrack-${{ steps.version.outputs.name }}.aab
+
+      # Only a tag push publishes a Release; the AAB is kept out of the public
+      # download (it's an upload format for Play, not something users install).
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: EasyTrack ${{ steps.version.outputs.name }}
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: easytrack-${{ steps.version.outputs.name }}.apk
