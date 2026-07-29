@@ -1,0 +1,26 @@
+# Install-and-forget OFF pack builder. Configure .env (see .env.example), then:
+#   docker compose up -d --build
+# First publish / testing: set RUN_ON_START=true for one `up`, then unset it.
+services:
+  off-pack-builder:
+    build:
+      context: ..                     # tools/etl
+      dockerfile: pack-builder/Dockerfile
+    image: easytrack-off-pack-builder:latest
+    container_name: easytrack-off-pack-builder
+    restart: unless-stopped
+    environment:
+      GH_TOKEN: ${GH_TOKEN:?set GH_TOKEN in .env — fine-grained PAT, contents:write}
+      REPO: ${REPO:-windowsaft/easytrack}
+      RELEASE_TAG: ${RELEASE_TAG:-off-latest}
+      REGIONS: ${REGIONS:-de dach world}
+      CRON_SCHEDULE: ${CRON_SCHEDULE:-0 3 1 1,4,7,10 *}
+      MAX_DUMP_AGE_DAYS: ${MAX_DUMP_AGE_DAYS:-80}
+      NODE_HEAP_MB: ${NODE_HEAP_MB:-6144}
+      RUN_ON_START: ${RUN_ON_START:-false}
+    volumes:
+      # Cached dump + build outputs; survives container recreation.
+      - off-pack-data:/data
+
+volumes:
+  off-pack-data:

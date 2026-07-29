@@ -1,0 +1,7 @@
+# These run inside a Linux container; CRLF would break the shebang and cron.d
+# parsing. Force LF regardless of the committer's platform (this repo is on
+# Windows).
+*.sh        text eol=lf
+*.sql       text eol=lf
+Dockerfile  text eol=lf
+.env.example text eol=lf
