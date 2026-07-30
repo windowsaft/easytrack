@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/services.dart' show rootBundle;
@@ -235,9 +236,38 @@ final packServiceProvider = FutureProvider<PackService>((ref) async {
     return response;
   }
 
+  // Streams the pack so the UI can show real progress and cancel mid-download.
+  // Bytes are still accumulated for the installer's whole-file SHA-256 check.
+  Future<Uint8List> download(
+    Uri url, {
+    int? expectedBytes,
+    PackProgress? onProgress,
+    PackCancelToken? cancel,
+  }) async {
+    final client = http.Client();
+    try {
+      final response = await client.send(http.Request('GET', url));
+      if (response.statusCode != 200) {
+        throw PackInstallException('HTTP ${response.statusCode} bei $url');
+      }
+      final total = response.contentLength ?? expectedBytes ?? 0;
+      final builder = BytesBuilder(copy: false);
+      var received = 0;
+      await for (final chunk in response.stream) {
+        if (cancel?.isCancelled ?? false) throw const PackCancelledException();
+        builder.add(chunk);
+        received += chunk.length;
+        onProgress?.call(received, total);
+      }
+      return builder.takeBytes();
+    } finally {
+      client.close();
+    }
+  }
+
   return PackService(
     prefs: prefs,
-    installer: PackInstaller((url) async => (await get(url)).bodyBytes),
+    installer: PackInstaller(download),
     fetchManifestText: (url) async => (await get(url)).body,
     supportDirectory: getApplicationSupportDirectory,
   );

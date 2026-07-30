@@ -37,7 +37,7 @@ void main() {
       );
 
   test('installs a verified pack and it opens', () async {
-    final installer = PackInstaller((_) async => packBytes);
+    final installer = PackInstaller((_, {expectedBytes, onProgress, cancel}) async => packBytes);
     await installer.install(release(), destination: dest);
 
     expect(dest.existsSync(), isTrue);
@@ -52,7 +52,7 @@ void main() {
     dest.writeAsBytesSync(const [10, 20, 30]);
 
     var downloaded = false;
-    final installer = PackInstaller((_) async {
+    final installer = PackInstaller((_, {expectedBytes, onProgress, cancel}) async {
       downloaded = true;
       return packBytes;
     });
@@ -70,7 +70,7 @@ void main() {
 
   test('a size mismatch is refused', () async {
     dest.writeAsBytesSync(const [1, 2, 3]);
-    final installer = PackInstaller((_) async => packBytes);
+    final installer = PackInstaller((_, {expectedBytes, onProgress, cancel}) async => packBytes);
 
     await expectLater(
       installer.install(
@@ -89,7 +89,7 @@ void main() {
     final junkSha = sha256.convert(junk).toString();
     dest.writeAsBytesSync(const [9, 9, 9]);
 
-    final installer = PackInstaller((_) async => junk);
+    final installer = PackInstaller((_, {expectedBytes, onProgress, cancel}) async => junk);
     await expectLater(
       installer.install(
         release(bytes: junk.length, sha: junkSha),
@@ -103,7 +103,7 @@ void main() {
   test('installs a local pack file and returns its meta', () async {
     final src = File('${dir.path}/local.sqlite');
     writeOffPack(src.path);
-    final installer = PackInstaller((_) async => packBytes);
+    final installer = PackInstaller((_, {expectedBytes, onProgress, cancel}) async => packBytes);
 
     final meta = await installer.installLocalFile(src, destination: dest);
 
@@ -122,7 +122,7 @@ void main() {
     final junk = File('${dir.path}/junk.sqlite')
       ..writeAsBytesSync(List<int>.generate(64, (i) => i));
     dest.writeAsBytesSync(const [7, 7, 7]);
-    final installer = PackInstaller((_) async => packBytes);
+    final installer = PackInstaller((_, {expectedBytes, onProgress, cancel}) async => packBytes);
 
     await expectLater(
       installer.installLocalFile(junk, destination: dest),
@@ -134,7 +134,7 @@ void main() {
 
   test('a pack needing a newer app is refused before downloading', () async {
     var downloaded = false;
-    final installer = PackInstaller((_) async {
+    final installer = PackInstaller((_, {expectedBytes, onProgress, cancel}) async {
       downloaded = true;
       return packBytes;
     });

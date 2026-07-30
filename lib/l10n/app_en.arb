@@ -181,6 +181,47 @@
       "error": { "type": "String" }
     }
   },
+  "settingsPackManageHint": "Open Food Facts adds branded and barcoded products to search.",
+  "@settingsPackManageHint": {
+    "description": "One-line explanation at the top of the product-database sheet."
+  },
+  "settingsPackDownloadAction": "Download ({size})",
+  "@settingsPackDownloadAction": {
+    "description": "Primary button to download the product pack, showing its size.",
+    "placeholders": {
+      "size": { "type": "String", "example": "61 MB" }
+    }
+  },
+  "settingsPackUpdateAction": "Update ({size})",
+  "@settingsPackUpdateAction": {
+    "description": "Primary button to download a newer product pack, showing its size.",
+    "placeholders": {
+      "size": { "type": "String", "example": "61 MB" }
+    }
+  },
+  "settingsPackRedownloadAction": "Download again ({size})",
+  "@settingsPackRedownloadAction": {
+    "description": "Button to re-download the pack when it is already up to date.",
+    "placeholders": {
+      "size": { "type": "String", "example": "61 MB" }
+    }
+  },
+  "settingsPackDownloadingProgress": "Downloading … {done} / {total} MB",
+  "@settingsPackDownloadingProgress": {
+    "description": "Label with live download progress in megabytes.",
+    "placeholders": {
+      "done": { "type": "String", "example": "34" },
+      "total": { "type": "String", "example": "61" }
+    }
+  },
+  "settingsPackUpToDate": "Up to date",
+  "@settingsPackUpToDate": {
+    "description": "Status when the installed pack matches the latest available."
+  },
+  "settingsPackUnavailable": "Couldn't reach the download server.",
+  "@settingsPackUnavailable": {
+    "description": "Shown when the pack manifest can't be fetched (e.g. offline)."
+  },
   "settingsLogShareSubject": "EasyTrack log",
   "@settingsLogShareSubject": {
     "description": "Subject line when sharing the exported diagnostic log."
@@ -413,6 +454,10 @@
   "commonCancel": "Cancel",
   "@commonCancel": {
     "description": "Generic 'cancel' action. Shown upper-cased on dialog buttons."
+  },
+  "commonRetry": "Retry",
+  "@commonRetry": {
+    "description": "Generic 'retry' action, e.g. after a failed network fetch."
   },
   "commonSave": "Save",
   "@commonSave": {

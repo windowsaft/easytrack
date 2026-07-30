@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -9,14 +8,13 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/di/providers.dart';
 import '../../core/diagnostics/app_log.dart';
-import '../../core/i18n/enum_labels.dart';
 import '../../core/i18n/language_picker.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
-import '../../data/pack/off_region.dart';
 import '../../data/pack/pack_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../backup/backup_flow.dart';
+import 'pack_manager_sheet.dart';
 
 /// Screen 6b — settings, reached from the profile.
 ///
@@ -101,27 +99,14 @@ class SettingsScreen extends ConsumerWidget {
                   _GroupHeader(l10n.settingsGroupProductData.toUpperCase()),
                   _Group(
                     children: [
-                      BoldListRow(
-                        icon: Icons.public,
-                        label: l10n.settingsRegion,
-                        subtitle:
-                            (packState?.selectedRegion ?? OffRegion.fallback)
-                                .hint(l10n),
-                        value: (packState?.selectedRegion ?? OffRegion.fallback)
-                            .label(l10n),
-                        onTap: () => _editRegion(context, ref),
-                      ),
+                      // One entry into the unified product-database sheet:
+                      // region, download/update (with progress), and file import
+                      // all live there now.
                       BoldListRow(
                         icon: Icons.inventory_2_outlined,
                         label: l10n.settingsProductDatabase,
                         subtitle: _packSubtitle(l10n, packState),
-                        onTap: () => _managePack(context, ref),
-                      ),
-                      BoldListRow(
-                        icon: Icons.folder_zip_outlined,
-                        label: l10n.settingsLoadPackFromFile,
-                        subtitle: l10n.settingsLoadPackFromFileHint,
-                        onTap: () => _importPack(context, ref),
+                        onTap: () => showPackManagerSheet(context, ref),
                       ),
                     ],
                   ),
@@ -183,131 +168,6 @@ class SettingsScreen extends ConsumerWidget {
     return version == null
         ? l10n.settingsPackLoaded
         : l10n.settingsPackLoadedVersion(version);
-  }
-
-  Future<void> _editRegion(BuildContext context, WidgetRef ref) async {
-    final service = await ref.read(packServiceProvider.future);
-    if (!context.mounted) return;
-    final current = service.selectedRegion;
-    final l10n = AppLocalizations.of(context);
-
-    final chosen = await showModalBottomSheet<OffRegion>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppTheme.screenPadding,
-            20,
-            AppTheme.screenPadding,
-            MediaQuery.paddingOf(context).bottom + 12,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.settingsRegion.toUpperCase(),
-                style: AppText.section(size: 18),
-              ),
-              const SizedBox(height: 14),
-              for (final region in OffRegion.values) ...[
-                BoldListRow(
-                  icon: Icons.public,
-                  label: region.label(l10n),
-                  subtitle: region.hint(l10n),
-                  chevron: false,
-                  highlight: region == current,
-                  onTap: () => Navigator.of(context).pop(region),
-                ),
-                const SizedBox(height: AppTheme.rowGap),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (chosen == null || chosen == current) {
-      return;
-    }
-    await service.setRegion(chosen);
-    ref.invalidate(packStateProvider);
-  }
-
-  Future<void> _managePack(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final l10n = AppLocalizations.of(context);
-    final service = await ref.read(packServiceProvider.future);
-
-    messenger.showSnackBar(
-      SnackBar(content: Text(l10n.settingsPackLoading)),
-    );
-    try {
-      final release = await service.install();
-      // The pack file changed, so re-open it and rebuild the search stack.
-      ref.invalidate(offPackProvider);
-      ref.invalidate(packStateProvider);
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.settingsPackLoadedCount(release.rowCount)),
-        ),
-      );
-    } on Object catch (error) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.settingsPackFailed(error.toString()))),
-      );
-    }
-  }
-
-  /// Imports a locally built product pack from a zip the user picks. The offline
-  /// counterpart to [_managePack]: no manifest, no download — the zip is on the
-  /// device already. Works the same on Android and iOS.
-  Future<void> _importPack(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final l10n = AppLocalizations.of(context);
-
-    // openFile hands back an XFile with a real path we can stream from — the
-    // .sqlite is pulled out of the zip on disk, so an ~85 MB pack is never
-    // loaded into memory.
-    final zipGroup = XTypeGroup(
-      label: l10n.settingsPackZipLabel,
-      extensions: const ['zip'],
-      mimeTypes: const ['application/zip', 'application/x-zip-compressed'],
-    );
-    final picked = await openFile(acceptedTypeGroups: [zipGroup]);
-    final path = picked?.path;
-    if (path == null) return; // Cancelled.
-
-    messenger.showSnackBar(
-      SnackBar(content: Text(l10n.settingsPackImporting)),
-    );
-    try {
-      final service = await ref.read(packServiceProvider.future);
-      final installed = await service.installFromZip(File(path));
-      // The pack file changed, so re-open it and rebuild the search stack.
-      ref.invalidate(offPackProvider);
-      ref.invalidate(packStateProvider);
-      AppLog.instance.log(
-        'Paket importiert: ${installed.rowCount} Produkte '
-        '(${installed.version})',
-        tag: 'pack',
-      );
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.settingsPackImportedCount(installed.rowCount)),
-        ),
-      );
-    } on Object catch (error) {
-      AppLog.instance.log(
-        'Paket-Import fehlgeschlagen',
-        tag: 'pack',
-        level: LogLevel.error,
-        error: error,
-      );
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.settingsPackImportFailed(error.toString()))),
-      );
-    }
   }
 
   /// Writes the App-Protokoll to a temp file and hands it to the system share

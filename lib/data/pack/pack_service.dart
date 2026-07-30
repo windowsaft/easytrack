@@ -111,9 +111,14 @@ class PackService {
       PackManifest.parse(await fetchManifestText(Uri.parse(manifestUrl)));
 
   /// Downloads and installs the pack for the currently selected region, then
-  /// records what was installed. Throws [PackInstallException] on any failure,
-  /// leaving an already-installed pack untouched (the installer's guarantee).
-  Future<PackRelease> install() async {
+  /// records what was installed. [onProgress] reports download bytes and
+  /// [cancel] aborts it. Throws [PackInstallException] on any failure (or
+  /// [PackCancelledException] when cancelled), leaving an already-installed pack
+  /// untouched (the installer's guarantee).
+  Future<PackRelease> install({
+    PackProgress? onProgress,
+    PackCancelToken? cancel,
+  }) async {
     final manifest = await fetchManifest();
     final region = selectedRegion;
     final release = manifest.releaseFor(region);
@@ -123,7 +128,12 @@ class PackService {
       );
     }
 
-    await installer.install(release, destination: await packFile());
+    await installer.install(
+      release,
+      destination: await packFile(),
+      onProgress: onProgress,
+      cancel: cancel,
+    );
 
     await prefs.setString(_kInstalledVersion, release.version);
     await prefs.setString(_kInstalledRegion, region.wire);

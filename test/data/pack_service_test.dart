@@ -40,8 +40,8 @@ void main() {
 
   PackService build() => PackService(
     prefs: prefs,
-    installer: PackInstaller((_) async => bytes),
-    fetchManifestText: (_) async => manifestJson(),
+    installer: PackInstaller((_, {expectedBytes, onProgress, cancel}) async => bytes),
+    fetchManifestText: (_, {expectedBytes, onProgress, cancel}) async => manifestJson(),
     supportDirectory: () async => dir,
     manifestUrl: 'http://test/manifest.json',
   );

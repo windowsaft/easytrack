@@ -7,9 +7,36 @@ import 'package:sqlite3/sqlite3.dart';
 import 'off_pack_database.dart';
 import 'pack_manifest.dart';
 
+/// Reports download progress: [received] bytes so far out of [total].
+typedef PackProgress = void Function(int received, int total);
+
+/// Cooperative cancellation for an in-flight download. The UI holds one and
+/// calls [cancel]; the downloader checks [isCancelled] between chunks.
+class PackCancelToken {
+  bool _cancelled = false;
+  bool get isCancelled => _cancelled;
+  void cancel() => _cancelled = true;
+}
+
+/// Thrown when a download is cancelled via a [PackCancelToken]. Kept distinct
+/// from [PackInstallException] so the UI can treat it as "aborted", not "failed".
+class PackCancelledException implements Exception {
+  const PackCancelledException();
+  @override
+  String toString() => 'PackCancelledException';
+}
+
 /// Fetches the bytes at [url]. Injected so the installer can be tested without a
 /// network, and so the production `http` client stays out of the pure logic.
-typedef PackDownloader = Future<Uint8List> Function(Uri url);
+/// [expectedBytes] seeds the progress total when the response omits a length;
+/// [onProgress] fires as bytes arrive; [cancel] aborts between chunks.
+typedef PackDownloader =
+    Future<Uint8List> Function(
+      Uri url, {
+      int? expectedBytes,
+      PackProgress? onProgress,
+      PackCancelToken? cancel,
+    });
 
 /// Thrown when a downloaded pack does not match what the manifest promised, or
 /// cannot be read as a valid pack. The installer guarantees an existing pack is
@@ -33,7 +60,12 @@ class PackInstaller {
 
   final PackDownloader download;
 
-  Future<void> install(PackRelease release, {required File destination}) async {
+  Future<void> install(
+    PackRelease release, {
+    required File destination,
+    PackProgress? onProgress,
+    PackCancelToken? cancel,
+  }) async {
     // An app too old for this pack refuses it up front rather than downloading
     // megabytes it cannot read.
     if (release.minAppSchema > OffPackDatabase.supportedSchemaVersion) {
@@ -43,7 +75,12 @@ class PackInstaller {
       );
     }
 
-    final bytes = await download(Uri.parse(release.url));
+    final bytes = await download(
+      Uri.parse(release.url),
+      expectedBytes: release.bytes,
+      onProgress: onProgress,
+      cancel: cancel,
+    );
 
     if (bytes.length != release.bytes) {
       throw PackInstallException(
