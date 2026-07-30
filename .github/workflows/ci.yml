@@ -30,6 +30,13 @@ jobs:
           cache: true
 
       - run: flutter pub get
+
+      # Generated sources are gitignored — the gen_l10n localizations and the
+      # drift/riverpod *.g.dart from build_runner — so CI must regenerate them
+      # before anything that reads them (analyze, test, and the APK build).
+      - run: flutter gen-l10n
+      - run: dart run build_runner build --delete-conflicting-outputs
+
       - run: flutter analyze
       - run: flutter test
 
