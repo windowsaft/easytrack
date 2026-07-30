@@ -61,11 +61,23 @@ class HistoryRepository {
               ..orderBy([(t) => OrderingTerm(expression: t.effectiveFrom)]))
             .watch();
 
-    return Rx.combineLatest([diary, water, activity, targets], (values) {
+    // The activity-adds-to-budget toggle is profile state (not history-
+    // preserving), so the current value applies to every day in the range.
+    final profile =
+        (_db.select(_db.userProfile)
+              ..where((t) => t.deletedAt.isNull())
+              ..limit(1))
+            .watchSingleOrNull();
+
+    return Rx.combineLatest([diary, water, activity, targets, profile], (
+      values,
+    ) {
       final diaryRows = values[0]! as List<QueryRow>;
       final waterRows = values[1]! as List<QueryRow>;
       final activityRows = values[2]! as List<QueryRow>;
       final targetRows = values[3]! as List<TargetRow>;
+      final activityAdds =
+          (values[4] as UserProfileRow?)?.activityAddsToBudget ?? true;
 
       final byDay = {for (final r in diaryRows) r.read<int>('d'): r};
       final waterByDay = {
@@ -103,6 +115,7 @@ class HistoryRepository {
             waterMl: waterByDay[day.value] ?? 0,
             activityKcal: activityByDay[day.value] ?? 0,
             targetKcal: targetFor(day.value),
+            activityAddsToBudget: activityAdds,
           ),
         );
       }

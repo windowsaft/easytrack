@@ -34,6 +34,10 @@ abstract final class AppColors {
   static const fat = Color(0xFF7C9CFF);
   static const water = Color(0xFF3FB6E6);
 
+  /// Neutral accent for the Verlauf "average deviation" stat, which can be over
+  /// or under — a signed distance, so coral (over/burned) would misread it.
+  static const violet = Color(0xFFB388FF);
+
   /// Ballaststoffe. Its own line on the nutrient sheet — not a "davon" under
   /// carbohydrate — so it carries a dot like the other top-level nutrients. A
   /// muted plant green, kept clear of the neon lime accent and the cyan water.

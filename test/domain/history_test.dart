@@ -29,9 +29,26 @@ void main() {
       expect(day(20260701, kcal: 10).hasData, isTrue);
     });
 
-    test('deviation is consumed minus target', () {
+    test('deviation is consumed minus the base target', () {
       expect(day(20260701, kcal: 2400, target: 2000).deviation, 400);
       expect(day(20260701, kcal: 1800, target: 2000).deviation, -200);
+    });
+
+    test('over-target is measured against the activity-extended budget', () {
+      // Above the base target but within base + burned → not over.
+      final within = day(20260701, kcal: 2300, target: 2000, activity: 400);
+      expect(within.budgetKcal, 2400);
+      expect(within.isOverTarget, isFalse);
+      // Above the budget → over.
+      final over = day(20260701, kcal: 2500, target: 2000, activity: 400);
+      expect(over.isOverTarget, isTrue);
+    });
+
+    test('a day within its budget counts as on target', () {
+      expect(
+        day(20260701, kcal: 2300, target: 2000, activity: 400).isOnTarget,
+        isTrue,
+      );
     });
   });
 
@@ -57,14 +74,15 @@ void main() {
       expect(s.avgDeviation, 200);
     });
 
-    test('adherence counts days within 15% of target', () {
+    test('adherence: within budget and not far under the base goal', () {
       final s = HistorySummary.of([
-        day(20260701, kcal: 2000, target: 2000), // dev 0 → adherent
-        day(20260702, kcal: 2200, target: 2000), // dev 200 ≤ 300 → adherent
-        day(20260703, kcal: 2400, target: 2000), // dev 400 > 300 → no
-        day(20260704, kcal: 1500, target: 2000), // dev 500 > 300 → no
+        day(20260701, kcal: 2000, target: 2000), // on the goal → yes
+        day(20260702, kcal: 2200, target: 2000), // over (no activity) → no
+        day(20260703, kcal: 1500, target: 2000), // >15% under base → no
+        day(20260704, kcal: 1800, target: 2000), // 10% under → yes
+        day(20260705, kcal: 2300, target: 2000, activity: 400), // within budget → yes
       ]);
-      expect(s.adherentDays, 2);
+      expect(s.adherentDays, 3);
     });
 
     test('macro split is the average plate by grams', () {

@@ -91,7 +91,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               label: l10n.historyAvgDeviation.toUpperCase(),
               value: _signedKcal(summary.avgDeviation),
               suffix: ' kcal',
-              accent: AppColors.coral,
+              accent: AppColors.violet,
             ),
           ),
           const SizedBox(height: AppTheme.rowGap),
