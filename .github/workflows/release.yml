@@ -64,6 +64,11 @@ jobs:
 
       - run: flutter pub get
 
+      # Generated sources (gen_l10n localizations, drift/riverpod *.g.dart) are
+      # gitignored, so regenerate them before building — the same step CI runs.
+      - run: flutter gen-l10n
+      - run: dart run build_runner build --delete-conflicting-outputs
+
       # build-number becomes the Android versionCode and must increase on every
       # release; github.run_number is monotonic across the repo's lifetime.
       - name: Build signed APK
