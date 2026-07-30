@@ -19,8 +19,14 @@ services:
       NODE_HEAP_MB: ${NODE_HEAP_MB:-6144}
       RUN_ON_START: ${RUN_ON_START:-false}
     volumes:
-      # Cached dump + build outputs; survives container recreation.
-      - off-pack-data:/data
-
-volumes:
-  off-pack-data:
+      # Cached dump + build outputs on a host path you control, so you can watch
+      # free space (the dump is several GB; world adds more). Set PACK_DATA_DIR
+      # in .env to a roomy disk on the server; defaults to ./data beside this
+      # file for local testing.
+      - ${PACK_DATA_DIR:-./data}:/data
+    # Quarterly runs log to stdout; cap growth so years of runs don't pile up.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

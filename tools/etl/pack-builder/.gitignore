@@ -1,2 +1,6 @@
 # Holds the GitHub token — never commit it.
 .env
+
+# Local bind-mount fallback (cached dump + build outputs) when PACK_DATA_DIR is
+# unset. Multi-GB — never commit.
+data/
