@@ -73,7 +73,7 @@ class PackService {
   static const defaultManifestUrl = String.fromEnvironment(
     'OFF_MANIFEST_URL',
     defaultValue:
-        'https://REPLACE_ME.example/easytrack-packs/off-latest/manifest.json',
+        'https://github.com/windowsaft/easytrack/releases/download/off-latest/manifest.json',
   );
 
   final SharedPreferences prefs;
