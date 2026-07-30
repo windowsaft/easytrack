@@ -36,6 +36,7 @@ import '../../domain/day_summary.dart';
 import '../../domain/history.dart';
 import '../../features/onboarding/onboarding_service.dart';
 import '../../l10n/app_localizations.dart';
+import '../app_update.dart';
 import '../i18n/locale_service.dart';
 import '../nutrition/food_ref.dart';
 import '../time/day_key.dart';
@@ -131,6 +132,25 @@ final localFoodProvidersProvider = FutureProvider<List<FoodProvider>>((
 final packageInfoProvider = FutureProvider<PackageInfo>(
   (ref) => PackageInfo.fromPlatform(),
 );
+
+/// A newer app version on GitHub Releases, or null when up to date, offline, or
+/// the check fails — sideloaded installs get no store auto-update, so this is
+/// their only nudge. Silent on any error; never blocks the UI.
+final appUpdateProvider = FutureProvider<AppUpdate?>((ref) async {
+  final info = ref.watch(packageInfoProvider).value;
+  if (info == null) return null;
+  try {
+    final response = await http.get(
+      Uri.parse(
+        'https://api.github.com/repos/windowsaft/easytrack/releases?per_page=30',
+      ),
+    );
+    if (response.statusCode != 200) return null;
+    return latestUpdateFrom(response.body, info.version);
+  } catch (_) {
+    return null;
+  }
+});
 
 /// Device-local key/value store. Backs the product-pack bookkeeping.
 final sharedPreferencesProvider = FutureProvider<SharedPreferences>(

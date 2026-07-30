@@ -6,6 +6,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../core/app_links.dart';
+import '../../core/app_update.dart';
 import '../../core/di/providers.dart';
 import '../../core/diagnostics/app_log.dart';
 import '../../core/i18n/language_picker.dart';
@@ -31,6 +33,7 @@ class SettingsScreen extends ConsumerWidget {
     final settings = ref.read(settingsRepositoryProvider);
     final profile = ref.watch(userProfileProvider).value;
     final packState = ref.watch(packStateProvider).value;
+    final update = ref.watch(appUpdateProvider).value;
     final l10n = AppLocalizations.of(context);
     final locale = ref.watch(localeControllerProvider);
     final languageIsExplicit =
@@ -53,6 +56,9 @@ class SettingsScreen extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.only(bottom: 32),
                 children: [
+                  // Only shown to sideloaded installs when GitHub has a newer
+                  // release; absent (and silent) otherwise.
+                  if (update != null) _UpdateBanner(update: update),
                   // App preferences only — no goals. Calorie/macro/water/factor
                   // targets live on the Ziele-Seite, reached from Profil.
                   _GroupHeader(l10n.settingsGroupActivity.toUpperCase()),
@@ -212,6 +218,69 @@ class SettingsScreen extends ConsumerWidget {
         '${Platform.operatingSystemVersion}\n'
         'Exportiert: ${DateTime.now().toIso8601String()}\n'
         '${'-' * 40}';
+  }
+}
+
+/// A tappable "new version available" banner for sideloaded installs. Opens the
+/// GitHub release page in the browser.
+class _UpdateBanner extends StatelessWidget {
+  const _UpdateBanner({required this.update});
+
+  final AppUpdate update;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        12,
+        AppTheme.screenPadding,
+        4,
+      ),
+      child: Material(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadii.button),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => openExternal(context, update.url),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.system_update,
+                  color: AppColors.lime,
+                  size: 22,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.settingsUpdateAvailable(update.version),
+                        style: AppText.grotesk(size: 14, weight: 700),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        l10n.settingsUpdateAvailableHint,
+                        style: AppText.rowSubtitle(color: AppColors.textMute),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.open_in_new,
+                  size: 18,
+                  color: AppColors.chevron,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

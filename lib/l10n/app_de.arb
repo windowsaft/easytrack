@@ -50,6 +50,8 @@
   "settingsPackDownloadingProgress": "Wird geladen … {done} / {total} MB",
   "settingsPackUpToDate": "Aktuell",
   "settingsPackUnavailable": "Download-Server nicht erreichbar.",
+  "settingsUpdateAvailable": "Neue Version {version} verfügbar",
+  "settingsUpdateAvailableHint": "Zum Öffnen der Download-Seite tippen",
   "settingsLogShareSubject": "EasyTrack Protokoll",
   "settingsLogExportFailed": "Protokoll-Export fehlgeschlagen: {error}",
   "settingsLogCleared": "Protokoll gelöscht",

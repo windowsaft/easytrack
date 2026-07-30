@@ -222,6 +222,17 @@
   "@settingsPackUnavailable": {
     "description": "Shown when the pack manifest can't be fetched (e.g. offline)."
   },
+  "settingsUpdateAvailable": "New version {version} available",
+  "@settingsUpdateAvailable": {
+    "description": "Settings banner title when a newer release exists on GitHub.",
+    "placeholders": {
+      "version": { "type": "String", "example": "1.0.1" }
+    }
+  },
+  "settingsUpdateAvailableHint": "Tap to open the download page",
+  "@settingsUpdateAvailableHint": {
+    "description": "Settings update-banner subtitle."
+  },
   "settingsLogShareSubject": "EasyTrack log",
   "@settingsLogShareSubject": {
     "description": "Subject line when sharing the exported diagnostic log."
