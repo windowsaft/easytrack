@@ -26,6 +26,15 @@ Most trackers want an account, a subscription, and your data. EasyTrack wants no
 - **Bilingual &amp; translatable** — English and German, and anyone can add a language without touching code.
 - **Source-available** — GPLv3; study it, build it, fork it.
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/home.png" width="220" alt="Daily dashboard" />
+  <img src="docs/screenshots/search.png" width="220" alt="Food search" />
+  <img src="docs/screenshots/history.png" width="220" alt="Weekly trends" />
+  <img src="docs/screenshots/recipe.png" width="220" alt="Recipes" />
+</p>
+
 ## Features
 
 | Feature | |
@@ -52,16 +61,6 @@ version is out.
 
 > Product data (Open Food Facts) is downloaded on first run and refreshed periodically, so the food
 > database stays current without shipping a new app.
-
-## Screenshots
-
-<!-- Add screenshots here, e.g.:
-<p align="center">
-  <img src="docs/screenshots/diary.png" width="240" />
-  <img src="docs/screenshots/search.png" width="240" />
-  <img src="docs/screenshots/history.png" width="240" />
-</p>
--->
 
 _A full walkthrough with screenshots lives in the project wiki._
 
