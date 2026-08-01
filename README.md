@@ -29,10 +29,10 @@ Most trackers want an account, a subscription, and your data. EasyTrack wants no
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/home.png" width="220" alt="Daily dashboard" />
-  <img src="docs/screenshots/search.png" width="220" alt="Food search" />
-  <img src="docs/screenshots/history.png" width="220" alt="Weekly trends" />
-  <img src="docs/screenshots/recipe.png" width="220" alt="Recipes" />
+  <img src="docs/screenshots/home.png" width="23%" alt="Daily dashboard" />
+  <img src="docs/screenshots/search.png" width="23%" alt="Food search" />
+  <img src="docs/screenshots/history.png" width="23%" alt="Weekly trends" />
+  <img src="docs/screenshots/recipe.png" width="23%" alt="Recipes" />
 </p>
 
 ## Features
