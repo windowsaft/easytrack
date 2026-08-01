@@ -1,0 +1,67 @@
+name: iOS test build
+
+# Manual only. This produces an UNSIGNED .ipa for sideloading onto a personal
+# iPhone with a free Apple ID — see docs/ios-testbuild.md. It is not a release
+# and it cannot go to TestFlight or the App Store (that needs the paid Apple
+# Developer Program and real signing, which release.yml does not do either).
+#
+# It runs on demand rather than on push because macOS runners are slow and this
+# artifact is only useful when someone is standing at a cable with a phone.
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build unsigned IPA
+    # macOS is the only host that can build iOS at all — the whole reason this
+    # workflow exists, since development happens on Windows. macos-26 ships
+    # Xcode 26 / the iOS 26 SDK, which Apple requires for App Store builds and
+    # which is a fine baseline for test builds too.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pinned to the exact local toolchain, same as ci.yml and release.yml.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.1
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # Generated sources are gitignored — the gen_l10n localizations and the
+      # drift/riverpod *.g.dart from build_runner — so a fresh checkout cannot
+      # compile without regenerating them first. Omitting these broke ci.yml
+      # and release.yml once each.
+      - run: flutter gen-l10n
+      - run: dart run build_runner build --delete-conflicting-outputs
+
+      # --no-codesign: there is no Apple certificate here, on purpose. The app
+      # is signed later, on Windows, by Sideloadly using a free Apple ID.
+      # `flutter build ipa` is deliberately NOT used — its export step demands
+      # a signing identity, so the Payload/ zip below stands in for it.
+      - name: Build unsigned .app
+        run: >-
+          flutter build ios --release --no-codesign
+          --build-number=${{ github.run_number }}
+
+      # An .ipa is just a zip with the .app inside a top-level Payload/ folder.
+      - name: Package as .ipa
+        run: |
+          mkdir -p Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          zip -qry easytrack-unsigned.ipa Payload
+
+      # sqlite3 is compiled from source into libsqlite3.dylib by a native-assets
+      # build hook rather than coming from a pod, so it is the one bundled
+      # binary most likely to go missing or to trip up re-signing. Printing the
+      # Frameworks directory makes that visible in the log instead of as a
+      # launch crash on the phone.
+      - name: List bundled frameworks
+        run: ls -la Payload/Runner.app/Frameworks/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: easytrack-ios-unsigned-${{ github.run_number }}
+          path: easytrack-unsigned.ipa

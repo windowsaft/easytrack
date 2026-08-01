@@ -90,11 +90,12 @@ dev_dependencies:
 # Launcher icons: lime tile + ascending near-black bars, matching the splash.
 # Regenerate the source PNGs with `dart run tool/gen_icon.dart`, then run
 # `dart run flutter_launcher_icons`.
-# iOS is intentionally off: this is an Android sideload build with no iOS
-# project (no ios/ directory), so there is no asset catalog to write into.
+# remove_alpha_ios strips the alpha channel: App Store icons may not have one,
+# and the master PNG is fully opaque anyway (tool/gen_icon.dart fills it).
 flutter_launcher_icons:
   android: true
-  ios: false
+  ios: true
+  remove_alpha_ios: true
   image_path: "assets/icon/icon.png"
   min_sdk_android: 21
   adaptive_icon_background: "#0E3B23"
