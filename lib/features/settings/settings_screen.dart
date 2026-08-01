@@ -12,6 +12,7 @@ import '../../core/di/providers.dart';
 import '../../core/diagnostics/app_log.dart';
 import '../../core/i18n/language_picker.dart';
 import '../../core/ui/app_theme.dart';
+import '../../core/ui/share_origin.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/pack/pack_service.dart';
 import '../../l10n/app_localizations.dart';
@@ -181,6 +182,9 @@ class SettingsScreen extends ConsumerWidget {
   Future<void> _exportLog(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context);
+    // Read before the awaits below: the render object is only reachable while
+    // the widget is still mounted.
+    final origin = shareOrigin(context);
     try {
       final info = ref.read(packageInfoProvider).value;
       final tempDir = await getTemporaryDirectory();
@@ -192,6 +196,7 @@ class SettingsScreen extends ConsumerWidget {
         ShareParams(
           files: [XFile(file.path)],
           subject: l10n.settingsLogShareSubject,
+          sharePositionOrigin: origin,
         ),
       );
     } on Object catch (error) {

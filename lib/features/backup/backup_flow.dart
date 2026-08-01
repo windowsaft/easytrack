@@ -10,6 +10,7 @@ import '../../app_boot.dart';
 import '../../core/di/providers.dart';
 import '../../core/diagnostics/app_log.dart';
 import '../../core/ui/app_theme.dart';
+import '../../core/ui/share_origin.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/backup/backup_service.dart';
 import '../../l10n/app_localizations.dart';
@@ -25,6 +26,9 @@ import '../../l10n/app_localizations.dart';
 Future<void> exportBackup(BuildContext context, WidgetRef ref) async {
   final messenger = ScaffoldMessenger.of(context);
   final l10n = AppLocalizations.of(context);
+  // Read before the awaits below: the render object is only reachable while the
+  // widget is still mounted.
+  final origin = shareOrigin(context);
   messenger.showSnackBar(
     SnackBar(content: Text(l10n.backupCreating)),
   );
@@ -36,6 +40,7 @@ Future<void> exportBackup(BuildContext context, WidgetRef ref) async {
         files: [XFile(zip.path, mimeType: 'application/zip')],
         subject: l10n.backupShareSubject,
         text: l10n.backupShareText,
+        sharePositionOrigin: origin,
       ),
     );
     AppLog.instance.log('Sicherung exportiert', tag: 'backup');
