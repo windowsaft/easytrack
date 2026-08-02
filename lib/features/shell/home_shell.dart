@@ -85,9 +85,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     }
 
     // Move to the diary first: returning from the add flow to another tab would
-    // leave the user somewhere they did not navigate to.
+    // leave the user somewhere they did not navigate to. The day is left alone —
+    // everything downstream logs to the diary's selected day, so pressing add
+    // while looking at "Gestern" adds to yesterday, which is what the visible
+    // date promises.
     setState(() => _index = 0);
-    ref.read(selectedDayProvider.notifier).goToToday();
 
     final choice = await showModalBottomSheet<_AddChoice>(
       context: context,

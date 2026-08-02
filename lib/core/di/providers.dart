@@ -401,8 +401,6 @@ class SelectedDay extends Notifier<DayKey> {
 
   void select(DayKey day) => state = day;
 
-  void goToToday() => state = DayKey.today();
-
   void shift(int days) => state = state.addDays(days);
 }
 
