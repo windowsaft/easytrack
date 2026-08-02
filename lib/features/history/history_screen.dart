@@ -8,6 +8,7 @@ import 'package:intl/intl.dart' show DateFormat;
 import '../../core/di/providers.dart';
 import '../../core/i18n/number_format.dart';
 import '../../core/time/day_key.dart';
+import '../../core/time/week_start.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/db/user_database.dart';
@@ -29,36 +30,22 @@ class HistoryScreen extends ConsumerStatefulWidget {
   ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-enum _Period {
-  woche(7),
-  monat(30);
-
-  const _Period(this.days);
-  final int days;
-
+extension on HistoryUnit {
   String label(AppLocalizations l10n) => switch (this) {
-    _Period.woche => l10n.historyWeek,
-    _Period.monat => l10n.historyMonth,
+    HistoryUnit.week => l10n.historyWeek,
+    HistoryUnit.month => l10n.historyMonth,
   };
 }
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
-  _Period _period = _Period.woche;
-
-  /// How many periods back from the rolling window the tab is showing.
-  ///
-  /// 0 is the rolling "last 7 / last 30 days" ending today — the default the
-  /// tab has always had. Anything below that leaves the rolling frame and walks
-  /// whole calendar units instead (−1 is the previous calendar week or month),
-  /// because "the week before" only means anything on a calendar boundary.
-  int _offset = 0;
-
-  /// A hand-picked span, which replaces both of the above until cleared.
-  ({DayKey from, DayKey to})? _custom;
+  /// Which stretch of days is on screen. The stepping and clamping rules live
+  /// in [HistoryRange] so they are unit-testable away from the widget.
+  HistoryRange _range = const HistoryRange(HistoryUnit.week);
 
   @override
   Widget build(BuildContext context) {
-    final range = _range;
+    final today = DayKey.today();
+    final range = _range.days(today, WeekStart.monday);
     final days = ref.watch(historyProvider(range)).value ?? const <DayHistory>[];
     final summary = HistorySummary.of(days);
     final l10n = AppLocalizations.of(context);
@@ -71,21 +58,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       children: [
         BoldHeader(title: l10n.navHistory.toUpperCase()),
         _PeriodTabs(
-          current: _period,
-          // Changing the unit returns to that unit's rolling window: carrying a
-          // "3 weeks back" offset over to months would land somewhere the user
-          // did not ask for.
-          onSelect: (p) => setState(() {
-            _period = p;
-            _offset = 0;
-            _custom = null;
-          }),
+          current: _range.unit,
+          onSelect: (unit) => setState(() => _range = _range.withUnit(unit)),
         ),
         _RangeBar(
-          label: _rangeLabel(l10n),
-          canForward: _canForward,
-          onStep: _step,
-          onPickCustom: _pickCustom,
+          label: _rangeLabel(l10n, range),
+          canForward: _range.canStepForward(today),
+          onStep: (direction) =>
+              setState(() => _range = _range.step(direction, today)),
+          onPickCustom: () => _pickCustom(range),
         ),
         if (summary.daysLogged == 0)
           const _EmptyState()
@@ -146,50 +127,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
-  /// The inclusive day range currently on screen.
-  ({DayKey from, DayKey to}) get _range {
-    final custom = _custom;
-    if (custom != null) return custom;
-
-    final today = DayKey.today();
-    if (_offset == 0) {
-      return (from: today.addDays(-(_period.days - 1)), to: today);
-    }
-    return switch (_period) {
-      _Period.woche => _calendarWeek(today, _offset),
-      _Period.monat => _calendarMonth(today, _offset),
-    };
-  }
-
-  /// Forward is blocked once the range has caught up with today — there is no
-  /// history ahead of it to show.
-  bool get _canForward {
-    final custom = _custom;
-    return custom == null ? _offset < 0 : custom.to.daysUntil(DayKey.today()) > 0;
-  }
-
-  /// Steps one period back (−1) or forward (+1). A custom range moves by its own
-  /// length, clamped so it never runs past today.
-  void _step(int direction) {
-    setState(() {
-      final custom = _custom;
-      if (custom == null) {
-        _offset += direction;
-        return;
-      }
-      final span = custom.from.daysUntil(custom.to) + 1;
-      final shift = direction > 0
-          ? math.min(span, custom.to.daysUntil(DayKey.today()))
-          : -span;
-      _custom = (
-        from: custom.from.addDays(shift),
-        to: custom.to.addDays(shift),
-      );
-    });
-  }
-
-  Future<void> _pickCustom() async {
-    final current = _range;
+  Future<void> _pickCustom(({DayKey from, DayKey to}) current) async {
     final picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
@@ -201,22 +139,19 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
     if (picked == null) return;
     setState(
-      () => _custom = (
-        from: DayKey.fromDate(picked.start),
-        to: DayKey.fromDate(picked.end),
+      () => _range = _range.withCustom(
+        DayKey.fromDate(picked.start),
+        DayKey.fromDate(picked.end),
       ),
     );
   }
 
-  String _rangeLabel(AppLocalizations l10n) {
-    if (_custom == null) {
-      if (_offset == 0) return l10n.historyLastDays(_period.days);
-      // A whole calendar month names itself; a week has to spell its ends out.
-      if (_period == _Period.monat) {
-        return DateFormat.yMMMM().format(_range.from.toDateTime());
-      }
+  String _rangeLabel(AppLocalizations l10n, ({DayKey from, DayKey to}) range) {
+    if (_range.isRolling) return l10n.historyLastDays(_range.unit.rollingDays);
+    // A whole calendar month names itself; a week has to spell its ends out.
+    if (_range.custom == null && _range.unit == HistoryUnit.month) {
+      return DateFormat.yMMMM().format(range.from.toDateTime());
     }
-    final range = _range;
     return '${_dayLabel(range.from)} – ${_dayLabel(range.to)}';
   }
 
@@ -226,23 +161,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     return day.year == DayKey.today().year
         ? DateFormat.MMMd().format(date)
         : DateFormat.yMMMd().format(date);
-  }
-
-  /// The Monday–Sunday week [offset] weeks from the one containing [today].
-  static ({DayKey from, DayKey to}) _calendarWeek(DayKey today, int offset) {
-    final weekday = today.toDateTime().weekday;
-    final from = DayKey.fromDate(
-      DateTime(today.year, today.month, today.day - (weekday - 1) + offset * 7),
-    );
-    return (from: from, to: from.addDays(6));
-  }
-
-  /// The whole calendar month [offset] months from today's.
-  static ({DayKey from, DayKey to}) _calendarMonth(DayKey today, int offset) {
-    final first = DateTime(today.year, today.month + offset, 1);
-    // Day 0 of the following month is the last day of this one.
-    final last = DateTime(first.year, first.month + 1, 0);
-    return (from: DayKey.fromDate(first), to: DayKey.fromDate(last));
   }
 
   static String _signedKcal(double kcal) {
@@ -257,8 +175,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 class _PeriodTabs extends StatelessWidget {
   const _PeriodTabs({required this.current, required this.onSelect});
 
-  final _Period current;
-  final ValueChanged<_Period> onSelect;
+  final HistoryUnit current;
+  final ValueChanged<HistoryUnit> onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -271,13 +189,13 @@ class _PeriodTabs extends StatelessWidget {
       ),
       child: Row(
         children: [
-          for (final period in _Period.values) ...[
-            if (period != _Period.values.first) const SizedBox(width: 8),
+          for (final unit in HistoryUnit.values) ...[
+            if (unit != HistoryUnit.values.first) const SizedBox(width: 8),
             Expanded(
               child: BoldChip(
-                label: period.label(AppLocalizations.of(context)),
-                selected: current == period,
-                onTap: () => onSelect(period),
+                label: unit.label(AppLocalizations.of(context)),
+                selected: current == unit,
+                onTap: () => onSelect(unit),
               ),
             ),
           ],

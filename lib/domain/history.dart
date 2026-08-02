@@ -1,4 +1,94 @@
+import 'dart:math' as math;
+
 import '../core/time/day_key.dart';
+import '../core/time/week_start.dart';
+
+/// The unit the Verlauf tab pages by.
+enum HistoryUnit {
+  week(7),
+  month(30);
+
+  const HistoryUnit(this.rollingDays);
+
+  /// How many days this unit's rolling window covers.
+  final int rollingDays;
+}
+
+/// Which stretch of days the Verlauf tab is showing, and how it moves.
+///
+/// [offset] 0 is the rolling window ending today — the default the tab has
+/// always had. Below that the range leaves the rolling frame and walks whole
+/// calendar units instead, because "the week before" only means anything on a
+/// calendar boundary. [custom] is a hand-picked span and overrides both.
+///
+/// Today is injected rather than read from the clock so the stepping and
+/// clamping rules can be tested without freezing time.
+class HistoryRange {
+  const HistoryRange(this.unit, {this.offset = 0, this.custom});
+
+  final HistoryUnit unit;
+  final int offset;
+  final ({DayKey from, DayKey to})? custom;
+
+  /// Whether this is the untouched default: the window ending today.
+  bool get isRolling => custom == null && offset == 0;
+
+  /// The inclusive range of days to load.
+  ({DayKey from, DayKey to}) days(DayKey today, WeekStart weekStart) {
+    final custom = this.custom;
+    if (custom != null) return custom;
+    if (offset == 0) {
+      return (from: today.addDays(-(unit.rollingDays - 1)), to: today);
+    }
+    return switch (unit) {
+      HistoryUnit.week => _calendarWeek(today, weekStart),
+      HistoryUnit.month => _calendarMonth(today),
+    };
+  }
+
+  /// Forward is blocked once the range has caught up with today — there is no
+  /// history ahead of it to show.
+  bool canStepForward(DayKey today) {
+    final custom = this.custom;
+    return custom == null ? offset < 0 : custom.to.daysUntil(today) > 0;
+  }
+
+  /// One unit back (-1) or forward (+1). A custom span moves by its own length,
+  /// clamped so it never runs past today.
+  HistoryRange step(int direction, DayKey today) {
+    final custom = this.custom;
+    if (custom == null) return HistoryRange(unit, offset: offset + direction);
+
+    final span = custom.from.daysUntil(custom.to) + 1;
+    final shift = direction > 0
+        ? math.min(span, custom.to.daysUntil(today))
+        : -span;
+    return HistoryRange(
+      unit,
+      custom: (from: custom.from.addDays(shift), to: custom.to.addDays(shift)),
+    );
+  }
+
+  /// Switching unit returns to that unit's rolling window: carrying a "three
+  /// weeks back" offset over to months would land somewhere unasked for.
+  HistoryRange withUnit(HistoryUnit unit) => HistoryRange(unit);
+
+  HistoryRange withCustom(DayKey from, DayKey to) =>
+      HistoryRange(unit, custom: (from: from, to: to));
+
+  ({DayKey from, DayKey to}) _calendarWeek(DayKey today, WeekStart weekStart) {
+    final from = weekStart.startOfWeek(today).addDays(offset * 7);
+    return (from: from, to: from.addDays(6));
+  }
+
+  ({DayKey from, DayKey to}) _calendarMonth(DayKey today) {
+    final first = DateTime(today.year, today.month + offset, 1);
+    // Day 0 of the following month is the last day of this one, so this lands
+    // on 28/29/30/31 without a table.
+    final last = DateTime(first.year, first.month + 1, 0);
+    return (from: DayKey.fromDate(first), to: DayKey.fromDate(last));
+  }
+}
 
 /// One day's rolled-up totals, for the Verlauf analytics.
 ///

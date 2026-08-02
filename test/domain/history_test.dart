@@ -1,4 +1,5 @@
 import 'package:easytrack/core/time/day_key.dart';
+import 'package:easytrack/core/time/week_start.dart';
 import 'package:easytrack/domain/history.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -102,6 +103,174 @@ void main() {
       ]);
       expect(s.avgWaterMl, 1500);
       expect(s.avgActivityKcal, 300);
+    });
+  });
+
+  group('HistoryRange', () {
+    // A Wednesday, so the calendar week it belongs to reaches in both
+    // directions and a rolling window can never be mistaken for one.
+    const wednesday = DayKey(20260805);
+
+    ({DayKey from, DayKey to}) week(
+      HistoryRange range, [
+      WeekStart start = WeekStart.monday,
+    ]) => range.days(wednesday, start);
+
+    test('defaults to the rolling window ending today', () {
+      const range = HistoryRange(HistoryUnit.week);
+      expect(range.isRolling, isTrue);
+      expect(week(range), (from: const DayKey(20260730), to: wednesday));
+
+      const month = HistoryRange(HistoryUnit.month);
+      expect(week(month), (from: const DayKey(20260707), to: wednesday));
+    });
+
+    test('the rolling window ignores the week-start convention', () {
+      const range = HistoryRange(HistoryUnit.week);
+      expect(week(range, WeekStart.sunday), week(range, WeekStart.monday));
+    });
+
+    test('one step back is the previous whole calendar week', () {
+      final range = const HistoryRange(HistoryUnit.week).step(-1, wednesday);
+      // Monday-first: 27 Jul – 2 Aug.
+      expect(week(range), (
+        from: const DayKey(20260727),
+        to: const DayKey(20260802),
+      ));
+      // Sunday-first shifts the same week by a day: 26 Jul – 1 Aug.
+      expect(week(range, WeekStart.sunday), (
+        from: const DayKey(20260726),
+        to: const DayKey(20260801),
+      ));
+    });
+
+    test('steps keep walking back a week at a time', () {
+      final range = const HistoryRange(HistoryUnit.week)
+          .step(-1, wednesday)
+          .step(-1, wednesday)
+          .step(-1, wednesday);
+      expect(week(range), (
+        from: const DayKey(20260713),
+        to: const DayKey(20260719),
+      ));
+    });
+
+    test('a month back is the whole previous month', () {
+      final range = const HistoryRange(HistoryUnit.month).step(-1, wednesday);
+      expect(week(range), (
+        from: const DayKey(20260701),
+        to: const DayKey(20260731),
+      ));
+    });
+
+    test('month ends land on the real last day, leap years included', () {
+      const inMarch = DayKey(20240315);
+      final february = const HistoryRange(
+        HistoryUnit.month,
+      ).step(-1, inMarch).days(inMarch, WeekStart.monday);
+      expect(february, (
+        from: const DayKey(20240201),
+        to: const DayKey(20240229),
+      ));
+
+      const inMay = DayKey(20260510);
+      final april = const HistoryRange(
+        HistoryUnit.month,
+      ).step(-1, inMay).days(inMay, WeekStart.monday);
+      expect(april, (from: const DayKey(20260401), to: const DayKey(20260430)));
+    });
+
+    test('paging back crosses the year boundary', () {
+      const inJanuary = DayKey(20260115);
+      final december = const HistoryRange(
+        HistoryUnit.month,
+      ).step(-1, inJanuary).days(inJanuary, WeekStart.monday);
+      expect(december, (
+        from: const DayKey(20251201),
+        to: const DayKey(20251231),
+      ));
+    });
+
+    test('forward is blocked at the rolling window and freed once paged back', () {
+      const rolling = HistoryRange(HistoryUnit.week);
+      expect(rolling.canStepForward(wednesday), isFalse);
+
+      final back = rolling.step(-1, wednesday);
+      expect(back.canStepForward(wednesday), isTrue);
+      expect(back.step(1, wednesday).isRolling, isTrue);
+    });
+
+    test('switching unit drops the offset', () {
+      final paged = const HistoryRange(HistoryUnit.week).step(-4, wednesday);
+      expect(paged.isRolling, isFalse);
+      expect(paged.withUnit(HistoryUnit.month).isRolling, isTrue);
+    });
+
+    test('a custom span survives a unit\'s stepping rules', () {
+      final custom = const HistoryRange(
+        HistoryUnit.week,
+      ).withCustom(const DayKey(20260701), const DayKey(20260710));
+      expect(custom.isRolling, isFalse);
+      expect(week(custom), (
+        from: const DayKey(20260701),
+        to: const DayKey(20260710),
+      ));
+    });
+
+    test('a custom span steps back by its own length', () {
+      final custom = const HistoryRange(
+        HistoryUnit.week,
+      ).withCustom(const DayKey(20260701), const DayKey(20260710));
+      // 10 days long, so one step back is 21–30 June.
+      expect(week(custom.step(-1, wednesday)), (
+        from: const DayKey(20260621),
+        to: const DayKey(20260630),
+      ));
+    });
+
+    test('stepping a custom span forward stops at today', () {
+      // Ends two days short of today, so a full 10-day jump would overshoot
+      // into the future; it may only move those two days.
+      final custom = const HistoryRange(
+        HistoryUnit.week,
+      ).withCustom(const DayKey(20260725), const DayKey(20260803));
+      expect(custom.canStepForward(wednesday), isTrue);
+      expect(week(custom.step(1, wednesday)), (
+        from: const DayKey(20260727),
+        to: wednesday,
+      ));
+    });
+
+    test('a custom span ending today cannot go forward', () {
+      final custom = const HistoryRange(
+        HistoryUnit.week,
+      ).withCustom(const DayKey(20260801), wednesday);
+      expect(custom.canStepForward(wednesday), isFalse);
+    });
+  });
+
+  group('WeekStart', () {
+    test('starts the week on the chosen day', () {
+      // 2026-08-05 is a Wednesday.
+      const wednesday = DayKey(20260805);
+      expect(WeekStart.monday.startOfWeek(wednesday), const DayKey(20260803));
+      expect(WeekStart.sunday.startOfWeek(wednesday), const DayKey(20260802));
+    });
+
+    test('a day that is already the start stays put', () {
+      expect(
+        WeekStart.monday.startOfWeek(const DayKey(20260803)),
+        const DayKey(20260803),
+      );
+      expect(
+        WeekStart.sunday.startOfWeek(const DayKey(20260802)),
+        const DayKey(20260802),
+      );
+    });
+
+    test('English counts from Sunday, everything else from Monday', () {
+      expect(WeekStart.forLanguage('en'), WeekStart.sunday);
+      expect(WeekStart.forLanguage('de'), WeekStart.monday);
     });
   });
 }
