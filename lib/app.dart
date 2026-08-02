@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/di/providers.dart';
+import 'core/i18n/week_start_localizations.dart';
 import 'core/ui/app_theme.dart';
 import 'features/splash/splash_screen.dart';
 import 'l10n/app_localizations.dart';
@@ -15,6 +16,9 @@ class EasyTrackApp extends ConsumerWidget {
     // Changing it here rebuilds the whole tree, so every translated string and
     // every DateFormat re-renders in the new language.
     final locale = ref.watch(localeControllerProvider);
+    // Which weekday the calendar grids start on. Watched here rather than at
+    // each picker because it reaches them through Localizations, not arguments.
+    final weekStart = ref.watch(weekStartProvider);
 
     return MaterialApp(
       title: 'EasyTrack',
@@ -27,9 +31,14 @@ class EasyTrackApp extends ConsumerWidget {
       locale: locale,
       // Both the app's own strings and Flutter's built-in widget translations;
       // AppLocalizations.localizationsDelegates already bundles the three Global
-      // delegates alongside its own.
+      // delegates alongside its own. The week-start wrapper goes first: Flutter
+      // keeps only the first delegate per type, so it has to beat the Global
+      // Material one it wraps.
       supportedLocales: AppLocalizations.supportedLocales,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      localizationsDelegates: [
+        WeekStartMaterialLocalizationsDelegate(weekStart),
+        ...AppLocalizations.localizationsDelegates,
+      ],
       home: const SplashScreen(),
     );
   }
