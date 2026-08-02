@@ -318,6 +318,38 @@ class _MacroBlocks extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.screenPadding),
       child: Column(
         children: [
+          // The caption sits above the tiles it belongs to: below, it read as a
+          // footnote to the water meter that follows.
+          Align(
+            alignment: Alignment.centerRight,
+            child: InkWell(
+              onTap: () => _showNutrientDetails(context, summary),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l10n.diaryAllNutrients.toUpperCase(),
+                      style: AppText.grotesk(
+                        size: 10,
+                        weight: 700,
+                        color: AppColors.textFaint,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 15,
+                      color: AppColors.textFaint,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
           // The tiles open the full breakdown (sugar, fibre, sat. fat, salt),
           // which has no room on the dashboard but is a tap away.
           InkWell(
@@ -351,36 +383,6 @@ class _MacroBlocks extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(height: 6),
-          Align(
-            alignment: Alignment.centerRight,
-            child: InkWell(
-              onTap: () => _showNutrientDetails(context, summary),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      l10n.diaryAllNutrients.toUpperCase(),
-                      style: AppText.grotesk(
-                        size: 10,
-                        weight: 700,
-                        color: AppColors.textFaint,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    const Icon(
-                      Icons.chevron_right,
-                      size: 15,
-                      color: AppColors.textFaint,
-                    ),
-                  ],
-                ),
-              ),
             ),
           ),
         ],
