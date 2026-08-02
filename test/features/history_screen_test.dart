@@ -6,6 +6,7 @@ import 'package:easytrack/core/di/providers.dart';
 import 'package:easytrack/core/nutrition/food_ref.dart';
 import 'package:easytrack/core/nutrition/nutrients.dart';
 import 'package:easytrack/core/time/day_key.dart';
+import 'package:easytrack/core/time/week_start.dart';
 import 'package:easytrack/core/ui/app_theme.dart';
 import 'package:easytrack/data/db/user_database.dart';
 import 'package:easytrack/data/food/food_item.dart';
@@ -16,12 +17,19 @@ import 'package:easytrack/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   late UserDatabase user;
   late DiaryRepository diary;
 
   setUp(() {
+    // Pin the week convention: it otherwise follows the language, which would
+    // make the range the back chevron lands on depend on the test environment.
+    SharedPreferences.setMockInitialValues({
+      'app_locale_v1': 'de',
+      'week_start_v1': 'monday',
+    });
     user = UserDatabase.forTesting();
     diary = DiaryRepository(user, SettingsRepository(user));
   });
@@ -107,13 +115,13 @@ void main() {
   testWidgets('stepping back reaches a day the rolling window cannot', (
     tester,
   ) async {
-    // The Monday of the previous calendar week is always at least 7 days ago,
+    // The start of the previous calendar week is always at least 7 days ago,
     // whatever today's weekday — so it can never fall inside "last 7 days", and
     // only the back chevron can bring it into view.
     final today = DayKey.today();
-    final lastMonday = today.addDays(-(today.toDateTime().weekday - 1) - 7);
+    final lastWeek = WeekStart.monday.startOfWeek(today).addDays(-7);
     await diary.addEntry(
-      day: lastMonday,
+      day: lastWeek,
       meal: MealType.breakfast,
       food: oats,
       amountG: 200,

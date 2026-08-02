@@ -38,8 +38,10 @@ import '../../features/onboarding/onboarding_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../app_update.dart';
 import '../i18n/locale_service.dart';
+import '../i18n/week_start_service.dart';
 import '../nutrition/food_ref.dart';
 import '../time/day_key.dart';
+import '../time/week_start.dart';
 
 /// The local user database. Lives for the whole app session.
 final userDatabaseProvider = Provider<UserDatabase>((ref) {
@@ -225,6 +227,32 @@ class LocaleController extends Notifier<Locale> {
 
 final localeControllerProvider = NotifierProvider<LocaleController, Locale>(
   LocaleController.new,
+);
+
+/// Which weekday a calendar week is counted from, for the Verlauf tab's week
+/// ranges.
+///
+/// Follows the active language until the user says otherwise in Settings —
+/// English counts from Sunday, German from Monday — so the default is right for
+/// both without anyone having to find the setting.
+class WeekStartController extends Notifier<WeekStart> {
+  @override
+  WeekStart build() {
+    final prefs = ref.watch(sharedPreferencesProvider).value;
+    final stored = prefs == null ? null : WeekStartService(prefs).getWeekStart();
+    return stored ??
+        WeekStart.forLanguage(ref.watch(localeControllerProvider).languageCode);
+  }
+
+  Future<void> setWeekStart(WeekStart start) async {
+    final prefs = await ref.read(sharedPreferencesProvider.future);
+    await WeekStartService(prefs).setWeekStart(start);
+    state = start;
+  }
+}
+
+final weekStartProvider = NotifierProvider<WeekStartController, WeekStart>(
+  WeekStartController.new,
 );
 
 /// Whether the first-run onboarding should be shown, decided once at launch.

@@ -42,6 +42,10 @@
   "@settingsGroupUnitsDisplay": {
     "description": "Settings section header. Shown upper-cased."
   },
+  "settingsWeekStart": "Week starts on",
+  "@settingsWeekStart": {
+    "description": "Settings row for which weekday a calendar week is counted from. The value shown next to it is a weekday name."
+  },
   "settingsUnits": "Units",
   "@settingsUnits": {
     "description": "Row label for the measurement-units setting."

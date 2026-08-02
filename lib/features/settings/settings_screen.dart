@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -11,6 +12,7 @@ import '../../core/app_update.dart';
 import '../../core/di/providers.dart';
 import '../../core/diagnostics/app_log.dart';
 import '../../core/i18n/language_picker.dart';
+import '../../core/time/week_start.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/share_origin.dart';
 import '../../core/ui/widgets/bold_controls.dart';
@@ -39,6 +41,7 @@ class SettingsScreen extends ConsumerWidget {
     final locale = ref.watch(localeControllerProvider);
     final languageIsExplicit =
         ref.read(localeControllerProvider.notifier).hasExplicitChoice;
+    final weekStart = ref.watch(weekStartProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -88,6 +91,12 @@ class SettingsScreen extends ConsumerWidget {
                             ? languageNativeName(locale.languageCode)
                             : l10n.languageSystemDefault,
                         onTap: () => showLanguagePicker(context, ref),
+                      ),
+                      BoldListRow(
+                        icon: Icons.date_range,
+                        label: l10n.settingsWeekStart,
+                        value: weekdayName(weekStart),
+                        onTap: () => _showWeekStartPicker(context, ref),
                       ),
                       BoldListRow(
                         icon: Icons.straighten,
@@ -224,6 +233,62 @@ class SettingsScreen extends ConsumerWidget {
         'Exportiert: ${DateTime.now().toIso8601String()}\n'
         '${'-' * 40}';
   }
+}
+
+/// The weekday's own name in the active language, taken from a date known to
+/// fall on it rather than from a hardcoded list — [DateFormat] already knows
+/// every translation, so there is nothing here to translate or keep in step.
+String weekdayName(WeekStart start) {
+  // 2024-01-01 was a Monday, so adding the weekday index lands on the day
+  // wanted for any variant.
+  final date = DateTime(2024, 1, start.firstWeekday);
+  return DateFormat.EEEE().format(date);
+}
+
+/// Lets the user override the week convention their language implies — someone
+/// running the app in English but living on a Monday-first calendar, or the
+/// other way round.
+Future<void> _showWeekStartPicker(BuildContext context, WidgetRef ref) async {
+  final l10n = AppLocalizations.of(context);
+  final current = ref.read(weekStartProvider);
+
+  final chosen = await showModalBottomSheet<WeekStart>(
+    context: context,
+    builder: (context) => SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          AppTheme.screenPadding,
+          20,
+          AppTheme.screenPadding,
+          MediaQuery.paddingOf(context).bottom + 12,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.settingsWeekStart.toUpperCase(),
+              style: AppText.section(size: 18),
+            ),
+            const SizedBox(height: 14),
+            for (final start in WeekStart.values) ...[
+              BoldListRow(
+                icon: Icons.date_range,
+                label: weekdayName(start),
+                chevron: false,
+                highlight: start == current,
+                onTap: () => Navigator.of(context).pop(start),
+              ),
+              const SizedBox(height: AppTheme.rowGap),
+            ],
+          ],
+        ),
+      ),
+    ),
+  );
+
+  if (chosen == null) return; // Dismissed.
+  await ref.read(weekStartProvider.notifier).setWeekStart(chosen);
 }
 
 /// A tappable "new version available" banner for sideloaded installs. Opens the

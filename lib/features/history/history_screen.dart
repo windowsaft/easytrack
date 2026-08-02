@@ -8,7 +8,6 @@ import 'package:intl/intl.dart' show DateFormat;
 import '../../core/di/providers.dart';
 import '../../core/i18n/number_format.dart';
 import '../../core/time/day_key.dart';
-import '../../core/time/week_start.dart';
 import '../../core/ui/app_theme.dart';
 import '../../core/ui/widgets/bold_controls.dart';
 import '../../data/db/user_database.dart';
@@ -45,7 +44,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final today = DayKey.today();
-    final range = _range.days(today, WeekStart.monday);
+    final weekStart = ref.watch(weekStartProvider);
+    final range = _range.days(today, weekStart);
     final days = ref.watch(historyProvider(range)).value ?? const <DayHistory>[];
     final summary = HistorySummary.of(days);
     final l10n = AppLocalizations.of(context);
