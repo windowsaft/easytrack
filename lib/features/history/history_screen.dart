@@ -45,10 +45,21 @@ enum _Period {
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   _Period _period = _Period.woche;
 
+  /// How many periods back from the rolling window the tab is showing.
+  ///
+  /// 0 is the rolling "last 7 / last 30 days" ending today — the default the
+  /// tab has always had. Anything below that leaves the rolling frame and walks
+  /// whole calendar units instead (−1 is the previous calendar week or month),
+  /// because "the week before" only means anything on a calendar boundary.
+  int _offset = 0;
+
+  /// A hand-picked span, which replaces both of the above until cleared.
+  ({DayKey from, DayKey to})? _custom;
+
   @override
   Widget build(BuildContext context) {
-    final days =
-        ref.watch(historyProvider(_period.days)).value ?? const <DayHistory>[];
+    final range = _range;
+    final days = ref.watch(historyProvider(range)).value ?? const <DayHistory>[];
     final summary = HistorySummary.of(days);
     final l10n = AppLocalizations.of(context);
 
@@ -61,7 +72,20 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         BoldHeader(title: l10n.navHistory.toUpperCase()),
         _PeriodTabs(
           current: _period,
-          onSelect: (p) => setState(() => _period = p),
+          // Changing the unit returns to that unit's rolling window: carrying a
+          // "3 weeks back" offset over to months would land somewhere the user
+          // did not ask for.
+          onSelect: (p) => setState(() {
+            _period = p;
+            _offset = 0;
+            _custom = null;
+          }),
+        ),
+        _RangeBar(
+          label: _rangeLabel(l10n),
+          canForward: _canForward,
+          onStep: _step,
+          onPickCustom: _pickCustom,
         ),
         if (summary.daysLogged == 0)
           const _EmptyState()
@@ -122,6 +146,105 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
+  /// The inclusive day range currently on screen.
+  ({DayKey from, DayKey to}) get _range {
+    final custom = _custom;
+    if (custom != null) return custom;
+
+    final today = DayKey.today();
+    if (_offset == 0) {
+      return (from: today.addDays(-(_period.days - 1)), to: today);
+    }
+    return switch (_period) {
+      _Period.woche => _calendarWeek(today, _offset),
+      _Period.monat => _calendarMonth(today, _offset),
+    };
+  }
+
+  /// Forward is blocked once the range has caught up with today — there is no
+  /// history ahead of it to show.
+  bool get _canForward {
+    final custom = _custom;
+    return custom == null ? _offset < 0 : custom.to.daysUntil(DayKey.today()) > 0;
+  }
+
+  /// Steps one period back (−1) or forward (+1). A custom range moves by its own
+  /// length, clamped so it never runs past today.
+  void _step(int direction) {
+    setState(() {
+      final custom = _custom;
+      if (custom == null) {
+        _offset += direction;
+        return;
+      }
+      final span = custom.from.daysUntil(custom.to) + 1;
+      final shift = direction > 0
+          ? math.min(span, custom.to.daysUntil(DayKey.today()))
+          : -span;
+      _custom = (
+        from: custom.from.addDays(shift),
+        to: custom.to.addDays(shift),
+      );
+    });
+  }
+
+  Future<void> _pickCustom() async {
+    final current = _range;
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DayKey.today().toDateTime(),
+      initialDateRange: DateTimeRange(
+        start: current.from.toDateTime(),
+        end: current.to.toDateTime(),
+      ),
+    );
+    if (picked == null) return;
+    setState(
+      () => _custom = (
+        from: DayKey.fromDate(picked.start),
+        to: DayKey.fromDate(picked.end),
+      ),
+    );
+  }
+
+  String _rangeLabel(AppLocalizations l10n) {
+    if (_custom == null) {
+      if (_offset == 0) return l10n.historyLastDays(_period.days);
+      // A whole calendar month names itself; a week has to spell its ends out.
+      if (_period == _Period.monat) {
+        return DateFormat.yMMMM().format(_range.from.toDateTime());
+      }
+    }
+    final range = _range;
+    return '${_dayLabel(range.from)} – ${_dayLabel(range.to)}';
+  }
+
+  /// Day and month, plus the year once the range has walked out of this one.
+  static String _dayLabel(DayKey day) {
+    final date = day.toDateTime();
+    return day.year == DayKey.today().year
+        ? DateFormat.MMMd().format(date)
+        : DateFormat.yMMMd().format(date);
+  }
+
+  /// The Monday–Sunday week [offset] weeks from the one containing [today].
+  static ({DayKey from, DayKey to}) _calendarWeek(DayKey today, int offset) {
+    final weekday = today.toDateTime().weekday;
+    final from = DayKey.fromDate(
+      DateTime(today.year, today.month, today.day - (weekday - 1) + offset * 7),
+    );
+    return (from: from, to: from.addDays(6));
+  }
+
+  /// The whole calendar month [offset] months from today's.
+  static ({DayKey from, DayKey to}) _calendarMonth(DayKey today, int offset) {
+    final first = DateTime(today.year, today.month + offset, 1);
+    // Day 0 of the following month is the last day of this one.
+    final last = DateTime(first.year, first.month + 1, 0);
+    return (from: DayKey.fromDate(first), to: DayKey.fromDate(last));
+  }
+
   static String _signedKcal(double kcal) {
     final n = kcal.round();
     final sign = n > 0 ? '+' : (n < 0 ? '−' : '±');
@@ -158,6 +281,89 @@ class _PeriodTabs extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Which stretch of days is on screen, with chevrons to walk it.
+///
+/// The label is the control for a hand-picked range: the calendar glyph next to
+/// it is what advertises that, since the tap itself is invisible.
+class _RangeBar extends StatelessWidget {
+  const _RangeBar({
+    required this.label,
+    required this.canForward,
+    required this.onStep,
+    required this.onPickCustom,
+  });
+
+  final String label;
+  final bool canForward;
+  final ValueChanged<int> onStep;
+  final VoidCallback onPickCustom;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        0,
+        AppTheme.screenPadding,
+        8,
+      ),
+      child: Row(
+        children: [
+          SquareIconButton(
+            icon: Icons.chevron_left,
+            size: 34,
+            iconSize: 20,
+            tooltip: l10n.historyPreviousRange,
+            onPressed: () => onStep(-1),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: onPickCustom,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        label.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.grotesk(
+                          size: 12,
+                          weight: 700,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Icon(
+                      Icons.calendar_month,
+                      size: 15,
+                      color: AppColors.textFaint,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Opacity(
+            opacity: canForward ? 1 : 0.3,
+            child: SquareIconButton(
+              icon: Icons.chevron_right,
+              size: 34,
+              iconSize: 20,
+              tooltip: l10n.historyNextRange,
+              onPressed: canForward ? () => onStep(1) : null,
+            ),
+          ),
         ],
       ),
     );
@@ -216,13 +422,12 @@ class _KcalBarsPainter extends CustomPainter {
       final h = (day.kcal / maxY) * chartH;
       final x = i * (barW + gap);
 
-      // The last day is "today" — still being logged, so it reads as muted
-      // rather than as a real over/under verdict.
-      final color = !day.hasData
+      // Today is still being logged, so it reads as muted rather than as a real
+      // over/under verdict. Tested by date, not by position: a range paged into
+      // the past ends on a finished day that deserves its verdict.
+      final color = !day.hasData || day.day.isToday
           ? AppColors.surfaceAlt
-          : (i == n - 1
-                ? AppColors.surfaceAlt
-                : (day.isOverTarget ? AppColors.coral : AppColors.lime));
+          : (day.isOverTarget ? AppColors.coral : AppColors.lime);
 
       if (h > 0) {
         canvas.drawRect(

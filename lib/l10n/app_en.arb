@@ -1082,6 +1082,21 @@
   "@historyMonth": {
     "description": "History period: last month."
   },
+  "historyLastDays": "Last {days} days",
+  "@historyLastDays": {
+    "description": "Label for the default history range, the rolling window ending today. Shown upper-cased.",
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "historyPreviousRange": "Previous period",
+  "@historyPreviousRange": {
+    "description": "Tooltip on the history range's back chevron."
+  },
+  "historyNextRange": "Next period",
+  "@historyNextRange": {
+    "description": "Tooltip on the history range's forward chevron."
+  },
   "historyAvgKcal": "Ø {kcal} kcal",
   "@historyAvgKcal": {
     "description": "Average daily calories caption in the history header.",

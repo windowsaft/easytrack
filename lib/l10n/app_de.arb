@@ -262,6 +262,9 @@
 
   "historyWeek": "Woche",
   "historyMonth": "Monat",
+  "historyLastDays": "Letzte {days} Tage",
+  "historyPreviousRange": "Vorheriger Zeitraum",
+  "historyNextRange": "Nächster Zeitraum",
   "historyAvgKcal": "Ø {kcal} kcal",
   "historyOverview": "Überblick",
   "historyAdherence": "Ziel-Treue",

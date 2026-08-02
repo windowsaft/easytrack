@@ -377,16 +377,16 @@ final historyRepositoryProvider = Provider<HistoryRepository>(
   (ref) => HistoryRepository(ref.watch(userDatabaseProvider)),
 );
 
-/// Per-day rolled-up history for the Verlauf tab, over the last [days] days
-/// (7 for Woche, 30 for Monat), ending today.
-final historyProvider = StreamProvider.family<List<DayHistory>, int>((
-  ref,
-  days,
-) {
-  final to = DayKey.today();
-  final from = to.addDays(-(days - 1));
-  return ref.watch(historyRepositoryProvider).watchRange(from, to);
-});
+/// Per-day rolled-up history for the Verlauf tab, over an inclusive day range.
+///
+/// Keyed by the range rather than by a length so the tab can page back to an
+/// earlier week or month, or show a hand-picked span, and not just the window
+/// ending today.
+final historyProvider =
+    StreamProvider.family<List<DayHistory>, ({DayKey from, DayKey to})>(
+      (ref, range) =>
+          ref.watch(historyRepositoryProvider).watchRange(range.from, range.to),
+    );
 
 /// The target in force today, used by the settings screen. The diary reads the
 /// target for the day it is showing instead, via [daySummaryProvider].

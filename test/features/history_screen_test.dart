@@ -103,4 +103,40 @@ void main() {
 
     await unmount(tester);
   });
+
+  testWidgets('stepping back reaches a day the rolling window cannot', (
+    tester,
+  ) async {
+    // The Monday of the previous calendar week is always at least 7 days ago,
+    // whatever today's weekday — so it can never fall inside "last 7 days", and
+    // only the back chevron can bring it into view.
+    final today = DayKey.today();
+    final lastMonday = today.addDays(-(today.toDateTime().weekday - 1) - 7);
+    await diary.addEntry(
+      day: lastMonday,
+      meal: MealType.breakfast,
+      food: oats,
+      amountG: 200,
+    );
+
+    await show(tester, const HistoryScreen());
+
+    expect(find.text('LETZTE 7 TAGE'), findsOneWidget);
+    expect(find.text('Noch keine Auswertung'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Vorheriger Zeitraum'));
+    await settle(tester);
+
+    expect(find.text('LETZTE 7 TAGE'), findsNothing);
+    expect(find.text('KALORIEN'), findsOneWidget);
+
+    // And forward returns to the rolling window it started from.
+    await tester.tap(find.byTooltip('Nächster Zeitraum'));
+    await settle(tester);
+
+    expect(find.text('LETZTE 7 TAGE'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await unmount(tester);
+  });
 }
